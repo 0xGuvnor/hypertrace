@@ -76,6 +76,12 @@ async function postInfo<T>(
   return (await response.json()) as T;
 }
 
+function fundingFeeFromCumFunding(sinceOpen: string): string {
+  const num = Number.parseFloat(sinceOpen);
+  if (!Number.isFinite(num) || num === 0) return sinceOpen;
+  return (-num).toString();
+}
+
 function parseTriggerPrice(triggerPx: string): string | null {
   const num = Number.parseFloat(triggerPx);
   if (Number.isNaN(num) || num === 0) return null;
@@ -165,7 +171,7 @@ function parsePositions(
         leverage: position.leverage.value,
         marginUsed: position.marginUsed,
         value: position.positionValue,
-        fundingFee: position.cumFunding.sinceOpen,
+        fundingFee: fundingFeeFromCumFunding(position.cumFunding.sinceOpen),
       };
     })
     .filter((p): p is NonNullable<typeof p> => p !== null);

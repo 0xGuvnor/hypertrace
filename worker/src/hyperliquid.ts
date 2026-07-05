@@ -66,6 +66,12 @@ async function postInfo<T>(body: Record<string, unknown>, attempt = 0): Promise<
   return (await response.json()) as T;
 }
 
+function fundingFeeFromCumFunding(sinceOpen: string): string {
+  const num = Number.parseFloat(sinceOpen);
+  if (!Number.isFinite(num) || num === 0) return sinceOpen;
+  return (-num).toString();
+}
+
 function parseTriggerPrice(triggerPx: string): string | null {
   const num = Number.parseFloat(triggerPx);
   if (Number.isNaN(num) || num === 0) return null;
@@ -102,7 +108,7 @@ export async function fetchWalletSnapshot(address: string): Promise<WalletSnapsh
         leverage: position.leverage.value,
         marginUsed: position.marginUsed,
         value: position.positionValue,
-        fundingFee: position.cumFunding.sinceOpen,
+        fundingFee: fundingFeeFromCumFunding(position.cumFunding.sinceOpen),
         takeProfitPrice: null as string | null,
         stopLossPrice: null as string | null,
       };
