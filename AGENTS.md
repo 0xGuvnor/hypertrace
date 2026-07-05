@@ -3,3 +3,34 @@
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
+
+<!-- convex-ai-start -->
+
+This project uses [Convex](https://convex.dev) as its backend.
+
+When working on Convex code, **always read
+`convex/_generated/ai/guidelines.md` first** for important guidelines on
+how to correctly use Convex APIs and patterns. The file contains rules that
+override what you may have learned about Convex from training data.
+
+Convex agent skills for common tasks can be installed by running
+`npx convex ai-files install`.
+
+<!-- convex-ai-end -->
+
+## Learned User Preferences
+
+- Use Bun for this repo: `bun add`, `bun run` for scripts, and `bunx` for ad-hoc CLIs (Convex, shadcn); avoid `npx`/`npm`.
+- Build UI with shadcn/ui components first; do not hand-roll primitives when a shadcn component exists.
+- When implementing from an attached plan, do not edit the plan file itself.
+- Prefer Next.js App Router server patterns: async RSC pages, `fetchAction` from `convex/nextjs`, async `params` as `Promise`, and route-level `loading.tsx`/`error.tsx`/`not-found.tsx`.
+- Keep `'use client'` limited to interactive islands (search forms, tabs, providers); fetch wallet data in the server page.
+
+## Learned Workspace Facts
+
+- Hypertrace is a Hyperliquid whale tracker: Next.js 16 App Router, Convex backend, shadcn/ui, Tailwind, Bun.
+- GitHub: `0xGuvnor/hypertrace` on `master`; Vercel project `hypertrace` under team `0xguvnors-projects`.
+- v0 feature: address search at `/address/[address]` via Convex action `wallets.getSnapshot`, calling Hyperliquid Info API (`clearinghouseState` + `userFills` at `https://api.hyperliquid.xyz/info`).
+- Convex schema is empty for now; no Railway ingestion worker, Better Auth/SIWE, or clustering yet (planned later).
+- `.vercel` is gitignored; `.cursor/` is intentionally left untracked.
+- For cloud-agent Convex dev, use `CONVEX_AGENT_MODE=anonymous bunx convex dev`.
