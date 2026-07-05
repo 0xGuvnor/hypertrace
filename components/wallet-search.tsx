@@ -98,8 +98,11 @@ export function WalletSearch() {
   }
 
   return (
-    <div className="flex w-full max-w-xl flex-col gap-4">
-      <form onSubmit={handleSubmit} className="flex gap-2">
+    <div className="flex w-full flex-col gap-4">
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-2 sm:flex-row sm:items-stretch"
+      >
         <Input
           type="text"
           placeholder="0x..."
@@ -108,11 +111,13 @@ export function WalletSearch() {
             setValue(e.target.value);
             if (error) setError(null);
           }}
-          className="font-mono text-sm"
+          className="min-w-0 flex-1 font-mono text-sm"
           spellCheck={false}
           autoComplete="off"
         />
-        <Button type="submit">Search</Button>
+        <Button type="submit" className="w-full shrink-0 sm:w-auto">
+          Search
+        </Button>
       </form>
 
       {error ? (

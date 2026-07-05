@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect } from "react";
 
+import { AppShell } from "@/components/app-shell";
+import { SiteHeader } from "@/components/site-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -26,19 +28,23 @@ export default function AddressError({
   }, [error]);
 
   return (
-    <div className="mx-auto flex min-h-svh max-w-4xl flex-col gap-6 p-6">
+    <AppShell className="gap-6">
+      <SiteHeader variant="compact" className="items-start" />
       <Alert variant="destructive">
         <AlertTitle>Could not load wallet</AlertTitle>
         <AlertDescription>{friendlyMessage(error.message)}</AlertDescription>
       </Alert>
-      <div className="flex gap-2">
-        <Button type="button" onClick={reset}>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button type="button" onClick={reset} className="w-full sm:w-auto">
           Try again
         </Button>
-        <Link href="/" className={cn(buttonVariants({ variant: "outline" }))}>
+        <Link
+          href="/"
+          className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}
+        >
           Back to search
         </Link>
       </div>
-    </div>
+    </AppShell>
   );
 }

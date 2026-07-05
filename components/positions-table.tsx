@@ -28,7 +28,6 @@ export function PositionsTable({
       <TableHeader>
         <TableRow>
           <TableHead>Asset</TableHead>
-          <TableHead>Side</TableHead>
           <TableHead className="text-right">Size</TableHead>
           <TableHead className="text-right">Entry</TableHead>
           <TableHead className="text-right">uPnL</TableHead>
@@ -41,14 +40,19 @@ export function PositionsTable({
       <TableBody>
         {positions.map((position) => {
           const pnl = Number.parseFloat(position.unrealizedPnl);
+          const isLong = position.side === "long";
           return (
             <TableRow key={position.coin}>
-              <TableCell className="font-medium">{position.coin}</TableCell>
               <TableCell>
                 <Badge
-                  variant={position.side === "long" ? "default" : "secondary"}
+                  variant="outline"
+                  className={
+                    isLong
+                      ? "border-emerald-500/30 bg-emerald-500/10 font-medium text-emerald-700 dark:text-emerald-400"
+                      : "border-red-500/30 bg-red-500/10 font-medium text-red-700 dark:text-red-400"
+                  }
                 >
-                  {position.side}
+                  {position.coin}
                 </Badge>
               </TableCell>
               <TableCell className="text-right font-mono text-xs">

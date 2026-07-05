@@ -8,25 +8,31 @@ import type { WalletSnapshot } from "@/lib/wallet-types";
 
 export function WalletTabs({ snapshot }: { snapshot: WalletSnapshot }) {
   return (
-    <Tabs defaultValue="positions">
-      <TabsList>
-        <TabsTrigger value="positions">
-          Positions ({snapshot.positions.length})
-        </TabsTrigger>
-        <TabsTrigger value="orders">
-          Orders ({snapshot.openOrders.length})
-        </TabsTrigger>
-        <TabsTrigger value="fills">
-          Fills ({snapshot.recentFills.length})
-        </TabsTrigger>
-      </TabsList>
-      <TabsContent value="positions">
+    <Tabs defaultValue="positions" className="min-w-0">
+      <div className="-mx-1 overflow-x-auto px-1 pb-1">
+        <TabsList className="w-max min-w-full sm:w-fit">
+          <TabsTrigger value="positions" className="text-xs sm:text-sm">
+            <span className="sm:hidden">Pos</span>
+            <span className="hidden sm:inline">Positions</span>
+            <span className="text-muted-foreground">({snapshot.positions.length})</span>
+          </TabsTrigger>
+          <TabsTrigger value="orders" className="text-xs sm:text-sm">
+            Orders
+            <span className="text-muted-foreground">({snapshot.openOrders.length})</span>
+          </TabsTrigger>
+          <TabsTrigger value="fills" className="text-xs sm:text-sm">
+            Fills
+            <span className="text-muted-foreground">({snapshot.recentFills.length})</span>
+          </TabsTrigger>
+        </TabsList>
+      </div>
+      <TabsContent value="positions" className="min-w-0">
         <PositionsTable positions={snapshot.positions} />
       </TabsContent>
-      <TabsContent value="orders">
+      <TabsContent value="orders" className="min-w-0">
         <OrdersTable orders={snapshot.openOrders} />
       </TabsContent>
-      <TabsContent value="fills">
+      <TabsContent value="fills" className="min-w-0">
         <FillsTable fills={snapshot.recentFills} />
       </TabsContent>
     </Tabs>

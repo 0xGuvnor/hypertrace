@@ -28,13 +28,13 @@ export const metadata: Metadata = {
     siteName: "Hypertrace",
     title: "Hypertrace",
     description: siteDescription,
-    images: [{ url: "/logo.PNG", width: 512, height: 512, alt: "Hypertrace" }],
+    images: [{ url: "/logo.png", width: 512, height: 512, alt: "Hypertrace" }],
   },
   twitter: {
     card: "summary",
     title: "Hypertrace",
     description: siteDescription,
-    images: ["/logo.PNG"],
+    images: ["/logo.png"],
   },
 }
 

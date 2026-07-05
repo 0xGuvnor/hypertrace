@@ -48,6 +48,10 @@
 }
 
 :root {
+    --brand-ink: #05051a;
+    --brand-cyan: #00d2ff;
+    --brand-blue: #0055ff;
+    --brand-purple: #8a2be2;
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -83,6 +87,10 @@
 }
 
 .dark {
+    --brand-ink: #05051a;
+    --brand-cyan: #00d2ff;
+    --brand-blue: #0055ff;
+    --brand-purple: #8a2be2;
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);

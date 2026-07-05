@@ -9,7 +9,7 @@ import type { WalletSnapshot } from "@/lib/wallet-types";
 
 export function WalletDetail({ snapshot }: { snapshot: WalletSnapshot }) {
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex min-w-0 flex-col gap-8">
       <div className="flex flex-col gap-1">
         <Link
           href="/"
@@ -17,7 +17,7 @@ export function WalletDetail({ snapshot }: { snapshot: WalletSnapshot }) {
         >
           ← Back to search
         </Link>
-        <div className="flex items-center gap-1">
+        <div className="flex min-w-0 items-center gap-1">
           <AddressWithTooltip address={snapshot.address} />
           <CopyAddressButton address={snapshot.address} />
         </div>

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { fetchAction } from "convex/nextjs";
 
+import { AppShell } from "@/components/app-shell";
+import { SiteHeader } from "@/components/site-header";
 import { WalletDetail } from "@/components/wallet-detail";
 import { api } from "@/convex/_generated/api";
 import { isValidAddress, normalizeAddress, truncateAddress } from "@/lib/address";
@@ -33,8 +35,9 @@ export default async function AddressPage({ params }: PageProps) {
   });
 
   return (
-    <div className="mx-auto flex min-h-svh max-w-4xl flex-col p-6">
+    <AppShell className="gap-6 sm:gap-8">
+      <SiteHeader variant="compact" className="items-start" />
       <WalletDetail snapshot={snapshot} />
-    </div>
+    </AppShell>
   );
 }
