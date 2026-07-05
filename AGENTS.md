@@ -35,9 +35,11 @@ Convex agent skills for common tasks can be installed by running
 - Hypertrace is a Hyperliquid whale tracker: Next.js 16 App Router, Convex backend, shadcn/ui, Tailwind, Bun.
 - GitHub: `0xGuvnor/hypertrace` on `master`; Vercel project `hypertrace` under team `0xguvnors-projects`.
 - v0 feature: address search at `/address/[address]` via Convex action `wallets.getSnapshot`, calling Hyperliquid Info API (`clearinghouseState` + `userFills` + `frontendOpenOrders` at `https://api.hyperliquid.xyz/info`); UI shows positions (with TP/SL), an Open Orders tab, and fills.
-- Wallet data is fetched once per navigation via server `fetchAction` (not live/reactive yet).
-- Planned live architecture: Hyperliquid WS/poll → ingestion worker (Railway) → Convex tables → client `useQuery`; avoid browser→Hyperliquid WebSocket.
-- Convex schema is empty for now; no Railway ingestion worker, Better Auth/SIWE, or clustering yet (planned later).
+- Wallet pages use server `fetchAction` for the first paint, then `WalletDetailLive` subscribes via `watches.request` + `useQuery(api.wallets.getLiveSnapshot)`.
+- Live pipeline: Hyperliquid WS → `worker/` (Railway, Bun) → Convex HTTP ingest (`/ingest/watches`, `/ingest/snapshot`) → `walletSnapshots` table → client `useQuery`.
+- Convex tables: `watchedAddresses` (24h TTL via `lastRequestedAt`), `walletSnapshots` (indexed by `address`).
+- Worker env: `CONVEX_URL`, `WORKER_INGEST_SECRET` (must match Convex env), optional `HL_WS_URL`, `WATCH_POLL_MS`, `REFRESH_DEBOUNCE_MS`; Railway root directory `worker`.
+- Do not subscribe to Hyperliquid from the browser.
 - `@convex-dev/eslint-plugin` is configured; `convex/_generated/**` is ignored in ESLint.
 - Branding layout uses `AppShell` + `SiteHeader` (hero/compact variants); logo at `public/logo.png`.
 - Root layout metadata uses `NEXT_PUBLIC_SITE_URL` → `VERCEL_URL` → localhost for `metadataBase`.

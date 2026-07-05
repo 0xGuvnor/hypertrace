@@ -5,15 +5,17 @@ const usdFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
 });
 
-export function formatUsd(value: string | number): string {
+export function formatUsd(value: string | number | null | undefined): string {
+  if (value === null || value === undefined || value === "") return "—";
   const num = typeof value === "string" ? Number.parseFloat(value) : value;
-  if (Number.isNaN(num)) return "—";
+  if (!Number.isFinite(num)) return "—";
   return usdFormatter.format(num);
 }
 
-export function formatSize(value: string): string {
+export function formatSize(value: string | null | undefined): string {
+  if (value === null || value === undefined || value === "") return "—";
   const num = Number.parseFloat(value);
-  if (Number.isNaN(num)) return value;
+  if (!Number.isFinite(num)) return "—";
   return num.toLocaleString("en-US", { maximumFractionDigits: 6 });
 }
 

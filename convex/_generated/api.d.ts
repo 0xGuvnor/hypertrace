@@ -8,10 +8,13 @@
  * @module
  */
 
+import type * as http from "../http.js";
 import type * as lib_address from "../lib/address.js";
 import type * as lib_hyperliquid from "../lib/hyperliquid.js";
 import type * as lib_hyperliquidTypes from "../lib/hyperliquidTypes.js";
+import type * as lib_ingestAuth from "../lib/ingestAuth.js";
 import type * as wallets from "../wallets.js";
+import type * as watches from "../watches.js";
 
 import type {
   ApiFromModules,
@@ -20,10 +23,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  http: typeof http;
   "lib/address": typeof lib_address;
   "lib/hyperliquid": typeof lib_hyperliquid;
   "lib/hyperliquidTypes": typeof lib_hyperliquidTypes;
+  "lib/ingestAuth": typeof lib_ingestAuth;
   wallets: typeof wallets;
+  watches: typeof watches;
 }>;
 
 /**

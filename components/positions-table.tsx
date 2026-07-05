@@ -10,6 +10,21 @@ import {
 import { formatUsd, formatSize } from "@/lib/format";
 import type { WalletSnapshot } from "@/lib/wallet-types";
 
+function unrealizedPnlClass(value: string): string {
+  const num = Number.parseFloat(value);
+  if (!Number.isFinite(num)) return "";
+  if (num > 0) return "text-emerald-600 dark:text-emerald-400";
+  if (num < 0) return "text-red-600 dark:text-red-400";
+  return "";
+}
+
+function fundingFeeClass(value: string): string {
+  const num = Number.parseFloat(value);
+  if (!Number.isFinite(num) || num === 0) return "";
+  if (num < 0) return "text-red-600 dark:text-red-400";
+  return "text-emerald-600 dark:text-emerald-400";
+}
+
 export function PositionsTable({
   positions,
 }: {
@@ -28,18 +43,19 @@ export function PositionsTable({
       <TableHeader>
         <TableRow>
           <TableHead>Asset</TableHead>
+          <TableHead className="text-right">Leverage</TableHead>
           <TableHead className="text-right">Size</TableHead>
+          <TableHead className="text-right">Value</TableHead>
           <TableHead className="text-right">Entry</TableHead>
-          <TableHead className="text-right">uPnL</TableHead>
           <TableHead className="text-right">Liq. price</TableHead>
           <TableHead className="text-right">TP</TableHead>
           <TableHead className="text-right">SL</TableHead>
-          <TableHead className="text-right">Leverage</TableHead>
+          <TableHead className="text-right">Funding fee</TableHead>
+          <TableHead className="text-right">uPnL</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {positions.map((position) => {
-          const pnl = Number.parseFloat(position.unrealizedPnl);
           const isLong = position.side === "long";
           return (
             <TableRow key={position.coin}>
@@ -56,15 +72,16 @@ export function PositionsTable({
                 </Badge>
               </TableCell>
               <TableCell className="text-right font-mono text-xs">
+                {position.leverage}x
+              </TableCell>
+              <TableCell className="text-right font-mono text-xs">
                 {formatSize(position.size)}
               </TableCell>
               <TableCell className="text-right font-mono text-xs">
-                {formatUsd(position.entryPrice)}
+                {formatUsd(position.value)}
               </TableCell>
-              <TableCell
-                className={`text-right font-mono text-xs ${pnl >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}
-              >
-                {formatUsd(position.unrealizedPnl)}
+              <TableCell className="text-right font-mono text-xs">
+                {formatUsd(position.entryPrice)}
               </TableCell>
               <TableCell className="text-right font-mono text-xs">
                 {position.liquidationPrice
@@ -81,8 +98,15 @@ export function PositionsTable({
                   ? formatUsd(position.stopLossPrice)
                   : "—"}
               </TableCell>
-              <TableCell className="text-right font-mono text-xs">
-                {position.leverage}x
+              <TableCell
+                className={`text-right font-mono text-xs ${fundingFeeClass(position.fundingFee)}`}
+              >
+                {formatUsd(position.fundingFee)}
+              </TableCell>
+              <TableCell
+                className={`text-right font-mono text-xs ${unrealizedPnlClass(position.unrealizedPnl)}`}
+              >
+                {formatUsd(position.unrealizedPnl)}
               </TableCell>
             </TableRow>
           );

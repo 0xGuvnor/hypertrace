@@ -1,5 +1,6 @@
 import { v } from "convex/values";
-import { action } from "./_generated/server";
+
+import { action, internalMutation, query } from "./_generated/server";
 import { isValidAddress, normalizeAddress } from "./lib/address";
 import { fetchWalletSnapshot } from "./lib/hyperliquid";
 import { walletSnapshotValidator } from "./lib/hyperliquidTypes";
@@ -14,5 +15,66 @@ export const getSnapshot = action({
     }
 
     return await fetchWalletSnapshot(normalizeAddress(trimmed));
+  },
+});
+
+export const getLiveSnapshot = query({
+  args: { address: v.string() },
+  returns: v.union(walletSnapshotValidator, v.null()),
+  handler: async (ctx, args) => {
+    const trimmed = args.address.trim();
+    if (!isValidAddress(trimmed)) {
+      return null;
+    }
+
+    const address = normalizeAddress(trimmed);
+    const row = await ctx.db
+      .query("walletSnapshots")
+      .withIndex("by_address", (q) => q.eq("address", address))
+      .unique();
+
+    if (!row) {
+      return null;
+    }
+
+    return {
+      address: row.address,
+      fetchedAt: row.fetchedAt,
+      account: row.account,
+      positions: row.positions,
+      openOrders: row.openOrders,
+      recentFills: row.recentFills,
+    };
+  },
+});
+
+export const upsertSnapshot = internalMutation({
+  args: { snapshot: walletSnapshotValidator },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const { snapshot } = args;
+    const now = Date.now();
+    const existing = await ctx.db
+      .query("walletSnapshots")
+      .withIndex("by_address", (q) => q.eq("address", snapshot.address))
+      .unique();
+
+    const record = {
+      address: snapshot.address,
+      fetchedAt: snapshot.fetchedAt,
+      account: snapshot.account,
+      positions: snapshot.positions,
+      openOrders: snapshot.openOrders,
+      recentFills: snapshot.recentFills,
+      updatedAt: now,
+    };
+
+    if (existing) {
+      await ctx.db.patch(existing._id, record);
+      return null;
+    }
+
+    await ctx.db.insert("walletSnapshots", record);
+    return null;
   },
 });

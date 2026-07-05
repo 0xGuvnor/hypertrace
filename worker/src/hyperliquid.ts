@@ -1,4 +1,4 @@
-import type { WalletSnapshot } from "./hyperliquidTypes";
+import type { WalletSnapshot } from "./types";
 
 const HL_INFO_URL = "https://api.hyperliquid.xyz/info";
 const RECENT_FILLS_LIMIT = 20;
@@ -19,9 +19,7 @@ type ClearinghouseState = {
       leverage: { value: number };
       marginUsed: string;
       positionValue: string;
-      cumFunding: {
-        sinceOpen: string;
-      };
+      cumFunding: { sinceOpen: string };
     };
   }>;
 };
@@ -50,10 +48,7 @@ type FrontendOpenOrder = {
   orderType: string;
 };
 
-async function postInfo<T>(
-  body: Record<string, unknown>,
-  attempt = 0,
-): Promise<T> {
+async function postInfo<T>(body: Record<string, unknown>, attempt = 0): Promise<T> {
   const response = await fetch(HL_INFO_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -66,11 +61,6 @@ async function postInfo<T>(
   }
 
   if (!response.ok) {
-    if (response.status === 429) {
-      throw new Error(
-        "Hyperliquid rate limit reached. Wait a moment and try again.",
-      );
-    }
     throw new Error(`Hyperliquid API error (${response.status})`);
   }
 
@@ -83,9 +73,7 @@ function parseTriggerPrice(triggerPx: string): string | null {
   return triggerPx;
 }
 
-function classifyPositionTpsl(
-  order: FrontendOpenOrder,
-): "tp" | "sl" | null {
+function classifyPositionTpsl(order: FrontendOpenOrder): "tp" | "sl" | null {
   if (!order.isPositionTpsl) return null;
   const orderType = order.orderType.toLowerCase();
   if (orderType.includes("take profit")) return "tp";
@@ -93,65 +81,14 @@ function classifyPositionTpsl(
   return null;
 }
 
-function parseOpenOrders(
-  orders: FrontendOpenOrder[],
-): WalletSnapshot["openOrders"] {
-  return orders.map((order) => ({
-    coin: order.coin,
-    side: order.side === "B" ? ("buy" as const) : ("sell" as const),
-    orderType: order.orderType,
-    size: order.sz,
-    limitPrice: order.limitPx,
-    triggerPrice: parseTriggerPrice(order.triggerPx),
-    triggerCondition: order.triggerCondition,
-    isTrigger: order.isTrigger,
-    isPositionTpsl: order.isPositionTpsl,
-    reduceOnly: order.reduceOnly,
-    timestamp: order.timestamp,
-    orderId: order.oid,
-  }));
-}
+export async function fetchWalletSnapshot(address: string): Promise<WalletSnapshot> {
+  const [clearinghouse, fills, rawOpenOrders] = await Promise.all([
+    postInfo<ClearinghouseState>({ type: "clearinghouseState", user: address }),
+    postInfo<UserFill[]>({ type: "userFills", user: address }),
+    postInfo<FrontendOpenOrder[]>({ type: "frontendOpenOrders", user: address }),
+  ]);
 
-function attachTpslToPositions(
-  positions: Array<Omit<WalletSnapshot["positions"][number], "takeProfitPrice" | "stopLossPrice">>,
-  rawOrders: FrontendOpenOrder[],
-): WalletSnapshot["positions"] {
-  const tpslByCoin = new Map<
-    string,
-    { takeProfitPrice?: string; stopLossPrice?: string }
-  >();
-
-  for (const order of rawOrders) {
-    const kind = classifyPositionTpsl(order);
-    if (!kind) continue;
-
-    const triggerPrice = parseTriggerPrice(order.triggerPx);
-    if (!triggerPrice) continue;
-
-    const entry = tpslByCoin.get(order.coin) ?? {};
-    if (kind === "tp" && entry.takeProfitPrice === undefined) {
-      entry.takeProfitPrice = triggerPrice;
-    }
-    if (kind === "sl" && entry.stopLossPrice === undefined) {
-      entry.stopLossPrice = triggerPrice;
-    }
-    tpslByCoin.set(order.coin, entry);
-  }
-
-  return positions.map((position) => {
-    const tpsl = tpslByCoin.get(position.coin);
-    return {
-      ...position,
-      takeProfitPrice: tpsl?.takeProfitPrice ?? null,
-      stopLossPrice: tpsl?.stopLossPrice ?? null,
-    };
-  });
-}
-
-function parsePositions(
-  assetPositions: ClearinghouseState["assetPositions"],
-): Array<Omit<WalletSnapshot["positions"][number], "takeProfitPrice" | "stopLossPrice">> {
-  return assetPositions
+  const positions = clearinghouse.assetPositions
     .map(({ position }) => {
       const sizeNum = Number.parseFloat(position.szi);
       if (!Number.isFinite(sizeNum) || sizeNum === 0) return null;
@@ -167,13 +104,57 @@ function parsePositions(
         marginUsed: position.marginUsed,
         value: position.positionValue,
         fundingFee: position.cumFunding.sinceOpen,
+        takeProfitPrice: null as string | null,
+        stopLossPrice: null as string | null,
       };
     })
-    .filter((p): p is NonNullable<typeof p> => p !== null);
-}
+    .filter((position): position is NonNullable<typeof position> => position !== null);
 
-function parseFills(fills: UserFill[]): WalletSnapshot["recentFills"] {
-  return [...fills]
+  const tpslByCoin = new Map<
+    string,
+    { takeProfitPrice?: string; stopLossPrice?: string }
+  >();
+
+  for (const order of rawOpenOrders) {
+    const kind = classifyPositionTpsl(order);
+    if (!kind) continue;
+    const triggerPrice = parseTriggerPrice(order.triggerPx);
+    if (!triggerPrice) continue;
+    const entry = tpslByCoin.get(order.coin) ?? {};
+    if (kind === "tp" && entry.takeProfitPrice === undefined) {
+      entry.takeProfitPrice = triggerPrice;
+    }
+    if (kind === "sl" && entry.stopLossPrice === undefined) {
+      entry.stopLossPrice = triggerPrice;
+    }
+    tpslByCoin.set(order.coin, entry);
+  }
+
+  const positionsWithTpsl = positions.map((position) => {
+    const tpsl = tpslByCoin.get(position.coin);
+    return {
+      ...position,
+      takeProfitPrice: tpsl?.takeProfitPrice ?? null,
+      stopLossPrice: tpsl?.stopLossPrice ?? null,
+    };
+  });
+
+  const openOrders = rawOpenOrders.map((order) => ({
+    coin: order.coin,
+    side: order.side === "B" ? ("buy" as const) : ("sell" as const),
+    orderType: order.orderType,
+    size: order.sz,
+    limitPrice: order.limitPx,
+    triggerPrice: parseTriggerPrice(order.triggerPx),
+    triggerCondition: order.triggerCondition,
+    isTrigger: order.isTrigger,
+    isPositionTpsl: order.isPositionTpsl,
+    reduceOnly: order.reduceOnly,
+    timestamp: order.timestamp,
+    orderId: order.oid,
+  }));
+
+  const recentFills = [...fills]
     .sort((a, b) => b.time - a.time)
     .slice(0, RECENT_FILLS_LIMIT)
     .map((fill) => ({
@@ -184,28 +165,6 @@ function parseFills(fills: UserFill[]): WalletSnapshot["recentFills"] {
       timestamp: fill.time,
       hash: fill.hash,
     }));
-}
-
-export async function fetchWalletSnapshot(
-  address: string,
-): Promise<WalletSnapshot> {
-  const [clearinghouse, fills, rawOpenOrders] = await Promise.all([
-    postInfo<ClearinghouseState>({
-      type: "clearinghouseState",
-      user: address,
-    }),
-    postInfo<UserFill[]>({
-      type: "userFills",
-      user: address,
-    }),
-    postInfo<FrontendOpenOrder[]>({
-      type: "frontendOpenOrders",
-      user: address,
-    }),
-  ]);
-
-  const positions = parsePositions(clearinghouse.assetPositions);
-  const openOrders = parseOpenOrders(rawOpenOrders);
 
   return {
     address,
@@ -215,8 +174,8 @@ export async function fetchWalletSnapshot(
       totalMarginUsed: clearinghouse.marginSummary.totalMarginUsed,
       withdrawable: clearinghouse.withdrawable,
     },
-    positions: attachTpslToPositions(positions, rawOpenOrders),
+    positions: positionsWithTpsl,
     openOrders,
-    recentFills: parseFills(fills),
+    recentFills,
   };
 }

@@ -7,7 +7,13 @@ import { WalletTabs } from "@/components/wallet-tabs";
 import { formatTimestamp } from "@/lib/format";
 import type { WalletSnapshot } from "@/lib/wallet-types";
 
-export function WalletDetail({ snapshot }: { snapshot: WalletSnapshot }) {
+export function WalletDetail({
+  snapshot,
+  isLive = false,
+}: {
+  snapshot: WalletSnapshot;
+  isLive?: boolean;
+}) {
   return (
     <div className="flex min-w-0 flex-col gap-8">
       <div className="flex flex-col gap-1">
@@ -22,7 +28,7 @@ export function WalletDetail({ snapshot }: { snapshot: WalletSnapshot }) {
           <CopyAddressButton address={snapshot.address} />
         </div>
         <p className="text-muted-foreground text-xs">
-          Fetched {formatTimestamp(snapshot.fetchedAt)}
+          {isLive ? "Live" : "Fetched"} {formatTimestamp(snapshot.fetchedAt)}
         </p>
       </div>
 

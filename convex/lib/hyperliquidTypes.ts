@@ -1,6 +1,27 @@
 import { v, type Infer } from "convex/values";
 
-const openOrderValidator = v.object({
+export const accountSummaryValidator = v.object({
+  accountValue: v.string(),
+  totalMarginUsed: v.string(),
+  withdrawable: v.string(),
+});
+
+export const positionValidator = v.object({
+  coin: v.string(),
+  side: v.union(v.literal("long"), v.literal("short")),
+  size: v.string(),
+  entryPrice: v.string(),
+  unrealizedPnl: v.string(),
+  liquidationPrice: v.union(v.string(), v.null()),
+  leverage: v.number(),
+  marginUsed: v.string(),
+  value: v.string(),
+  fundingFee: v.string(),
+  takeProfitPrice: v.union(v.string(), v.null()),
+  stopLossPrice: v.union(v.string(), v.null()),
+});
+
+export const openOrderValidator = v.object({
   coin: v.string(),
   side: v.union(v.literal("buy"), v.literal("sell")),
   orderType: v.string(),
@@ -15,39 +36,22 @@ const openOrderValidator = v.object({
   orderId: v.number(),
 });
 
+export const fillValidator = v.object({
+  coin: v.string(),
+  side: v.union(v.literal("buy"), v.literal("sell")),
+  size: v.string(),
+  price: v.string(),
+  timestamp: v.number(),
+  hash: v.optional(v.string()),
+});
+
 export const walletSnapshotValidator = v.object({
   address: v.string(),
   fetchedAt: v.number(),
-  account: v.object({
-    accountValue: v.string(),
-    totalMarginUsed: v.string(),
-    withdrawable: v.string(),
-  }),
-  positions: v.array(
-    v.object({
-      coin: v.string(),
-      side: v.union(v.literal("long"), v.literal("short")),
-      size: v.string(),
-      entryPrice: v.string(),
-      unrealizedPnl: v.string(),
-      liquidationPrice: v.union(v.string(), v.null()),
-      leverage: v.number(),
-      marginUsed: v.string(),
-      takeProfitPrice: v.union(v.string(), v.null()),
-      stopLossPrice: v.union(v.string(), v.null()),
-    }),
-  ),
+  account: accountSummaryValidator,
+  positions: v.array(positionValidator),
   openOrders: v.array(openOrderValidator),
-  recentFills: v.array(
-    v.object({
-      coin: v.string(),
-      side: v.union(v.literal("buy"), v.literal("sell")),
-      size: v.string(),
-      price: v.string(),
-      timestamp: v.number(),
-      hash: v.optional(v.string()),
-    }),
-  ),
+  recentFills: v.array(fillValidator),
 });
 
 export type WalletSnapshot = Infer<typeof walletSnapshotValidator>;

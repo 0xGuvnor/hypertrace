@@ -4,7 +4,7 @@ import { fetchAction } from "convex/nextjs";
 
 import { AppShell } from "@/components/app-shell";
 import { SiteHeader } from "@/components/site-header";
-import { WalletDetail } from "@/components/wallet-detail";
+import { WalletDetailLive } from "@/components/wallet-detail-live";
 import { api } from "@/convex/_generated/api";
 import { isValidAddress, normalizeAddress, truncateAddress } from "@/lib/address";
 
@@ -30,14 +30,13 @@ export default async function AddressPage({ params }: PageProps) {
   const { address: raw } = await params;
   if (!isValidAddress(raw)) notFound();
 
-  const snapshot = await fetchAction(api.wallets.getSnapshot, {
-    address: normalizeAddress(raw),
-  });
+  const address = normalizeAddress(raw);
+  const snapshot = await fetchAction(api.wallets.getSnapshot, { address });
 
   return (
     <AppShell className="gap-6 sm:gap-8">
       <SiteHeader variant="compact" className="items-start" />
-      <WalletDetail snapshot={snapshot} />
+      <WalletDetailLive address={address} initialSnapshot={snapshot} />
     </AppShell>
   );
 }
