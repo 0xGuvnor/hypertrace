@@ -1,5 +1,20 @@
 import { v, type Infer } from "convex/values";
 
+const openOrderValidator = v.object({
+  coin: v.string(),
+  side: v.union(v.literal("buy"), v.literal("sell")),
+  orderType: v.string(),
+  size: v.string(),
+  limitPrice: v.string(),
+  triggerPrice: v.union(v.string(), v.null()),
+  triggerCondition: v.string(),
+  isTrigger: v.boolean(),
+  isPositionTpsl: v.boolean(),
+  reduceOnly: v.boolean(),
+  timestamp: v.number(),
+  orderId: v.number(),
+});
+
 export const walletSnapshotValidator = v.object({
   address: v.string(),
   fetchedAt: v.number(),
@@ -18,8 +33,11 @@ export const walletSnapshotValidator = v.object({
       liquidationPrice: v.union(v.string(), v.null()),
       leverage: v.number(),
       marginUsed: v.string(),
+      takeProfitPrice: v.union(v.string(), v.null()),
+      stopLossPrice: v.union(v.string(), v.null()),
     }),
   ),
+  openOrders: v.array(openOrderValidator),
   recentFills: v.array(
     v.object({
       coin: v.string(),

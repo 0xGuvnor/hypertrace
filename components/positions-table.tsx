@@ -33,6 +33,8 @@ export function PositionsTable({
           <TableHead className="text-right">Entry</TableHead>
           <TableHead className="text-right">uPnL</TableHead>
           <TableHead className="text-right">Liq. price</TableHead>
+          <TableHead className="text-right">TP</TableHead>
+          <TableHead className="text-right">SL</TableHead>
           <TableHead className="text-right">Leverage</TableHead>
         </TableRow>
       </TableHeader>
@@ -63,6 +65,16 @@ export function PositionsTable({
               <TableCell className="text-right font-mono text-xs">
                 {position.liquidationPrice
                   ? formatUsd(position.liquidationPrice)
+                  : "—"}
+              </TableCell>
+              <TableCell className="text-right font-mono text-xs">
+                {position.takeProfitPrice
+                  ? formatUsd(position.takeProfitPrice)
+                  : "—"}
+              </TableCell>
+              <TableCell className="text-right font-mono text-xs">
+                {position.stopLossPrice
+                  ? formatUsd(position.stopLossPrice)
                   : "—"}
               </TableCell>
               <TableCell className="text-right font-mono text-xs">

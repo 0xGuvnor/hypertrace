@@ -102,7 +102,7 @@ export function WalletSearch() {
       <form onSubmit={handleSubmit} className="flex gap-2">
         <Input
           type="text"
-          placeholder="0x… wallet address"
+          placeholder="0x..."
           value={value}
           onChange={(e) => {
             setValue(e.target.value);

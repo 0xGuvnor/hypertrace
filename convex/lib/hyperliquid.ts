@@ -31,6 +31,21 @@ type UserFill = {
   hash?: string;
 };
 
+type FrontendOpenOrder = {
+  coin: string;
+  side: "B" | "A";
+  limitPx: string;
+  sz: string;
+  oid: number;
+  timestamp: number;
+  triggerCondition: string;
+  isTrigger: boolean;
+  triggerPx: string;
+  isPositionTpsl: boolean;
+  reduceOnly: boolean;
+  orderType: string;
+};
+
 async function postInfo<T>(
   body: Record<string, unknown>,
   attempt = 0,
@@ -58,9 +73,80 @@ async function postInfo<T>(
   return (await response.json()) as T;
 }
 
+function parseTriggerPrice(triggerPx: string): string | null {
+  const num = Number.parseFloat(triggerPx);
+  if (Number.isNaN(num) || num === 0) return null;
+  return triggerPx;
+}
+
+function classifyPositionTpsl(
+  order: FrontendOpenOrder,
+): "tp" | "sl" | null {
+  if (!order.isPositionTpsl) return null;
+  const orderType = order.orderType.toLowerCase();
+  if (orderType.includes("take profit")) return "tp";
+  if (orderType.includes("stop")) return "sl";
+  return null;
+}
+
+function parseOpenOrders(
+  orders: FrontendOpenOrder[],
+): WalletSnapshot["openOrders"] {
+  return orders.map((order) => ({
+    coin: order.coin,
+    side: order.side === "B" ? ("buy" as const) : ("sell" as const),
+    orderType: order.orderType,
+    size: order.sz,
+    limitPrice: order.limitPx,
+    triggerPrice: parseTriggerPrice(order.triggerPx),
+    triggerCondition: order.triggerCondition,
+    isTrigger: order.isTrigger,
+    isPositionTpsl: order.isPositionTpsl,
+    reduceOnly: order.reduceOnly,
+    timestamp: order.timestamp,
+    orderId: order.oid,
+  }));
+}
+
+function attachTpslToPositions(
+  positions: Array<Omit<WalletSnapshot["positions"][number], "takeProfitPrice" | "stopLossPrice">>,
+  rawOrders: FrontendOpenOrder[],
+): WalletSnapshot["positions"] {
+  const tpslByCoin = new Map<
+    string,
+    { takeProfitPrice?: string; stopLossPrice?: string }
+  >();
+
+  for (const order of rawOrders) {
+    const kind = classifyPositionTpsl(order);
+    if (!kind) continue;
+
+    const triggerPrice = parseTriggerPrice(order.triggerPx);
+    if (!triggerPrice) continue;
+
+    const entry = tpslByCoin.get(order.coin) ?? {};
+    if (kind === "tp" && entry.takeProfitPrice === undefined) {
+      entry.takeProfitPrice = triggerPrice;
+    }
+    if (kind === "sl" && entry.stopLossPrice === undefined) {
+      entry.stopLossPrice = triggerPrice;
+    }
+    tpslByCoin.set(order.coin, entry);
+  }
+
+  return positions.map((position) => {
+    const tpsl = tpslByCoin.get(position.coin);
+    return {
+      ...position,
+      takeProfitPrice: tpsl?.takeProfitPrice ?? null,
+      stopLossPrice: tpsl?.stopLossPrice ?? null,
+    };
+  });
+}
+
 function parsePositions(
   assetPositions: ClearinghouseState["assetPositions"],
-): WalletSnapshot["positions"] {
+): Array<Omit<WalletSnapshot["positions"][number], "takeProfitPrice" | "stopLossPrice">> {
   return assetPositions
     .map(({ position }) => {
       const sizeNum = Number.parseFloat(position.szi);
@@ -97,14 +183,23 @@ function parseFills(fills: UserFill[]): WalletSnapshot["recentFills"] {
 export async function fetchWalletSnapshot(
   address: string,
 ): Promise<WalletSnapshot> {
-  const clearinghouse = await postInfo<ClearinghouseState>({
-    type: "clearinghouseState",
-    user: address,
-  });
-  const fills = await postInfo<UserFill[]>({
-    type: "userFills",
-    user: address,
-  });
+  const [clearinghouse, fills, rawOpenOrders] = await Promise.all([
+    postInfo<ClearinghouseState>({
+      type: "clearinghouseState",
+      user: address,
+    }),
+    postInfo<UserFill[]>({
+      type: "userFills",
+      user: address,
+    }),
+    postInfo<FrontendOpenOrder[]>({
+      type: "frontendOpenOrders",
+      user: address,
+    }),
+  ]);
+
+  const positions = parsePositions(clearinghouse.assetPositions);
+  const openOrders = parseOpenOrders(rawOpenOrders);
 
   return {
     address,
@@ -114,7 +209,8 @@ export async function fetchWalletSnapshot(
       totalMarginUsed: clearinghouse.marginSummary.totalMarginUsed,
       withdrawable: clearinghouse.withdrawable,
     },
-    positions: parsePositions(clearinghouse.assetPositions),
+    positions: attachTpslToPositions(positions, rawOpenOrders),
+    openOrders,
     recentFills: parseFills(fills),
   };
 }

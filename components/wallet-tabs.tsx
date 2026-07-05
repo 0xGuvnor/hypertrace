@@ -1,6 +1,7 @@
 "use client";
 
 import { FillsTable } from "@/components/fills-table";
+import { OrdersTable } from "@/components/orders-table";
 import { PositionsTable } from "@/components/positions-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { WalletSnapshot } from "@/lib/wallet-types";
@@ -12,12 +13,18 @@ export function WalletTabs({ snapshot }: { snapshot: WalletSnapshot }) {
         <TabsTrigger value="positions">
           Positions ({snapshot.positions.length})
         </TabsTrigger>
+        <TabsTrigger value="orders">
+          Orders ({snapshot.openOrders.length})
+        </TabsTrigger>
         <TabsTrigger value="fills">
           Fills ({snapshot.recentFills.length})
         </TabsTrigger>
       </TabsList>
       <TabsContent value="positions">
         <PositionsTable positions={snapshot.positions} />
+      </TabsContent>
+      <TabsContent value="orders">
+        <OrdersTable orders={snapshot.openOrders} />
       </TabsContent>
       <TabsContent value="fills">
         <FillsTable fills={snapshot.recentFills} />
