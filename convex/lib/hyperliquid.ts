@@ -1,7 +1,6 @@
 import type { WalletSnapshot } from "./hyperliquidTypes";
 
 const HL_INFO_URL = "https://api.hyperliquid.xyz/info";
-const RECENT_FILLS_LIMIT = 20;
 
 type ClearinghouseState = {
   marginSummary: {
@@ -175,7 +174,6 @@ function parsePositions(
 function parseFills(fills: UserFill[]): WalletSnapshot["recentFills"] {
   return [...fills]
     .sort((a, b) => b.time - a.time)
-    .slice(0, RECENT_FILLS_LIMIT)
     .map((fill) => ({
       coin: fill.coin,
       side: fill.side === "B" ? ("buy" as const) : ("sell" as const),
