@@ -15,11 +15,11 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { address: raw } = await params;
   if (!isValidAddress(raw)) {
-    return { title: "Not found · Hypertrace" };
+    return { title: "Not found" };
   }
   const address = normalizeAddress(raw);
   return {
-    title: `${truncateAddress(address, 6)} · Hypertrace`,
+    title: truncateAddress(address, 6),
     robots: { index: false, follow: false },
   };
 }
