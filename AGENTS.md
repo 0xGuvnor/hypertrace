@@ -27,19 +27,18 @@ Convex agent skills for common tasks can be installed by running
 - Keep `'use client'` limited to interactive islands (search forms, tabs, providers); fetch wallet data in the server page.
 - Use the `frontend-design` skill for branding and distinctive UI work.
 - Wordmark UI: italicize "trace" in Hypertrace (Hyperliquid-style); keep metadata titles plain "Hypertrace".
-- Positions table: encode long/short with green/red asset badges; no separate Side column.
+- Positions table: encode long/short with green/red asset badges; no separate Side column; funding fee negative/red = paid, positive/green = received.
 - Route `loading.tsx` skeletons should mirror the live page layout (reuse `AppShell`, `SiteHeader`, and table structure).
 
 ## Learned Workspace Facts
 
 - Hypertrace is a Hyperliquid whale tracker: Next.js 16 App Router, Convex backend, shadcn/ui, Tailwind, Bun.
 - GitHub: `0xGuvnor/hypertrace` on `master`; Vercel project `hypertrace` under team `0xguvnors-projects`.
-- v0 feature: address search at `/address/[address]` via Convex action `wallets.getSnapshot`, calling Hyperliquid Info API (`clearinghouseState` + `userFills` + `frontendOpenOrders` at `https://api.hyperliquid.xyz/info`); UI shows positions (with TP/SL), an Open Orders tab, and fills.
+- v0 feature: address search at `/address/[address]` via Convex action `wallets.getSnapshot`, calling Hyperliquid Info API (`clearinghouseState` + `userFills` + `frontendOpenOrders` at `https://api.hyperliquid.xyz/info`); UI shows positions (TP/SL, notional value from `positionValue`, funding fee from `cumFunding.sinceOpen`), an Open Orders tab, and fills.
 - Wallet pages use server `fetchAction` for the first paint, then `WalletDetailLive` subscribes via `watches.request` + `useQuery(api.wallets.getLiveSnapshot)`.
-- Live pipeline: Hyperliquid WS → `worker/` (Railway, Bun) → Convex HTTP ingest (`/ingest/watches`, `/ingest/snapshot`) → `walletSnapshots` table → client `useQuery`.
-- Convex tables: `watchedAddresses` (24h TTL via `lastRequestedAt`), `walletSnapshots` (indexed by `address`).
+- Live pipeline: Hyperliquid WS → `worker/` (Railway, Bun) → Convex HTTP ingest (`/ingest/watches`, `/ingest/snapshot`) → `watchedAddresses` (24h TTL) + `walletSnapshots` (by address) → client `useQuery`; do not subscribe to Hyperliquid from the browser.
 - Worker env: `CONVEX_URL`, `WORKER_INGEST_SECRET` (must match Convex env), optional `HL_WS_URL`, `WATCH_POLL_MS`, `REFRESH_DEBOUNCE_MS`; Railway root directory `worker`.
-- Do not subscribe to Hyperliquid from the browser.
+- Hyperliquid `cumFunding.sinceOpen` sign is inverted vs `userFunding` cash flow; negate at parse time in `convex/lib/hyperliquid.ts` and `worker/src/hyperliquid.ts`.
 - `@convex-dev/eslint-plugin` is configured; `convex/_generated/**` is ignored in ESLint.
 - Branding layout uses `AppShell` + `SiteHeader` (hero/compact variants); logo at `public/logo.png`.
 - Root layout metadata uses `NEXT_PUBLIC_SITE_URL` → `VERCEL_URL` → localhost for `metadataBase`.
