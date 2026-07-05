@@ -2,17 +2,20 @@ import Link from "next/link";
 
 import { AddressWithTooltip } from "@/components/address-with-tooltip";
 import { CopyAddressButton } from "@/components/copy-address-button";
+import { LiveStatusBadge } from "@/components/live-status-badge";
 import { WalletSummary } from "@/components/wallet-summary";
 import { WalletTabs } from "@/components/wallet-tabs";
-import { formatTimestamp } from "@/lib/format";
+import type { LiveFeedStatus } from "@/lib/live-status";
 import type { WalletSnapshot } from "@/lib/wallet-types";
 
 export function WalletDetail({
   snapshot,
-  isLive = false,
+  feedStatus,
+  statusNow,
 }: {
   snapshot: WalletSnapshot;
-  isLive?: boolean;
+  feedStatus?: LiveFeedStatus;
+  statusNow?: number;
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-8">
@@ -27,9 +30,9 @@ export function WalletDetail({
           <AddressWithTooltip address={snapshot.address} />
           <CopyAddressButton address={snapshot.address} />
         </div>
-        <p className="text-muted-foreground text-xs">
-          {isLive ? "Live" : "Fetched"} {formatTimestamp(snapshot.fetchedAt)}
-        </p>
+        {feedStatus && statusNow !== undefined ? (
+          <LiveStatusBadge status={feedStatus} now={statusNow} />
+        ) : null}
       </div>
 
       <WalletSummary account={snapshot.account} />

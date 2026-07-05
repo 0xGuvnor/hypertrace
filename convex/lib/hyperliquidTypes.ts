@@ -54,4 +54,10 @@ export const walletSnapshotValidator = v.object({
   recentFills: v.array(fillValidator),
 });
 
+export const liveWalletSnapshotValidator = v.object({
+  ...walletSnapshotValidator.fields,
+  updatedAt: v.number(),
+});
+
 export type WalletSnapshot = Infer<typeof walletSnapshotValidator>;
+export type LiveWalletSnapshot = Infer<typeof liveWalletSnapshotValidator>;

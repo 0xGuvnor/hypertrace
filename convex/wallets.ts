@@ -3,7 +3,10 @@ import { v } from "convex/values";
 import { action, internalMutation, query } from "./_generated/server";
 import { isValidAddress, normalizeAddress } from "./lib/address";
 import { fetchWalletSnapshot } from "./lib/hyperliquid";
-import { walletSnapshotValidator } from "./lib/hyperliquidTypes";
+import {
+  liveWalletSnapshotValidator,
+  walletSnapshotValidator,
+} from "./lib/hyperliquidTypes";
 
 export const getSnapshot = action({
   args: { address: v.string() },
@@ -20,7 +23,7 @@ export const getSnapshot = action({
 
 export const getLiveSnapshot = query({
   args: { address: v.string() },
-  returns: v.union(walletSnapshotValidator, v.null()),
+  returns: v.union(liveWalletSnapshotValidator, v.null()),
   handler: async (ctx, args) => {
     const trimmed = args.address.trim();
     if (!isValidAddress(trimmed)) {
@@ -44,6 +47,7 @@ export const getLiveSnapshot = query({
       positions: row.positions,
       openOrders: row.openOrders,
       recentFills: row.recentFills,
+      updatedAt: row.updatedAt,
     };
   },
 });
