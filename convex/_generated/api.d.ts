@@ -8,9 +8,13 @@
  * @module
  */
 
+import type * as clusters from "../clusters.js";
+import type * as crons from "../crons.js";
 import type * as deposits from "../deposits.js";
 import type * as http from "../http.js";
 import type * as lib_address from "../lib/address.js";
+import type * as lib_clusterTypes from "../lib/clusterTypes.js";
+import type * as lib_depositClustering from "../lib/depositClustering.js";
 import type * as lib_depositTypes from "../lib/depositTypes.js";
 import type * as lib_hyperliquid from "../lib/hyperliquid.js";
 import type * as lib_hyperliquidTypes from "../lib/hyperliquidTypes.js";
@@ -26,9 +30,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  clusters: typeof clusters;
+  crons: typeof crons;
   deposits: typeof deposits;
   http: typeof http;
   "lib/address": typeof lib_address;
+  "lib/clusterTypes": typeof lib_clusterTypes;
+  "lib/depositClustering": typeof lib_depositClustering;
   "lib/depositTypes": typeof lib_depositTypes;
   "lib/hyperliquid": typeof lib_hyperliquid;
   "lib/hyperliquidTypes": typeof lib_hyperliquidTypes;

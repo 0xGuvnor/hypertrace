@@ -1,0 +1,56 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect } from "react";
+
+import { AppShell } from "@/components/app-shell";
+import { SiteHeader } from "@/components/site-header";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+function friendlyMessage(message: string): string {
+  if (message.toLowerCase().includes("fetch")) {
+    return "Could not reach Convex. Check your connection and try again.";
+  }
+  return message || "Something went wrong loading cluster data.";
+}
+
+export default function ClustersError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
+
+  return (
+    <AppShell className="gap-6">
+      <SiteHeader variant="compact" className="items-start" />
+      <Alert variant="destructive">
+        <AlertTitle>Could not load clusters</AlertTitle>
+        <AlertDescription>{friendlyMessage(error.message)}</AlertDescription>
+      </Alert>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button type="button" onClick={reset} className="w-full sm:w-auto">
+          Try again
+        </Button>
+        <Link
+          href="/clusters"
+          className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}
+        >
+          Browse clusters
+        </Link>
+        <Link
+          href="/"
+          className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}
+        >
+          Back to search
+        </Link>
+      </div>
+    </AppShell>
+  );
+}

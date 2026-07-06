@@ -3,8 +3,10 @@ import Link from "next/link";
 import { AddressWithTooltip } from "@/components/address-with-tooltip";
 import { CopyAddressButton } from "@/components/copy-address-button";
 import { LiveStatusBadge } from "@/components/live-status-badge";
+import { WalletClusterCard } from "@/components/wallet-cluster-card";
 import { WalletSummary } from "@/components/wallet-summary";
 import { WalletTabs } from "@/components/wallet-tabs";
+import type { Deposit, WalletClusters } from "@/lib/cluster-types";
 import type { LiveFeedStatus } from "@/lib/live-status";
 import type { WalletSnapshot } from "@/lib/wallet-types";
 
@@ -12,10 +14,14 @@ export function WalletDetail({
   snapshot,
   feedStatus,
   statusNow,
+  walletClusters,
+  deposits,
 }: {
   snapshot: WalletSnapshot;
   feedStatus?: LiveFeedStatus;
   statusNow?: number;
+  walletClusters: WalletClusters;
+  deposits: Deposit[];
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-8">
@@ -35,8 +41,15 @@ export function WalletDetail({
         ) : null}
       </div>
 
+      {walletClusters.clusters.length > 0 ? (
+        <WalletClusterCard
+          walletClusters={walletClusters}
+          walletAddress={snapshot.address}
+        />
+      ) : null}
+
       <WalletSummary account={snapshot.account} />
-      <WalletTabs snapshot={snapshot} />
+      <WalletTabs snapshot={snapshot} deposits={deposits} />
     </div>
   );
 }

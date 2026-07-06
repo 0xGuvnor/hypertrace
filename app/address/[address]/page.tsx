@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { fetchAction } from "convex/nextjs";
+import { fetchAction, fetchQuery } from "convex/nextjs";
 
 import { AppShell } from "@/components/app-shell";
 import { SiteHeader } from "@/components/site-header";
@@ -31,12 +31,21 @@ export default async function AddressPage({ params }: PageProps) {
   if (!isValidAddress(raw)) notFound();
 
   const address = normalizeAddress(raw);
-  const snapshot = await fetchAction(api.wallets.getSnapshot, { address });
+  const [snapshot, initialWalletClusters, initialDeposits] = await Promise.all([
+    fetchAction(api.wallets.getSnapshot, { address }),
+    fetchQuery(api.clusters.getForWallet, { address }),
+    fetchQuery(api.deposits.listByWallet, { address }),
+  ]);
 
   return (
     <AppShell className="gap-6 sm:gap-8">
       <SiteHeader variant="compact" className="items-start" />
-      <WalletDetailLive address={address} initialSnapshot={snapshot} />
+      <WalletDetailLive
+        address={address}
+        initialSnapshot={snapshot}
+        initialWalletClusters={initialWalletClusters}
+        initialDeposits={initialDeposits}
+      />
     </AppShell>
   );
 }

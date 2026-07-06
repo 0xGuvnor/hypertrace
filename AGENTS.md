@@ -23,26 +23,27 @@ Convex agent skills for common tasks can be installed by running
 - Use Bun for this repo: `bun add`, `bun run` for scripts, and `bunx` for ad-hoc CLIs (Convex, shadcn); avoid `npx`/`npm`.
 - Build UI with shadcn/ui components first; do not hand-roll primitives when a shadcn component exists.
 - When implementing from an attached plan, do not edit the plan file itself.
-- Prefer Next.js App Router server patterns: async RSC pages, `fetchAction` from `convex/nextjs`, async `params` as `Promise`, and route-level `loading.tsx`/`error.tsx`/`not-found.tsx`.
+- Prefer Next.js App Router server patterns: async RSC pages, `fetchAction`/`fetchQuery` from `convex/nextjs`, async `params` as `Promise`, and route-level `loading.tsx`/`error.tsx`/`not-found.tsx`; cluster and wallet Convex data use server prefetch plus client `useQuery` (`live ?? initial`).
 - Keep `'use client'` limited to interactive islands (search forms, tabs, providers); fetch wallet data in the server page.
 - Use the `frontend-design` skill for branding and distinctive UI work.
 - Wordmark UI: italicize "trace" in Hypertrace (Hyperliquid-style); keep metadata titles plain "Hypertrace".
-- Positions table: encode long/short with green/red asset badges; no separate Side column; funding fee negative/red = paid, positive/green = received.
+- Positions table: encode long/short with green/red asset badges; no separate Side column; Leverage column stacks multiplier + Cross/Isolated margin; funding fee negative/red = paid, positive/green = received.
 - Route `loading.tsx` skeletons should mirror the live page layout (reuse `AppShell`, `SiteHeader`, and table structure).
 - Home page is search-first: compact hero with `WalletSearch` anchored near optical center (autofocus); in-input lucide `Search` icon submit, not a separate Search button.
 - Wallet tabs on mobile: full-width equal segments (`flex-1` triggers, `w-full` list); desktop keeps content-sized tabs (`sm:flex-none`, `sm:w-fit`).
+- Use `/poteto-mode` for nontrivial implementation, investigation, and architecture work.
 
 ## Learned Workspace Facts
 
-- Hypertrace is a Hyperliquid whale tracker: Next.js 16 App Router, Convex backend, shadcn/ui, Tailwind, Bun.
+- Hypertrace is a Hyperliquid whale tracker with cross-wallet clustering as the core differentiator: Next.js 16 App Router, Convex backend, shadcn/ui, Tailwind, Bun.
 - GitHub: `0xGuvnor/hypertrace` on `master`; Vercel project `hypertrace` under team `0xguvnors-projects`.
-- v0 feature: address search at `/address/[address]` via Convex action `wallets.getSnapshot`, calling Hyperliquid Info API (`clearinghouseState` + `userFills` + `frontendOpenOrders` at `https://api.hyperliquid.xyz/info`); UI shows positions (position-attached TP/SL only via `isPositionTpsl`, notional value from `positionValue`, funding fee from `cumFunding.sinceOpen`), an Open Orders tab, and fills.
+- Shipped UI: `/address/[address]` via `wallets.getSnapshot` (HL Info API: `clearinghouseState` + `userFills` + `frontendOpenOrders`); positions (TP/SL via `isPositionTpsl`, notional from `positionValue`, funding from `cumFunding.sinceOpen`), Open Orders, fills from snapshot; `/clusters` list + detail; wallet cluster card and Deposits tab; no dedicated `fills` table yet.
 - Wallet pages use server `fetchAction` for the first paint, then `WalletDetailLive` subscribes via `watches.request` + `useQuery(api.wallets.getLiveSnapshot)`.
 - Live pipeline: Hyperliquid WS → `worker/` (Railway, Bun) → Convex HTTP ingest (`/ingest/watches`, `/ingest/snapshot`) → `watchedAddresses` (24h TTL) + `walletSnapshots` (by address) → client `useQuery`; do not subscribe to Hyperliquid from the browser.
-- Worker env: `CONVEX_URL`, `WORKER_INGEST_SECRET` (must match Convex env), optional `HL_WS_URL`, `WATCH_POLL_MS`, `REFRESH_DEBOUNCE_MS`; Railway root directory `worker`.
+- Worker env: `CONVEX_URL`, `WORKER_INGEST_SECRET` (must match Convex env), required `ARBITRUM_RPC_URL` (Alchemy), optional `HL_WS_URL`, `WATCH_POLL_MS`, `REFRESH_DEBOUNCE_MS`, `BRIDGE2_START_BLOCK` (default June 1 2026 block `468748168`), `FUNDING_LOOKBACK_DAYS` (default 7); Railway root directory `worker`.
+- Arbitrum deposit tracing (M3/M3.1): per watched wallet, scan Bridge2 USDC `Transfer` logs to the bridge (not on-chain `Deposit` events); resolve upstream `sourceAddress` via Alchemy `getAssetTransfers` with 7-day lookback; `deposits`, `depositScanCursors`, and `wallets` tables plus HTTP ingest endpoints.
+- Deposit-source clustering (M4): `clusters` table; cron every 3 min runs `internal.clusters.rebuildDepositSource`; `clusterKey` format `deposit-source:0x…`; groups wallets sharing the same upstream Arbitrum `sourceAddress`.
 - Hyperliquid `cumFunding.sinceOpen` sign is inverted vs `userFunding` cash flow; negate at parse time in `convex/lib/hyperliquid.ts` and `worker/src/hyperliquid.ts`.
-- `@convex-dev/eslint-plugin` is configured; `convex/_generated/**` is ignored in ESLint.
 - Branding layout uses `AppShell` + `SiteHeader` (hero/compact variants); transparent `logo.png` uses `object-contain` with no clipped wrapper (`logo-background.png` is unused full-bleed reference).
 - Root layout metadata uses `NEXT_PUBLIC_SITE_URL` → `VERCEL_URL` → localhost for `metadataBase`.
-- `.vercel` is gitignored; `.cursor/` is intentionally left untracked.
-- For cloud-agent Convex dev, use `CONVEX_AGENT_MODE=anonymous bunx convex dev`.
+- `.vercel` is gitignored; `.cursor/` is intentionally left untracked; for cloud-agent Convex dev, use `CONVEX_AGENT_MODE=anonymous bunx convex dev`.

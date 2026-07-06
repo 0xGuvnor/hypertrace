@@ -1,6 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+import { clusterRecordValidator } from "./lib/clusterTypes";
 import { depositRecordValidator } from "./lib/depositTypes";
 import {
   accountSummaryValidator,
@@ -42,4 +43,8 @@ export default defineSchema({
     tags: v.array(v.string()),
     clusterId: v.union(v.string(), v.null()),
   }).index("by_address", ["address"]),
+
+  clusters: defineTable(clusterRecordValidator).index("by_clusterKey", [
+    "clusterKey",
+  ]),
 });

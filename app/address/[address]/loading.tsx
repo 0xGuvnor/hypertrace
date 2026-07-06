@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table";
 
 const SUMMARY_LABELS = ["Account value", "Margin used", "Withdrawable"] as const;
-const TAB_WIDTHS = ["w-[5.5rem]", "w-20", "w-16"] as const;
+const TAB_WIDTHS = ["w-[5.5rem]", "w-20", "w-16", "w-16"] as const;
 const TABLE_ROW_COUNT = 3;
 
 export default function Loading() {
@@ -32,6 +32,16 @@ export default function Loading() {
           </div>
           <Skeleton className="h-6 w-44 rounded-full" />
         </div>
+
+        <Card size="sm" className="border-[var(--brand-cyan)]/20">
+          <CardHeader>
+            <Skeleton className="h-4 w-36" />
+            <Skeleton className="h-3 w-56" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-4 w-full max-w-sm" />
+          </CardContent>
+        </Card>
 
         <div className="grid gap-4 sm:grid-cols-3">
           {SUMMARY_LABELS.map((label) => (

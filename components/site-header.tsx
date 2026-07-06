@@ -8,11 +8,31 @@ type SiteHeaderProps = {
   className?: string;
 };
 
+function ClustersNavLink({ className }: { className?: string }) {
+  return (
+    <Link
+      href="/clusters"
+      className={cn(
+        "text-muted-foreground hover:text-foreground text-sm transition-colors",
+        className,
+      )}
+    >
+      Clusters
+    </Link>
+  );
+}
+
 export function SiteHeader({ variant = "compact", className }: SiteHeaderProps) {
   const isHero = variant === "hero";
 
   return (
-    <header className={cn("flex flex-col items-center", className)}>
+    <header
+      className={cn(
+        "flex w-full flex-col items-center gap-3",
+        !isHero && "sm:flex-row sm:items-start sm:justify-between",
+        className,
+      )}
+    >
       <Link
         href="/"
         className={cn(
@@ -57,6 +77,11 @@ export function SiteHeader({ variant = "compact", className }: SiteHeaderProps) 
           ) : null}
         </div>
       </Link>
+      {isHero ? (
+        <ClustersNavLink className="sm:self-end" />
+      ) : (
+        <ClustersNavLink className="shrink-0 pt-1 sm:pt-0.5" />
+      )}
     </header>
   );
 }
