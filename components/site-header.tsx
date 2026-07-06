@@ -22,23 +22,17 @@ export function SiteHeader({ variant = "compact", className }: SiteHeaderProps) 
       >
         <div
           className={cn(
-            "relative shrink-0 overflow-hidden rounded-2xl",
+            "relative shrink-0",
             isHero ? "size-20 sm:size-24" : "size-9 sm:size-10",
           )}
         >
-          {isHero ? (
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 scale-150 bg-[radial-gradient(circle_at_50%_50%,var(--brand-cyan)_0%,transparent_70%)] opacity-30 blur-2xl"
-            />
-          ) : null}
           <Image
             src="/logo.png"
             alt=""
             width={96}
             height={96}
             priority={isHero}
-            className="relative size-full object-cover"
+            className="size-full object-contain"
           />
         </div>
         <div className={cn("flex flex-col", isHero ? "items-center text-center" : "items-start")}>
