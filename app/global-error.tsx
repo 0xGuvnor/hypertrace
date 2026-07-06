@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 
 import "./globals.css";
+import { SHELL_PADDING, SHELL_WIDTH_WIDE } from "@/components/app-shell";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -22,7 +23,13 @@ export default function GlobalError({
   return (
     <html lang="en">
       <body className="font-sans antialiased">
-        <div className="mx-auto flex min-h-svh w-full max-w-4xl flex-col justify-center gap-6 px-4 py-6 sm:px-6 sm:py-8">
+        <div
+          className={cn(
+            "mx-auto flex min-h-svh w-full flex-col justify-center gap-6",
+            SHELL_PADDING,
+            SHELL_WIDTH_WIDE,
+          )}
+        >
           <Alert variant="destructive">
             <AlertTitle>Something went wrong</AlertTitle>
             <AlertDescription>
