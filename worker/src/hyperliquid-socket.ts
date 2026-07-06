@@ -1,5 +1,7 @@
 import WebSocket from "ws";
 
+const XYZ_DEX = "xyz";
+
 type SubscriptionType = "clearinghouseState" | "openOrders" | "userFills";
 
 type Subscription = {
@@ -16,7 +18,7 @@ type HyperliquidSocketOptions = {
 };
 
 function subscriptionKey(subscription: Subscription): string {
-  return `${subscription.type}:${subscription.user}`;
+  return `${subscription.type}:${subscription.user}:${subscription.dex ?? ""}`;
 }
 
 export class HyperliquidSocket {
@@ -121,6 +123,7 @@ export class HyperliquidSocket {
   private subscribeUser(user: string) {
     const subscriptions: Subscription[] = [
       { type: "clearinghouseState", user, dex: "" },
+      { type: "clearinghouseState", user, dex: XYZ_DEX },
       { type: "openOrders", user },
       { type: "userFills", user },
     ];
@@ -134,6 +137,7 @@ export class HyperliquidSocket {
   private unsubscribeUser(user: string) {
     const subscriptions: Subscription[] = [
       { type: "clearinghouseState", user, dex: "" },
+      { type: "clearinghouseState", user, dex: XYZ_DEX },
       { type: "openOrders", user },
       { type: "userFills", user },
     ];

@@ -1,6 +1,7 @@
 import type { WalletSnapshot } from "./hyperliquidTypes";
 
 const HL_INFO_URL = "https://api.hyperliquid.xyz/info";
+const XYZ_DEX = "xyz";
 
 type ClearinghouseState = {
   marginSummary: {
@@ -182,6 +183,25 @@ function buildMarkPriceByCoin(metaAndCtxs: MetaAndAssetCtxs): Map<string, string
   return markByCoin;
 }
 
+function mergeMarkPriceMaps(...maps: Map<string, string>[]): Map<string, string> {
+  const merged = new Map<string, string>();
+  for (const map of maps) {
+    for (const [coin, mark] of map) {
+      merged.set(coin, mark);
+    }
+  }
+  return merged;
+}
+
+function sumUsdStrings(...values: string[]): string {
+  let sum = 0;
+  for (const value of values) {
+    const num = Number.parseFloat(value);
+    if (Number.isFinite(num)) sum += num;
+  }
+  return sum.toString();
+}
+
 function parsePositions(
   assetPositions: ClearinghouseState["assetPositions"],
   markByCoin: Map<string, string>,
@@ -225,10 +245,24 @@ function parseFills(fills: UserFill[]): WalletSnapshot["recentFills"] {
 export async function fetchWalletSnapshot(
   address: string,
 ): Promise<WalletSnapshot> {
-  const [clearinghouse, fills, rawOpenOrders, metaAndCtxs] = await Promise.all([
+  const [
+    clearinghouseDefault,
+    clearinghouseXyz,
+    fills,
+    ordersDefault,
+    ordersXyz,
+    metaDefault,
+    metaXyz,
+  ] = await Promise.all([
     postInfo<ClearinghouseState>({
       type: "clearinghouseState",
       user: address,
+      dex: "",
+    }),
+    postInfo<ClearinghouseState>({
+      type: "clearinghouseState",
+      user: address,
+      dex: XYZ_DEX,
     }),
     postInfo<UserFill[]>({
       type: "userFills",
@@ -237,24 +271,50 @@ export async function fetchWalletSnapshot(
     postInfo<FrontendOpenOrder[]>({
       type: "frontendOpenOrders",
       user: address,
+      dex: "",
+    }),
+    postInfo<FrontendOpenOrder[]>({
+      type: "frontendOpenOrders",
+      user: address,
+      dex: XYZ_DEX,
     }),
     postInfo<MetaAndAssetCtxs>({
       type: "metaAndAssetCtxs",
       dex: "",
     }),
+    postInfo<MetaAndAssetCtxs>({
+      type: "metaAndAssetCtxs",
+      dex: XYZ_DEX,
+    }),
   ]);
 
-  const markByCoin = buildMarkPriceByCoin(metaAndCtxs);
-  const positions = parsePositions(clearinghouse.assetPositions, markByCoin);
+  const markByCoin = mergeMarkPriceMaps(
+    buildMarkPriceByCoin(metaDefault),
+    buildMarkPriceByCoin(metaXyz),
+  );
+  const positions = [
+    ...parsePositions(clearinghouseDefault.assetPositions, markByCoin),
+    ...parsePositions(clearinghouseXyz.assetPositions, markByCoin),
+  ];
+  const rawOpenOrders = [...ordersDefault, ...ordersXyz];
   const openOrders = parseOpenOrders(rawOpenOrders);
 
   return {
     address,
     fetchedAt: Date.now(),
     account: {
-      accountValue: clearinghouse.marginSummary.accountValue,
-      totalMarginUsed: clearinghouse.marginSummary.totalMarginUsed,
-      withdrawable: clearinghouse.withdrawable,
+      accountValue: sumUsdStrings(
+        clearinghouseDefault.marginSummary.accountValue,
+        clearinghouseXyz.marginSummary.accountValue,
+      ),
+      totalMarginUsed: sumUsdStrings(
+        clearinghouseDefault.marginSummary.totalMarginUsed,
+        clearinghouseXyz.marginSummary.totalMarginUsed,
+      ),
+      withdrawable: sumUsdStrings(
+        clearinghouseDefault.withdrawable,
+        clearinghouseXyz.withdrawable,
+      ),
     },
     positions: attachTpslToPositions(positions, rawOpenOrders),
     openOrders,
