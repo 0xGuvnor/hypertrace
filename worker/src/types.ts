@@ -52,4 +52,38 @@ export type WorkerConfig = {
   watchPollMs: number;
   refreshDebounceMs: number;
   port: number;
+  arbitrumRpcUrl: string;
+  bridge2Address: `0x${string}`;
+  usdcAddress: `0x${string}`;
+  bridge2StartBlock: number;
+  arbitrumLogChunkBlocks: number;
+  depositScanConcurrency: number;
+  fundingLookbackDays: number;
+};
+
+export const JUNE_1_2026_START_BLOCK = 468_748_168;
+
+export type DepositRow = {
+  hlAddress: string;
+  sourceAddress: string;
+  amount: number;
+  timestamp: number;
+  arbTxHash: string;
+  logIndex: number;
+  depositKey: string;
+  blockNumber: number;
+};
+
+export type DepositCursor = {
+  hlAddress: string;
+  lastScannedBlock: number;
+};
+
+export type DepositSourceUpdate = {
+  depositKey: string;
+  sourceAddress: string;
+};
+
+export type SelfSourcedDeposit = Omit<DepositRow, "blockNumber"> & {
+  blockNumber?: number;
 };

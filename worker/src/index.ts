@@ -1,13 +1,45 @@
+import { createPublicClient, http } from "viem";
+import { arbitrum } from "viem/chains";
+
+import { createArbitrumDepositScanner } from "./arbitrum-deposits";
 import { createConvexIngestClient } from "./convex-client";
 import { loadConfig } from "./config";
+import {
+  createFundingResolver,
+  resolveDepositBlockNumber,
+} from "./funding-resolution";
 import { fetchWalletSnapshot } from "./hyperliquid";
 import { HyperliquidSocket } from "./hyperliquid-socket";
+import type { DepositRow } from "./types";
 
 const config = loadConfig();
 const convex = createConvexIngestClient(config.convexSiteUrl, config.ingestSecret);
 
+const arbitrumClient = createPublicClient({
+  chain: arbitrum,
+  transport: http(config.arbitrumRpcUrl),
+});
+
+const fundingResolver = createFundingResolver(arbitrumClient, {
+  rpcUrl: config.arbitrumRpcUrl,
+  usdcAddress: config.usdcAddress,
+  lookbackDays: config.fundingLookbackDays,
+  backfillStartBlock: BigInt(config.bridge2StartBlock),
+});
+
+const arbitrumScanner = createArbitrumDepositScanner({
+  rpcUrl: config.arbitrumRpcUrl,
+  bridge2Address: config.bridge2Address,
+  usdcAddress: config.usdcAddress,
+  bridge2StartBlock: BigInt(config.bridge2StartBlock),
+  logChunkBlocks: BigInt(config.arbitrumLogChunkBlocks),
+  fundingResolver,
+  client: arbitrumClient,
+});
+
 const refreshTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const inFlight = new Set<string>();
+const depositInFlight = new Set<string>();
 
 function startHealthServer() {
   Bun.serve({
@@ -49,6 +81,101 @@ function scheduleRefresh(address: string, reason: string) {
   refreshTimers.set(address, timer);
 }
 
+async function reconcileSelfSourcedDeposits(address: string) {
+  const rows = await convex.listSelfSourcedDeposits([address]);
+  const forAddress = rows.filter((row) => row.hlAddress === address);
+  if (forAddress.length === 0) {
+    return;
+  }
+
+  const updates: Array<{ depositKey: string; sourceAddress: string }> = [];
+  for (const row of forAddress) {
+    const blockNumber = await resolveDepositBlockNumber(arbitrumClient, {
+      blockNumber: row.blockNumber,
+      arbTxHash: row.arbTxHash as `0x${string}`,
+    });
+    const resolved = await fundingResolver.resolveDeposit({
+      ...row,
+      blockNumber,
+    });
+    if (resolved.sourceAddress !== row.hlAddress) {
+      updates.push({
+        depositKey: row.depositKey,
+        sourceAddress: resolved.sourceAddress,
+      });
+    }
+  }
+
+  if (updates.length === 0) {
+    return;
+  }
+
+  const result = await convex.patchDepositSources(updates);
+  console.log(
+    `[deposits] ${address.slice(0, 8)}… reconcile updated=${result.updated} skipped=${result.skipped}`,
+  );
+}
+
+async function scanDepositsForAddress(address: string, cursor: number | null) {
+  if (depositInFlight.has(address)) return;
+  depositInFlight.add(address);
+  try {
+    const { deposits, lastScannedBlock } =
+      await arbitrumScanner.scanDepositsWithCursor(
+        address as `0x${string}`,
+        cursor,
+      );
+
+    const result = await convex.ingestDeposits(deposits as DepositRow[], [
+      { hlAddress: address, lastScannedBlock },
+    ]);
+
+    console.log(
+      `[deposits] ${address.slice(0, 8)}… found=${deposits.length} inserted=${result.inserted} updated=${result.updated} skipped=${result.skipped} block=${lastScannedBlock}`,
+    );
+
+    await reconcileSelfSourcedDeposits(address);
+  } catch (error) {
+    console.error(`[deposits] failed for ${address}`, error);
+  } finally {
+    depositInFlight.delete(address);
+  }
+}
+
+async function runWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T) => Promise<void>,
+) {
+  let index = 0;
+  const runners = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (index < items.length) {
+      const current = items[index];
+      index += 1;
+      await worker(current);
+    }
+  });
+  await Promise.all(runners);
+}
+
+async function syncDepositScans(addresses: string[]) {
+  if (addresses.length === 0) return;
+
+  try {
+    const cursors = await convex.getDepositCursors(addresses);
+    await runWithConcurrency(
+      addresses,
+      config.depositScanConcurrency,
+      async (address) => {
+        const normalized = address.toLowerCase();
+        await scanDepositsForAddress(normalized, cursors[normalized] ?? null);
+      },
+    );
+  } catch (error) {
+    console.error("[deposits] sync failed", error);
+  }
+}
+
 async function syncWatches(socket: HyperliquidSocket) {
   try {
     const addresses = await convex.listActiveWatches();
@@ -58,6 +185,8 @@ async function syncWatches(socket: HyperliquidSocket) {
     for (const address of addresses) {
       scheduleRefresh(address, "watch-sync");
     }
+
+    void syncDepositScans(addresses);
   } catch (error) {
     console.error("[watches] sync failed", error);
   }

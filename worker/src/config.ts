@@ -1,4 +1,5 @@
 import type { WorkerConfig } from "./types";
+import { JUNE_1_2026_START_BLOCK } from "./types";
 
 export function loadConfig(): WorkerConfig {
   const convexUrl = requiredEnv("CONVEX_URL");
@@ -12,7 +13,29 @@ export function loadConfig(): WorkerConfig {
     watchPollMs: numberEnv("WATCH_POLL_MS", 30_000),
     refreshDebounceMs: numberEnv("REFRESH_DEBOUNCE_MS", 1_500),
     port: numberEnv("PORT", 8080),
+    arbitrumRpcUrl: requiredEnv("ARBITRUM_RPC_URL"),
+    bridge2Address: addressEnv(
+      "BRIDGE2_ADDRESS",
+      "0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7",
+    ),
+    usdcAddress: addressEnv(
+      "USDC_ADDRESS",
+      "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    ),
+    bridge2StartBlock: numberEnv("BRIDGE2_START_BLOCK", JUNE_1_2026_START_BLOCK),
+    arbitrumLogChunkBlocks: numberEnv("ARBITRUM_LOG_CHUNK_BLOCKS", 2_000),
+    depositScanConcurrency: numberEnv("DEPOSIT_SCAN_CONCURRENCY", 3),
+    fundingLookbackDays: numberEnv("FUNDING_LOOKBACK_DAYS", 7),
   };
+}
+
+function addressEnv(name: string, fallback: `0x${string}`): `0x${string}` {
+  const value = process.env[name];
+  if (!value) return fallback;
+  if (!/^0x[a-fA-F0-9]{40}$/.test(value)) {
+    throw new Error(`Invalid address for ${name}: ${value}`);
+  }
+  return value as `0x${string}`;
 }
 
 function requiredEnv(name: string): string {

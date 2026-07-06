@@ -1,6 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+import { depositRecordValidator } from "./lib/depositTypes";
 import {
   accountSummaryValidator,
   fillValidator,
@@ -22,5 +23,23 @@ export default defineSchema({
     openOrders: v.array(openOrderValidator),
     recentFills: v.array(fillValidator),
     updatedAt: v.number(),
+  }).index("by_address", ["address"]),
+
+  deposits: defineTable(depositRecordValidator)
+    .index("by_depositKey", ["depositKey"])
+    .index("by_hlAddress", ["hlAddress"])
+    .index("by_sourceAddress", ["sourceAddress"]),
+
+  depositScanCursors: defineTable({
+    hlAddress: v.string(),
+    lastScannedBlock: v.number(),
+    updatedAt: v.number(),
+  }).index("by_hlAddress", ["hlAddress"]),
+
+  wallets: defineTable({
+    address: v.string(),
+    firstSeen: v.number(),
+    tags: v.array(v.string()),
+    clusterId: v.union(v.string(), v.null()),
   }).index("by_address", ["address"]),
 });
