@@ -1,12 +1,20 @@
 "use client";
 
+import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { isValidAddress, normalizeAddress } from "@/lib/address";
+
+type WalletSearchProps = {
+  autoFocus?: boolean;
+  className?: string;
+  inputClassName?: string;
+};
 
 const RECENT_KEY = "hypertrace:recent-addresses";
 const MAX_RECENT = 5;
@@ -70,7 +78,11 @@ function saveRecent(address: string) {
   invalidateRecentCache();
 }
 
-export function WalletSearch() {
+export function WalletSearch({
+  autoFocus = false,
+  className,
+  inputClassName,
+}: WalletSearchProps = {}) {
   const router = useRouter();
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -80,8 +92,7 @@ export function WalletSearch() {
     getRecentServerSnapshot,
   );
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function searchAddress() {
     const trimmed = value.trim();
     if (!isValidAddress(trimmed)) {
       setError("Enter a valid 0x address (42 characters).");
@@ -93,16 +104,18 @@ export function WalletSearch() {
     router.push(`/address/${normalized}`);
   }
 
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    searchAddress();
+  }
+
   function handleRecentClick(address: string) {
     router.push(`/address/${address}`);
   }
 
   return (
-    <div className="flex w-full flex-col gap-4">
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col gap-2 sm:flex-row sm:items-stretch"
-      >
+    <div className={cn("flex w-full flex-col gap-4", className)}>
+      <form onSubmit={handleSubmit} className="relative w-full">
         <Input
           type="text"
           placeholder="0x..."
@@ -111,12 +124,22 @@ export function WalletSearch() {
             setValue(e.target.value);
             if (error) setError(null);
           }}
-          className="min-w-0 flex-1 font-mono text-sm"
+          className={cn(
+            "min-w-0 w-full pr-11 font-mono text-sm",
+            inputClassName,
+          )}
           spellCheck={false}
           autoComplete="off"
+          autoFocus={autoFocus}
         />
-        <Button type="submit" className="w-full shrink-0 sm:w-auto">
-          Search
+        <Button
+          type="submit"
+          variant="ghost"
+          size="icon-sm"
+          className="absolute top-1/2 right-1 -translate-y-1/2 text-muted-foreground hover:text-[var(--brand-cyan)]"
+          aria-label="Search"
+        >
+          <Search />
         </Button>
       </form>
 

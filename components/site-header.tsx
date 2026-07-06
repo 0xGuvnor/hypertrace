@@ -17,13 +17,13 @@ export function SiteHeader({ variant = "compact", className }: SiteHeaderProps) 
         href="/"
         className={cn(
           "group flex items-center gap-3 rounded-xl outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--brand-cyan)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-          isHero ? "flex-col gap-4" : "flex-row",
+          isHero ? "flex-col gap-3 sm:flex-row sm:gap-4" : "flex-row",
         )}
       >
         <div
           className={cn(
             "relative shrink-0",
-            isHero ? "size-20 sm:size-24" : "size-9 sm:size-10",
+            isHero ? "size-16 sm:size-20" : "size-9 sm:size-10",
           )}
         >
           <Image
@@ -35,17 +35,22 @@ export function SiteHeader({ variant = "compact", className }: SiteHeaderProps) 
             className="size-full object-contain"
           />
         </div>
-        <div className={cn("flex flex-col", isHero ? "items-center text-center" : "items-start")}>
+        <div
+          className={cn(
+            "flex flex-col",
+            isHero ? "items-center text-center sm:items-start sm:text-left" : "items-start",
+          )}
+        >
           <span
             className={cn(
               "font-semibold tracking-tight",
-              isHero ? "text-2xl sm:text-3xl" : "text-base sm:text-lg",
+              isHero ? "text-xl sm:text-2xl" : "text-base sm:text-lg",
             )}
           >
             Hyper<span className="italic">trace</span>
           </span>
           {isHero ? (
-            <span className="text-muted-foreground max-w-sm text-sm sm:text-base">
+            <span className="text-muted-foreground max-w-sm text-sm leading-snug">
               Look up any Hyperliquid wallet. Positions, margin, and recent fills.
             </span>
           ) : null}
