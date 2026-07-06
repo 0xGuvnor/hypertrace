@@ -6,6 +6,7 @@ export const clusterRecordValidator = v.object({
   clusterKey: v.string(),
   sourceAddress: v.string(),
   memberAddresses: v.array(v.string()),
+  memberCount: v.number(),
   confidenceScore: v.number(),
   basis: v.array(v.string()),
   lastUpdated: v.number(),

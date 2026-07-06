@@ -1,3 +1,4 @@
+import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 
 import { internalMutation, query, type MutationCtx } from "./_generated/server";
@@ -11,6 +12,7 @@ import {
 import {
   buildDepositSourceClusters,
   buildHlAddressSourceCounts,
+  depositSourceClusterKey,
   memberAddressesEqual,
   pickPrimaryClusterKey,
   type DepositRow,
@@ -19,6 +21,34 @@ import {
 const DEPOSIT_PAGE_SIZE = 256;
 const CLUSTER_PAGE_SIZE = 128;
 const WALLET_PAGE_SIZE = 256;
+
+type ClusterDoc = {
+  clusterKey: string;
+  sourceAddress: string;
+  memberAddresses: string[];
+  confidenceScore: number;
+  basis: string[];
+  lastUpdated: number;
+};
+
+function toCluster(row: ClusterDoc) {
+  return {
+    clusterKey: row.clusterKey,
+    sourceAddress: row.sourceAddress,
+    memberAddresses: row.memberAddresses,
+    confidenceScore: row.confidenceScore,
+    basis: row.basis,
+    lastUpdated: row.lastUpdated,
+  };
+}
+
+function sortClusters(clusters: ReturnType<typeof toCluster>[]) {
+  return clusters.sort(
+    (a, b) =>
+      b.memberAddresses.length - a.memberAddresses.length ||
+      a.clusterKey.localeCompare(b.clusterKey),
+  );
+}
 
 async function paginateAllDeposits(ctx: MutationCtx): Promise<DepositRow[]> {
   const deposits: DepositRow[] = [];
@@ -51,6 +81,27 @@ export const rebuildDepositSource = internalMutation({
   returns: rebuildDepositSourceResultValidator,
   handler: async (ctx) => {
     const now = Date.now();
+
+    let backfillCursor: string | null = null;
+    while (true) {
+      const page = await ctx.db.query("clusters").paginate({
+        numItems: CLUSTER_PAGE_SIZE,
+        cursor: backfillCursor,
+      });
+
+      for (const existing of page.page) {
+        const memberCount = existing.memberAddresses.length;
+        if ((existing.memberCount ?? -1) !== memberCount) {
+          await ctx.db.patch(existing._id, { memberCount });
+        }
+      }
+
+      if (page.isDone) {
+        break;
+      }
+      backfillCursor = page.continueCursor;
+    }
+
     const deposits = await paginateAllDeposits(ctx);
     const desiredClusters = buildDepositSourceClusters(deposits);
     const desiredByKey = new Map(
@@ -70,7 +121,12 @@ export const rebuildDepositSource = internalMutation({
 
       if (!existing) {
         await ctx.db.insert("clusters", {
-          ...cluster,
+          clusterKey: cluster.clusterKey,
+          sourceAddress: cluster.sourceAddress,
+          memberAddresses: cluster.memberAddresses,
+          memberCount: cluster.memberAddresses.length,
+          confidenceScore: cluster.confidenceScore,
+          basis: cluster.basis,
           lastUpdated: now,
         });
         clustersCreated += 1;
@@ -81,15 +137,18 @@ export const rebuildDepositSource = internalMutation({
         continue;
       }
 
+      const nextMemberCount = cluster.memberAddresses.length;
       const changed =
         !memberAddressesEqual(existing.memberAddresses, cluster.memberAddresses) ||
         existing.confidenceScore !== cluster.confidenceScore ||
-        existing.sourceAddress !== cluster.sourceAddress;
+        existing.sourceAddress !== cluster.sourceAddress ||
+        existing.memberCount !== nextMemberCount;
 
       if (changed) {
         await ctx.db.patch(existing._id, {
           sourceAddress: cluster.sourceAddress,
           memberAddresses: cluster.memberAddresses,
+          memberCount: nextMemberCount,
           confidenceScore: cluster.confidenceScore,
           basis: cluster.basis,
           lastUpdated: now,
@@ -184,47 +243,24 @@ export const rebuildDepositSource = internalMutation({
 });
 
 export const list = query({
-  args: {},
-  returns: v.array(clusterValidator),
-  handler: async (ctx) => {
-    const clusters: Array<{
-      clusterKey: string;
-      sourceAddress: string;
-      memberAddresses: string[];
-      confidenceScore: number;
-      basis: string[];
-      lastUpdated: number;
-    }> = [];
+  args: { paginationOpts: paginationOptsValidator },
+  returns: v.object({
+    page: v.array(clusterValidator),
+    continueCursor: v.union(v.string(), v.null()),
+    isDone: v.boolean(),
+  }),
+  handler: async (ctx, args) => {
+    const result = await ctx.db
+      .query("clusters")
+      .withIndex("by_memberCount")
+      .order("desc")
+      .paginate(args.paginationOpts);
 
-    let cursor: string | null = null;
-    while (true) {
-      const page = await ctx.db.query("clusters").paginate({
-        numItems: CLUSTER_PAGE_SIZE,
-        cursor,
-      });
-
-      for (const row of page.page) {
-        clusters.push({
-          clusterKey: row.clusterKey,
-          sourceAddress: row.sourceAddress,
-          memberAddresses: row.memberAddresses,
-          confidenceScore: row.confidenceScore,
-          basis: row.basis,
-          lastUpdated: row.lastUpdated,
-        });
-      }
-
-      if (page.isDone) {
-        break;
-      }
-      cursor = page.continueCursor;
-    }
-
-    return clusters.sort(
-      (a, b) =>
-        b.memberAddresses.length - a.memberAddresses.length ||
-        a.clusterKey.localeCompare(b.clusterKey),
-    );
+    return {
+      page: result.page.map(toCluster),
+      continueCursor: result.continueCursor,
+      isDone: result.isDone,
+    };
   },
 });
 
@@ -241,14 +277,7 @@ export const getByKey = query({
       return null;
     }
 
-    return {
-      clusterKey: row.clusterKey,
-      sourceAddress: row.sourceAddress,
-      memberAddresses: row.memberAddresses,
-      confidenceScore: row.confidenceScore,
-      basis: row.basis,
-      lastUpdated: row.lastUpdated,
-    };
+    return toCluster(row);
   },
 });
 
@@ -267,52 +296,37 @@ export const getForWallet = query({
       .withIndex("by_address", (q) => q.eq("address", hlAddress))
       .unique();
 
-    const clusters: Array<{
-      clusterKey: string;
-      sourceAddress: string;
-      memberAddresses: string[];
-      confidenceScore: number;
-      basis: string[];
-      lastUpdated: number;
-    }> = [];
+    const depositRows = await ctx.db
+      .query("deposits")
+      .withIndex("by_hlAddress", (q) => q.eq("hlAddress", hlAddress))
+      .collect();
 
-    let cursor: string | null = null;
-    while (true) {
-      const page = await ctx.db.query("clusters").paginate({
-        numItems: CLUSTER_PAGE_SIZE,
-        cursor,
-      });
+    const sourceAddresses = [...new Set(depositRows.map((row) => row.sourceAddress))];
+    const seenKeys = new Set<string>();
+    const clusters: ReturnType<typeof toCluster>[] = [];
 
-      for (const row of page.page) {
-        if (!row.memberAddresses.includes(hlAddress)) {
-          continue;
-        }
+    for (const sourceAddress of sourceAddresses) {
+      const clusterKey = depositSourceClusterKey(sourceAddress);
+      if (seenKeys.has(clusterKey)) {
+        continue;
+      }
+      seenKeys.add(clusterKey);
 
-        clusters.push({
-          clusterKey: row.clusterKey,
-          sourceAddress: row.sourceAddress,
-          memberAddresses: row.memberAddresses,
-          confidenceScore: row.confidenceScore,
-          basis: row.basis,
-          lastUpdated: row.lastUpdated,
-        });
+      const row = await ctx.db
+        .query("clusters")
+        .withIndex("by_clusterKey", (q) => q.eq("clusterKey", clusterKey))
+        .unique();
+
+      if (!row || !row.memberAddresses.includes(hlAddress)) {
+        continue;
       }
 
-      if (page.isDone) {
-        break;
-      }
-      cursor = page.continueCursor;
+      clusters.push(toCluster(row));
     }
-
-    clusters.sort(
-      (a, b) =>
-        b.memberAddresses.length - a.memberAddresses.length ||
-        a.clusterKey.localeCompare(b.clusterKey),
-    );
 
     return {
       primaryClusterId: wallet?.clusterId ?? null,
-      clusters,
+      clusters: sortClusters(clusters),
     };
   },
 });

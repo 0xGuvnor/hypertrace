@@ -1,19 +1,18 @@
 "use client";
 
+import { Preloaded, useMutation, usePreloadedQuery, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
-import { useMutation, useQuery } from "convex/react";
 
 import { WalletDetail } from "@/components/wallet-detail";
 import { api } from "@/convex/_generated/api";
 import { deriveLiveFeedStatus } from "@/lib/live-status";
-import type { Deposit, WalletClusters } from "@/lib/cluster-types";
 import type { WalletSnapshot } from "@/lib/wallet-types";
 
 type WalletDetailLiveProps = {
   address: string;
   initialSnapshot: WalletSnapshot;
-  initialWalletClusters: WalletClusters;
-  initialDeposits: Deposit[];
+  preloadedWalletClusters: Preloaded<typeof api.clusters.getForWallet>;
+  preloadedDeposits: Preloaded<typeof api.deposits.listByWallet>;
 };
 
 const STATUS_TICK_MS = 10_000;
@@ -21,13 +20,13 @@ const STATUS_TICK_MS = 10_000;
 export function WalletDetailLive({
   address,
   initialSnapshot,
-  initialWalletClusters,
-  initialDeposits,
+  preloadedWalletClusters,
+  preloadedDeposits,
 }: WalletDetailLiveProps) {
   const requestWatch = useMutation(api.watches.request);
   const liveSnapshot = useQuery(api.wallets.getLiveSnapshot, { address });
-  const liveWalletClusters = useQuery(api.clusters.getForWallet, { address });
-  const liveDeposits = useQuery(api.deposits.listByWallet, { address });
+  const walletClusters = usePreloadedQuery(preloadedWalletClusters);
+  const walletDeposits = usePreloadedQuery(preloadedDeposits);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -50,8 +49,6 @@ export function WalletDetailLive({
   }, [liveSnapshot?.updatedAt]);
 
   const snapshot = liveSnapshot ?? initialSnapshot;
-  const walletClusters = liveWalletClusters ?? initialWalletClusters;
-  const deposits = liveDeposits ?? initialDeposits;
   const feedStatus = deriveLiveFeedStatus(
     liveSnapshot,
     now,
@@ -64,7 +61,7 @@ export function WalletDetailLive({
       feedStatus={feedStatus}
       statusNow={now}
       walletClusters={walletClusters}
-      deposits={deposits}
+      walletDeposits={walletDeposits}
     />
   );
 }

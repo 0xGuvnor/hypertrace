@@ -2,6 +2,10 @@ import type { LiveWalletSnapshot } from "@/lib/wallet-types";
 
 export const LIVE_STALE_AFTER_MS = 90_000;
 
+export function isSnapshotFreshForSsr(updatedAt: number, now = Date.now()): boolean {
+  return now - updatedAt < LIVE_STALE_AFTER_MS;
+}
+
 export type LiveFeedStatus =
   | { kind: "connecting" }
   | { kind: "snapshot"; fetchedAt: number }

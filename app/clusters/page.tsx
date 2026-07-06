@@ -5,13 +5,16 @@ import { AppShell } from "@/components/app-shell";
 import { ClustersListLive } from "@/components/clusters-list-live";
 import { SiteHeader } from "@/components/site-header";
 import { api } from "@/convex/_generated/api";
+import { CLUSTERS_LIST_PAGE_SIZE } from "@/lib/cluster-list";
 
 export const metadata: Metadata = {
   title: "Clusters",
 };
 
 export default async function ClustersPage() {
-  const preloadedClusters = await preloadQuery(api.clusters.list);
+  await preloadQuery(api.clusters.list, {
+    paginationOpts: { numItems: CLUSTERS_LIST_PAGE_SIZE, cursor: null },
+  });
 
   return (
     <AppShell className="gap-6 sm:gap-8">
@@ -26,7 +29,7 @@ export default async function ClustersPage() {
             Updated every few minutes from bridge deposit tracing.
           </p>
         </div>
-        <ClustersListLive preloadedClusters={preloadedClusters} />
+        <ClustersListLive />
       </div>
     </AppShell>
   );

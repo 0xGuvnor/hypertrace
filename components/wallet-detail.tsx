@@ -6,7 +6,7 @@ import { LiveStatusBadge } from "@/components/live-status-badge";
 import { WalletClusterCard } from "@/components/wallet-cluster-card";
 import { WalletSummary } from "@/components/wallet-summary";
 import { WalletTabs } from "@/components/wallet-tabs";
-import type { Deposit, WalletClusters } from "@/lib/cluster-types";
+import type { WalletClusters, WalletDeposits } from "@/lib/cluster-types";
 import type { LiveFeedStatus } from "@/lib/live-status";
 import type { WalletSnapshot } from "@/lib/wallet-types";
 
@@ -15,13 +15,13 @@ export function WalletDetail({
   feedStatus,
   statusNow,
   walletClusters,
-  deposits,
+  walletDeposits,
 }: {
   snapshot: WalletSnapshot;
   feedStatus?: LiveFeedStatus;
   statusNow?: number;
   walletClusters: WalletClusters;
-  deposits: Deposit[];
+  walletDeposits: WalletDeposits;
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-8">
@@ -49,7 +49,7 @@ export function WalletDetail({
       ) : null}
 
       <WalletSummary account={snapshot.account} />
-      <WalletTabs snapshot={snapshot} deposits={deposits} />
+      <WalletTabs snapshot={snapshot} walletDeposits={walletDeposits} />
     </div>
   );
 }

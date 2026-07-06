@@ -5,16 +5,19 @@ import { FillsTable } from "@/components/fills-table";
 import { OrdersTable } from "@/components/orders-table";
 import { PositionsTable } from "@/components/positions-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Deposit } from "@/lib/cluster-types";
+import type { WalletDeposits } from "@/lib/cluster-types";
 import type { WalletSnapshot } from "@/lib/wallet-types";
 
 export function WalletTabs({
   snapshot,
-  deposits,
+  walletDeposits,
 }: {
   snapshot: WalletSnapshot;
-  deposits: Deposit[];
+  walletDeposits: WalletDeposits;
 }) {
+  const { deposits, hasMore } = walletDeposits;
+  const depositCountLabel = hasMore ? `${deposits.length}+` : `${deposits.length}`;
+
   return (
     <Tabs defaultValue="positions" className="min-w-0">
       <div className="-mx-1 overflow-x-auto px-1 pb-1 sm:overflow-visible">
@@ -35,7 +38,7 @@ export function WalletTabs({
           <TabsTrigger value="deposits" className="min-w-0 flex-1 text-xs sm:flex-none sm:text-sm">
             <span className="sm:hidden">Dep</span>
             <span className="hidden sm:inline">Deposits</span>
-            <span className="text-muted-foreground">({deposits.length})</span>
+            <span className="text-muted-foreground">({depositCountLabel})</span>
           </TabsTrigger>
         </TabsList>
       </div>
@@ -49,7 +52,7 @@ export function WalletTabs({
         <FillsTable fills={snapshot.recentFills} />
       </TabsContent>
       <TabsContent value="deposits" className="min-w-0">
-        <DepositsTable deposits={deposits} />
+        <DepositsTable deposits={deposits} hasMore={hasMore} />
       </TabsContent>
     </Tabs>
   );

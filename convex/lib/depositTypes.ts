@@ -31,3 +31,8 @@ export const depositSourceUpdateValidator = v.object({
 });
 
 export const depositValidator = depositRecordValidator;
+
+export const walletDepositsResultValidator = v.object({
+  deposits: v.array(depositValidator),
+  hasMore: v.boolean(),
+});

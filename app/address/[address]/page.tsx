@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { fetchAction, fetchQuery } from "convex/nextjs";
+import { fetchAction, fetchQuery, preloadQuery } from "convex/nextjs";
 
 import { AppShell } from "@/components/app-shell";
 import { SiteHeader } from "@/components/site-header";
@@ -8,6 +8,7 @@ import { WalletDetailLive } from "@/components/wallet-detail-live";
 import { WalletLoadError } from "@/components/wallet-load-error";
 import { api } from "@/convex/_generated/api";
 import { isValidAddress, normalizeAddress, truncateAddress } from "@/lib/address";
+import { isSnapshotFreshForSsr } from "@/lib/live-status";
 import { walletLoadUserMessage } from "@/lib/wallet-load-error";
 
 type PageProps = {
@@ -35,20 +36,26 @@ export default async function AddressPage({ params }: PageProps) {
   const address = normalizeAddress(raw);
 
   try {
-    const [snapshot, initialWalletClusters, initialDeposits] = await Promise.all([
-      fetchAction(api.wallets.getSnapshot, { address }),
-      fetchQuery(api.clusters.getForWallet, { address }),
-      fetchQuery(api.deposits.listByWallet, { address }),
-    ]);
+    const [cachedSnapshot, preloadedWalletClusters, preloadedDeposits] =
+      await Promise.all([
+        fetchQuery(api.wallets.getLiveSnapshot, { address }),
+        preloadQuery(api.clusters.getForWallet, { address }),
+        preloadQuery(api.deposits.listByWallet, { address }),
+      ]);
+
+    const initialSnapshot =
+      cachedSnapshot && isSnapshotFreshForSsr(cachedSnapshot.updatedAt)
+        ? cachedSnapshot
+        : await fetchAction(api.wallets.getSnapshot, { address });
 
     return (
       <AppShell className="gap-6 sm:gap-8">
         <SiteHeader variant="compact" className="items-start" />
         <WalletDetailLive
           address={address}
-          initialSnapshot={snapshot}
-          initialWalletClusters={initialWalletClusters}
-          initialDeposits={initialDeposits}
+          initialSnapshot={initialSnapshot}
+          preloadedWalletClusters={preloadedWalletClusters}
+          preloadedDeposits={preloadedDeposits}
         />
       </AppShell>
     );

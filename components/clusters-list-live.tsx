@@ -1,16 +1,24 @@
 "use client";
 
-import { Preloaded, usePreloadedQuery } from "convex/react";
+import { usePaginatedQuery } from "convex/react";
 
 import { ClustersTable } from "@/components/clusters-table";
 import { api } from "@/convex/_generated/api";
+import { CLUSTERS_LIST_PAGE_SIZE } from "@/lib/cluster-list";
 
-export function ClustersListLive({
-  preloadedClusters,
-}: {
-  preloadedClusters: Preloaded<typeof api.clusters.list>;
-}) {
-  const clusters = usePreloadedQuery(preloadedClusters);
+export function ClustersListLive() {
+  const { results, status, loadMore } = usePaginatedQuery(
+    api.clusters.list,
+    {},
+    { initialNumItems: CLUSTERS_LIST_PAGE_SIZE },
+  );
 
-  return <ClustersTable clusters={clusters} />;
+  return (
+    <ClustersTable
+      clusters={results ?? []}
+      canLoadMore={status === "CanLoadMore"}
+      isLoadingMore={status === "LoadingMore"}
+      onLoadMore={() => loadMore(CLUSTERS_LIST_PAGE_SIZE)}
+    />
+  );
 }

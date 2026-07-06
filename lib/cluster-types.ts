@@ -22,3 +22,8 @@ export type WalletClusters = {
   primaryClusterId: string | null;
   clusters: Cluster[];
 };
+
+export type WalletDeposits = {
+  deposits: Deposit[];
+  hasMore: boolean;
+};

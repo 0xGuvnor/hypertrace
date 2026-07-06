@@ -7,9 +7,11 @@ import {
   depositRowValidator,
   depositSourceUpdateValidator,
   depositValidator,
+  walletDepositsResultValidator,
 } from "./lib/depositTypes";
 
 const SELF_SOURCED_LIMIT_PER_ADDRESS = 100;
+const DEPOSIT_LIST_LIMIT = 100;
 
 function isImprovedSource(
   hlAddress: string,
@@ -270,30 +272,32 @@ export const setCursors = internalMutation({
 
 export const listByWallet = query({
   args: { address: v.string() },
-  returns: v.array(depositValidator),
+  returns: walletDepositsResultValidator,
   handler: async (ctx, args) => {
     const trimmed = args.address.trim();
     if (!isValidAddress(trimmed)) {
-      return [];
+      return { deposits: [], hasMore: false };
     }
 
     const hlAddress = normalizeAddress(trimmed);
     const rows = await ctx.db
       .query("deposits")
-      .withIndex("by_hlAddress", (q) => q.eq("hlAddress", hlAddress))
-      .collect();
+      .withIndex("by_hlAddress_timestamp", (q) => q.eq("hlAddress", hlAddress))
+      .order("desc")
+      .take(DEPOSIT_LIST_LIMIT + 1);
 
-    return rows
-      .map((row) => ({
-        hlAddress: row.hlAddress,
-        sourceAddress: row.sourceAddress,
-        amount: row.amount,
-        timestamp: row.timestamp,
-        arbTxHash: row.arbTxHash,
-        logIndex: row.logIndex,
-        depositKey: row.depositKey,
-        blockNumber: row.blockNumber,
-      }))
-      .sort((a, b) => b.timestamp - a.timestamp);
+    const hasMore = rows.length > DEPOSIT_LIST_LIMIT;
+    const deposits = rows.slice(0, DEPOSIT_LIST_LIMIT).map((row) => ({
+      hlAddress: row.hlAddress,
+      sourceAddress: row.sourceAddress,
+      amount: row.amount,
+      timestamp: row.timestamp,
+      arbTxHash: row.arbTxHash,
+      logIndex: row.logIndex,
+      depositKey: row.depositKey,
+      blockNumber: row.blockNumber,
+    }));
+
+    return { deposits, hasMore };
   },
 });
