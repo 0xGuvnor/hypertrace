@@ -36,8 +36,8 @@ export function SiteHeader({ variant = "compact", className }: SiteHeaderProps) 
       <Link
         href="/"
         className={cn(
-          "group flex items-center gap-3 rounded-xl outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--brand-cyan)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-          isHero ? "flex-col gap-3 sm:flex-row sm:gap-4" : "flex-row",
+          "group flex items-center rounded-xl outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--brand-cyan)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          isHero ? "flex-col gap-3 sm:flex-row sm:gap-4" : "flex-row gap-1",
         )}
       >
         <div
