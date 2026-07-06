@@ -8,7 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 const siteDescription =
-  "Look up any Hyperliquid wallet. Positions, margin, open orders, and recent fills."
+  "Hyperliquid whale tracker with cross-wallet clustering. Detect coordinated groups from shared funding and correlated trading."
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ??

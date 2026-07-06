@@ -50,8 +50,9 @@ export function SiteHeader({ variant = "compact", className }: SiteHeaderProps) 
             Hyper<span className="italic">trace</span>
           </span>
           {isHero ? (
-            <span className="text-muted-foreground max-w-sm text-sm leading-snug">
-              Look up any Hyperliquid wallet. Positions, margin, and recent fills.
+            <span className="text-muted-foreground max-w-md text-sm leading-snug">
+              Track Hyperliquid whales and the wallet clusters behind them. Shared
+              funding, correlated entries, live positions.
             </span>
           ) : null}
         </div>
