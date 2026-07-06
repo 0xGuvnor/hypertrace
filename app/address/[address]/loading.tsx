@@ -48,11 +48,11 @@ export default function Loading() {
 
         <div className="flex min-w-0 flex-col gap-2">
           <div className="-mx-1 overflow-x-auto px-1 pb-1 sm:overflow-visible">
-            <div className="inline-flex h-8 w-max min-w-full items-center gap-1 rounded-lg bg-muted p-[3px] sm:min-w-0 sm:w-fit">
+            <div className="inline-flex h-8 w-full items-center gap-1 rounded-lg bg-muted p-[3px] sm:w-fit">
               {TAB_WIDTHS.map((width, index) => (
                 <Skeleton
                   key={index}
-                  className={`h-[calc(100%-2px)] rounded-md ${width}`}
+                  className={`h-[calc(100%-2px)] flex-1 rounded-md sm:flex-none ${width}`}
                 />
               ))}
             </div>
