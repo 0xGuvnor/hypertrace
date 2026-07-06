@@ -15,7 +15,11 @@ type ClearinghouseState = {
       entryPx: string;
       unrealizedPnl: string;
       liquidationPx: string | null;
-      leverage: { value: number };
+      leverage: {
+        type: "cross" | "isolated";
+        value: number;
+        rawUsd?: string;
+      };
       marginUsed: string;
       positionValue: string;
       cumFunding: {
@@ -153,6 +157,11 @@ function attachTpslToPositions(
   });
 }
 
+function parseMarginMode(type: string): WalletSnapshot["positions"][number]["marginMode"] {
+  if (type === "cross" || type === "isolated") return type;
+  throw new Error(`Unknown Hyperliquid margin mode: ${type}`);
+}
+
 function parsePositions(
   assetPositions: ClearinghouseState["assetPositions"],
 ): Array<Omit<WalletSnapshot["positions"][number], "takeProfitPrice" | "stopLossPrice">> {
@@ -169,6 +178,7 @@ function parsePositions(
         unrealizedPnl: position.unrealizedPnl,
         liquidationPrice: position.liquidationPx,
         leverage: position.leverage.value,
+        marginMode: parseMarginMode(position.leverage.type),
         marginUsed: position.marginUsed,
         value: position.positionValue,
         fundingFee: fundingFeeFromCumFunding(position.cumFunding.sinceOpen),

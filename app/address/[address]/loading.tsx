@@ -96,7 +96,7 @@ export default function Loading() {
                     <Skeleton className="ml-auto h-4 w-20" />
                   </TableCell>
                   <TableCell className="text-right">
-                    <Skeleton className="ml-auto h-4 w-8" />
+                    <Skeleton className="ml-auto h-4 w-14" />
                   </TableCell>
                 </TableRow>
               ))}

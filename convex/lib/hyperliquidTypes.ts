@@ -6,6 +6,11 @@ export const accountSummaryValidator = v.object({
   withdrawable: v.string(),
 });
 
+export const marginModeValidator = v.union(
+  v.literal("cross"),
+  v.literal("isolated"),
+);
+
 export const positionValidator = v.object({
   coin: v.string(),
   side: v.union(v.literal("long"), v.literal("short")),
@@ -14,6 +19,7 @@ export const positionValidator = v.object({
   unrealizedPnl: v.string(),
   liquidationPrice: v.union(v.string(), v.null()),
   leverage: v.number(),
+  marginMode: marginModeValidator,
   marginUsed: v.string(),
   value: v.string(),
   fundingFee: v.string(),

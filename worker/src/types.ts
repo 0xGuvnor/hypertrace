@@ -14,6 +14,7 @@ export type WalletSnapshot = {
     unrealizedPnl: string;
     liquidationPrice: string | null;
     leverage: number;
+    marginMode: "cross" | "isolated";
     marginUsed: string;
     value: string;
     fundingFee: string;

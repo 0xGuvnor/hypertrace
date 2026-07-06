@@ -15,7 +15,11 @@ type ClearinghouseState = {
       entryPx: string;
       unrealizedPnl: string;
       liquidationPx: string | null;
-      leverage: { value: number };
+      leverage: {
+        type: "cross" | "isolated";
+        value: number;
+        rawUsd?: string;
+      };
       marginUsed: string;
       positionValue: string;
       cumFunding: { sinceOpen: string };
@@ -86,6 +90,11 @@ function classifyPositionTpsl(order: FrontendOpenOrder): "tp" | "sl" | null {
   return null;
 }
 
+function parseMarginMode(type: string): WalletSnapshot["positions"][number]["marginMode"] {
+  if (type === "cross" || type === "isolated") return type;
+  throw new Error(`Unknown Hyperliquid margin mode: ${type}`);
+}
+
 export async function fetchWalletSnapshot(address: string): Promise<WalletSnapshot> {
   const [clearinghouse, fills, rawOpenOrders] = await Promise.all([
     postInfo<ClearinghouseState>({ type: "clearinghouseState", user: address }),
@@ -106,6 +115,7 @@ export async function fetchWalletSnapshot(address: string): Promise<WalletSnapsh
         unrealizedPnl: position.unrealizedPnl,
         liquidationPrice: position.liquidationPx,
         leverage: position.leverage.value,
+        marginMode: parseMarginMode(position.leverage.type),
         marginUsed: position.marginUsed,
         value: position.positionValue,
         fundingFee: fundingFeeFromCumFunding(position.cumFunding.sinceOpen),

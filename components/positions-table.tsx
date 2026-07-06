@@ -25,6 +25,10 @@ function fundingFeeClass(value: string): string {
   return "text-emerald-600 dark:text-emerald-400";
 }
 
+function formatMarginMode(mode: WalletSnapshot["positions"][number]["marginMode"]): string {
+  return mode === "cross" ? "Cross" : "Isolated";
+}
+
 export function PositionsTable({
   positions,
 }: {
@@ -71,8 +75,13 @@ export function PositionsTable({
                   {position.coin}
                 </Badge>
               </TableCell>
-              <TableCell className="text-right font-mono text-xs">
-                {position.leverage}x
+              <TableCell className="text-right">
+                <div className="flex flex-col items-end gap-0.5">
+                  <span className="font-mono text-xs">{position.leverage}x</span>
+                  <span className="text-muted-foreground text-[10px]">
+                    {formatMarginMode(position.marginMode)}
+                  </span>
+                </div>
               </TableCell>
               <TableCell className="text-right font-mono text-xs">
                 {formatSize(position.size)}
