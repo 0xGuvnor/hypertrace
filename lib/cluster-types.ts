@@ -27,3 +27,16 @@ export type WalletDeposits = {
   deposits: Deposit[];
   hasMore: boolean;
 };
+
+/** Accept legacy listByWallet payloads that returned a bare Deposit[]. */
+export function normalizeWalletDeposits(
+  value: WalletDeposits | Deposit[] | null | undefined,
+): WalletDeposits {
+  if (value == null) {
+    return { deposits: [], hasMore: false };
+  }
+  if (Array.isArray(value)) {
+    return { deposits: value, hasMore: false };
+  }
+  return value;
+}

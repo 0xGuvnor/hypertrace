@@ -18,10 +18,6 @@ import {
   type DepositRow,
 } from "./lib/depositClustering";
 
-const DEPOSIT_PAGE_SIZE = 256;
-const CLUSTER_PAGE_SIZE = 128;
-const WALLET_PAGE_SIZE = 256;
-
 type ClusterDoc = {
   clusterKey: string;
   sourceAddress: string;
@@ -45,35 +41,17 @@ function toCluster(row: ClusterDoc) {
 function sortClusters(clusters: ReturnType<typeof toCluster>[]) {
   return clusters.sort(
     (a, b) =>
-      b.memberAddresses.length - a.memberAddresses.length ||
+      (b.memberAddresses?.length ?? 0) - (a.memberAddresses?.length ?? 0) ||
       a.clusterKey.localeCompare(b.clusterKey),
   );
 }
 
-async function paginateAllDeposits(ctx: MutationCtx): Promise<DepositRow[]> {
-  const deposits: DepositRow[] = [];
-  let cursor: string | null = null;
-
-  while (true) {
-    const page = await ctx.db.query("deposits").paginate({
-      numItems: DEPOSIT_PAGE_SIZE,
-      cursor,
-    });
-
-    for (const row of page.page) {
-      deposits.push({
-        hlAddress: row.hlAddress,
-        sourceAddress: row.sourceAddress,
-      });
-    }
-
-    if (page.isDone) {
-      break;
-    }
-    cursor = page.continueCursor;
-  }
-
-  return deposits;
+async function collectAllDeposits(ctx: MutationCtx): Promise<DepositRow[]> {
+  const rows = await ctx.db.query("deposits").collect();
+  return rows.map((row) => ({
+    hlAddress: row.hlAddress,
+    sourceAddress: row.sourceAddress,
+  }));
 }
 
 export const rebuildDepositSource = internalMutation({
@@ -82,27 +60,14 @@ export const rebuildDepositSource = internalMutation({
   handler: async (ctx) => {
     const now = Date.now();
 
-    let backfillCursor: string | null = null;
-    while (true) {
-      const page = await ctx.db.query("clusters").paginate({
-        numItems: CLUSTER_PAGE_SIZE,
-        cursor: backfillCursor,
-      });
-
-      for (const existing of page.page) {
-        const memberCount = existing.memberAddresses.length;
-        if ((existing.memberCount ?? -1) !== memberCount) {
-          await ctx.db.patch(existing._id, { memberCount });
-        }
+    for (const existing of await ctx.db.query("clusters").collect()) {
+      const memberCount = existing.memberAddresses.length;
+      if ((existing.memberCount ?? -1) !== memberCount) {
+        await ctx.db.patch(existing._id, { memberCount });
       }
-
-      if (page.isDone) {
-        break;
-      }
-      backfillCursor = page.continueCursor;
     }
 
-    const deposits = await paginateAllDeposits(ctx);
+    const deposits = await collectAllDeposits(ctx);
     const desiredClusters = buildDepositSourceClusters(deposits);
     const desiredByKey = new Map(
       desiredClusters.map((cluster) => [cluster.clusterKey, cluster]),
@@ -162,71 +127,45 @@ export const rebuildDepositSource = internalMutation({
       }
     }
 
-    let clusterCursor: string | null = null;
-    while (true) {
-      const page = await ctx.db.query("clusters").paginate({
-        numItems: CLUSTER_PAGE_SIZE,
-        cursor: clusterCursor,
+    for (const existing of await ctx.db.query("clusters").collect()) {
+      if (!existing.basis.includes(SHARED_DEPOSIT_SOURCE_BASIS)) {
+        continue;
+      }
+      if (desiredByKey.has(existing.clusterKey)) {
+        continue;
+      }
+
+      await ctx.db.delete(existing._id);
+      clustersDissolved += 1;
+      console.log("cluster dissolved", {
+        clusterKey: existing.clusterKey,
+        previousMembers: existing.memberAddresses,
       });
-
-      for (const existing of page.page) {
-        if (!existing.basis.includes(SHARED_DEPOSIT_SOURCE_BASIS)) {
-          continue;
-        }
-        if (desiredByKey.has(existing.clusterKey)) {
-          continue;
-        }
-
-        await ctx.db.delete(existing._id);
-        clustersDissolved += 1;
-        console.log("cluster dissolved", {
-          clusterKey: existing.clusterKey,
-          previousMembers: existing.memberAddresses,
-        });
-      }
-
-      if (page.isDone) {
-        break;
-      }
-      clusterCursor = page.continueCursor;
     }
 
     const hlSourceCounts = buildHlAddressSourceCounts(deposits);
     let walletsLinked = 0;
     let walletsUnlinked = 0;
 
-    let walletCursor: string | null = null;
-    while (true) {
-      const page = await ctx.db.query("wallets").paginate({
-        numItems: WALLET_PAGE_SIZE,
-        cursor: walletCursor,
-      });
+    for (const wallet of await ctx.db.query("wallets").collect()) {
+      const sourceCounts = hlSourceCounts.get(wallet.address) ?? new Map();
+      const nextClusterId = pickPrimaryClusterKey(
+        wallet.address,
+        sourceCounts,
+        activeClusterKeys,
+      );
 
-      for (const wallet of page.page) {
-        const sourceCounts = hlSourceCounts.get(wallet.address) ?? new Map();
-        const nextClusterId = pickPrimaryClusterKey(
-          wallet.address,
-          sourceCounts,
-          activeClusterKeys,
-        );
-
-        if (wallet.clusterId === nextClusterId) {
-          continue;
-        }
-
-        await ctx.db.patch(wallet._id, { clusterId: nextClusterId });
-
-        if (nextClusterId === null) {
-          walletsUnlinked += 1;
-        } else {
-          walletsLinked += 1;
-        }
+      if (wallet.clusterId === nextClusterId) {
+        continue;
       }
 
-      if (page.isDone) {
-        break;
+      await ctx.db.patch(wallet._id, { clusterId: nextClusterId });
+
+      if (nextClusterId === null) {
+        walletsUnlinked += 1;
+      } else {
+        walletsLinked += 1;
       }
-      walletCursor = page.continueCursor;
     }
 
     const result = {
@@ -317,7 +256,7 @@ export const getForWallet = query({
         .withIndex("by_clusterKey", (q) => q.eq("clusterKey", clusterKey))
         .unique();
 
-      if (!row || !row.memberAddresses.includes(hlAddress)) {
+      if (!row?.memberAddresses?.includes(hlAddress)) {
         continue;
       }
 

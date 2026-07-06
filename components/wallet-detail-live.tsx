@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { WalletDetail } from "@/components/wallet-detail";
 import { api } from "@/convex/_generated/api";
 import { deriveLiveFeedStatus } from "@/lib/live-status";
+import { normalizeWalletDeposits } from "@/lib/cluster-types";
 import type { WalletSnapshot } from "@/lib/wallet-types";
 
 type WalletDetailLiveProps = {
@@ -26,7 +27,7 @@ export function WalletDetailLive({
   const requestWatch = useMutation(api.watches.request);
   const liveSnapshot = useQuery(api.wallets.getLiveSnapshot, { address });
   const walletClusters = usePreloadedQuery(preloadedWalletClusters);
-  const walletDeposits = usePreloadedQuery(preloadedDeposits);
+  const walletDeposits = normalizeWalletDeposits(usePreloadedQuery(preloadedDeposits));
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
