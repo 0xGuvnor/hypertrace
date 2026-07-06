@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { fetchQuery } from "convex/nextjs";
+import { preloadQuery, preloadedQueryResult } from "convex/nextjs";
 
 import { AppShell } from "@/components/app-shell";
 import { ClusterDetailLive } from "@/components/cluster-detail-live";
@@ -47,8 +47,10 @@ export default async function ClusterDetailPage({
     notFound();
   }
 
-  const initialCluster = await fetchQuery(api.clusters.getByKey, { clusterKey });
-  if (initialCluster === null) {
+  const preloadedCluster = await preloadQuery(api.clusters.getByKey, {
+    clusterKey,
+  });
+  if (preloadedQueryResult(preloadedCluster) === null) {
     notFound();
   }
 
@@ -59,8 +61,7 @@ export default async function ClusterDetailPage({
     <AppShell className="gap-6 sm:gap-8">
       <SiteHeader variant="compact" className="items-start" />
       <ClusterDetailLive
-        clusterKey={clusterKey}
-        initialCluster={initialCluster}
+        preloadedCluster={preloadedCluster}
         highlightAddress={highlightAddress}
       />
     </AppShell>

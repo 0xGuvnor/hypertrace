@@ -1,18 +1,16 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { Preloaded, usePreloadedQuery } from "convex/react";
 
 import { ClustersTable } from "@/components/clusters-table";
 import { api } from "@/convex/_generated/api";
-import type { Cluster } from "@/lib/cluster-types";
 
 export function ClustersListLive({
-  initialClusters,
+  preloadedClusters,
 }: {
-  initialClusters: Cluster[];
+  preloadedClusters: Preloaded<typeof api.clusters.list>;
 }) {
-  const liveClusters = useQuery(api.clusters.list);
-  const clusters = liveClusters ?? initialClusters;
+  const clusters = usePreloadedQuery(preloadedClusters);
 
   return <ClustersTable clusters={clusters} />;
 }

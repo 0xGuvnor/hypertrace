@@ -1,23 +1,19 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { Preloaded, usePreloadedQuery } from "convex/react";
 import { notFound } from "next/navigation";
 
 import { ClusterDetail } from "@/components/cluster-detail";
 import { api } from "@/convex/_generated/api";
-import type { Cluster } from "@/lib/cluster-types";
 
 export function ClusterDetailLive({
-  clusterKey,
-  initialCluster,
+  preloadedCluster,
   highlightAddress,
 }: {
-  clusterKey: string;
-  initialCluster: Cluster;
+  preloadedCluster: Preloaded<typeof api.clusters.getByKey>;
   highlightAddress?: string;
 }) {
-  const liveCluster = useQuery(api.clusters.getByKey, { clusterKey });
-  const cluster = liveCluster ?? initialCluster;
+  const cluster = usePreloadedQuery(preloadedCluster);
 
   if (cluster === null) {
     notFound();

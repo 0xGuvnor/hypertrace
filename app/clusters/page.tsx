@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { fetchQuery } from "convex/nextjs";
+import { preloadQuery } from "convex/nextjs";
 
 import { AppShell } from "@/components/app-shell";
 import { ClustersListLive } from "@/components/clusters-list-live";
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ClustersPage() {
-  const initialClusters = await fetchQuery(api.clusters.list);
+  const preloadedClusters = await preloadQuery(api.clusters.list);
 
   return (
     <AppShell className="gap-6 sm:gap-8">
@@ -26,7 +26,7 @@ export default async function ClustersPage() {
             Updated every few minutes from bridge deposit tracing.
           </p>
         </div>
-        <ClustersListLive initialClusters={initialClusters} />
+        <ClustersListLive preloadedClusters={preloadedClusters} />
       </div>
     </AppShell>
   );

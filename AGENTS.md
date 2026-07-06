@@ -23,7 +23,7 @@ Convex agent skills for common tasks can be installed by running
 - Use Bun for this repo: `bun add`, `bun run` for scripts, and `bunx` for ad-hoc CLIs (Convex, shadcn); avoid `npx`/`npm`.
 - Build UI with shadcn/ui components first; do not hand-roll primitives when a shadcn component exists.
 - When implementing from an attached plan, do not edit the plan file itself.
-- Prefer Next.js App Router server patterns: async RSC pages, `fetchAction`/`fetchQuery` from `convex/nextjs`, async `params` as `Promise`, and route-level `loading.tsx`/`error.tsx`/`not-found.tsx`; cluster and wallet Convex data use server prefetch plus client `useQuery` (`live ?? initial`).
+- Prefer Next.js App Router server patterns: async RSC pages, async `params` as `Promise`, and route-level `loading.tsx`/`error.tsx`/`not-found.tsx`; cluster routes use `preloadQuery` + client `usePreloadedQuery`; wallet pages use `fetchAction`/`fetchQuery` + client `useQuery` (`live ?? initial`).
 - Keep `'use client'` limited to interactive islands (search forms, tabs, providers); fetch wallet data in the server page.
 - Use the `frontend-design` skill for branding and distinctive UI work.
 - Wordmark UI: italicize "trace" in Hypertrace (Hyperliquid-style); keep metadata titles plain "Hypertrace".
