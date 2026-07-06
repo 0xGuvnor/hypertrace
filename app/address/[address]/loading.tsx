@@ -74,6 +74,7 @@ export default function Loading() {
                 <TableHead>Asset</TableHead>
                 <TableHead className="text-right">Size</TableHead>
                 <TableHead className="text-right">Entry</TableHead>
+                <TableHead className="text-right">Mark</TableHead>
                 <TableHead className="text-right">uPnL</TableHead>
                 <TableHead className="text-right">Liq. price</TableHead>
                 <TableHead className="text-right">TP</TableHead>
@@ -89,6 +90,9 @@ export default function Loading() {
                   </TableCell>
                   <TableCell className="text-right">
                     <Skeleton className="ml-auto h-4 w-16" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="ml-auto h-4 w-20" />
                   </TableCell>
                   <TableCell className="text-right">
                     <Skeleton className="ml-auto h-4 w-20" />

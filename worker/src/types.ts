@@ -11,6 +11,7 @@ export type WalletSnapshot = {
     side: "long" | "short";
     size: string;
     entryPrice: string;
+    markPrice: string | null;
     unrealizedPnl: string;
     liquidationPrice: string | null;
     leverage: number;

@@ -51,6 +51,7 @@ export function PositionsTable({
           <TableHead className="text-right">Size</TableHead>
           <TableHead className="text-right">Value</TableHead>
           <TableHead className="text-right">Entry</TableHead>
+          <TableHead className="text-right">Mark</TableHead>
           <TableHead className="text-right">Liq. price</TableHead>
           <TableHead className="text-right">TP</TableHead>
           <TableHead className="text-right">SL</TableHead>
@@ -91,6 +92,9 @@ export function PositionsTable({
               </TableCell>
               <TableCell className="text-right font-mono text-xs">
                 {formatUsd(position.entryPrice)}
+              </TableCell>
+              <TableCell className="text-right font-mono text-xs">
+                {position.markPrice ? formatUsd(position.markPrice) : "—"}
               </TableCell>
               <TableCell className="text-right font-mono text-xs">
                 {position.liquidationPrice

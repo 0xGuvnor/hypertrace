@@ -51,6 +51,11 @@ type FrontendOpenOrder = {
   orderType: string;
 };
 
+type MetaAndAssetCtxs = [
+  { universe: Array<{ name: string }> },
+  Array<{ markPx: string }>,
+];
+
 async function postInfo<T>(body: Record<string, unknown>, attempt = 0): Promise<T> {
   const response = await fetch(HL_INFO_URL, {
     method: "POST",
@@ -95,12 +100,30 @@ function parseMarginMode(type: string): WalletSnapshot["positions"][number]["mar
   throw new Error(`Unknown Hyperliquid margin mode: ${type}`);
 }
 
+function buildMarkPriceByCoin(metaAndCtxs: MetaAndAssetCtxs): Map<string, string> {
+  const [meta, ctxs] = metaAndCtxs;
+  const markByCoin = new Map<string, string>();
+
+  for (let i = 0; i < meta.universe.length; i++) {
+    const name = meta.universe[i]?.name;
+    const markPx = ctxs[i]?.markPx;
+    if (name && markPx) {
+      markByCoin.set(name, markPx);
+    }
+  }
+
+  return markByCoin;
+}
+
 export async function fetchWalletSnapshot(address: string): Promise<WalletSnapshot> {
-  const [clearinghouse, fills, rawOpenOrders] = await Promise.all([
+  const [clearinghouse, fills, rawOpenOrders, metaAndCtxs] = await Promise.all([
     postInfo<ClearinghouseState>({ type: "clearinghouseState", user: address }),
     postInfo<UserFill[]>({ type: "userFills", user: address }),
     postInfo<FrontendOpenOrder[]>({ type: "frontendOpenOrders", user: address }),
+    postInfo<MetaAndAssetCtxs>({ type: "metaAndAssetCtxs", dex: "" }),
   ]);
+
+  const markByCoin = buildMarkPriceByCoin(metaAndCtxs);
 
   const positions = clearinghouse.assetPositions
     .map(({ position }) => {
@@ -112,6 +135,7 @@ export async function fetchWalletSnapshot(address: string): Promise<WalletSnapsh
         side: sizeNum > 0 ? ("long" as const) : ("short" as const),
         size: Math.abs(sizeNum).toString(),
         entryPrice: position.entryPx,
+        markPrice: markByCoin.get(position.coin) ?? null,
         unrealizedPnl: position.unrealizedPnl,
         liquidationPrice: position.liquidationPx,
         leverage: position.leverage.value,

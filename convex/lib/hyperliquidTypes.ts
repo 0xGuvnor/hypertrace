@@ -16,6 +16,7 @@ export const positionValidator = v.object({
   side: v.union(v.literal("long"), v.literal("short")),
   size: v.string(),
   entryPrice: v.string(),
+  markPrice: v.union(v.string(), v.null()),
   unrealizedPnl: v.string(),
   liquidationPrice: v.union(v.string(), v.null()),
   leverage: v.number(),
