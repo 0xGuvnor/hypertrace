@@ -19,6 +19,19 @@ export function formatSize(value: string | null | undefined): string {
   return num.toLocaleString("en-US", { maximumFractionDigits: 6 });
 }
 
+export function formatOrderSize(
+  size: string,
+  isPositionTpsl: boolean,
+): string {
+  if (isPositionTpsl) {
+    const num = Number.parseFloat(size);
+    if (Number.isFinite(num) && num === 0) {
+      return "Close position";
+    }
+  }
+  return formatSize(size);
+}
+
 export function formatTimestamp(ms: number): string {
   return new Date(ms).toLocaleString("en-US", {
     month: "short",

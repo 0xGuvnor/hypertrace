@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatSize, formatTimestamp, formatUsd } from "@/lib/format";
+import { formatOrderSize, formatTimestamp, formatUsd } from "@/lib/format";
 import type { WalletSnapshot } from "@/lib/wallet-types";
 
 export function OrdersTable({
@@ -41,7 +41,11 @@ export function OrdersTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {sorted.map((order) => (
+        {sorted.map((order) => {
+          const sizeLabel = formatOrderSize(order.size, order.isPositionTpsl);
+          const isClosePosition = sizeLabel === "Close position";
+
+          return (
           <TableRow key={order.orderId}>
             <TableCell className="text-muted-foreground font-mono text-xs">
               {formatTimestamp(order.timestamp)}
@@ -53,8 +57,10 @@ export function OrdersTable({
               </Badge>
             </TableCell>
             <TableCell className="text-xs">{order.orderType}</TableCell>
-            <TableCell className="text-right font-mono text-xs">
-              {formatSize(order.size)}
+            <TableCell
+              className={`text-right text-xs ${isClosePosition ? "text-muted-foreground" : "font-mono"}`}
+            >
+              {sizeLabel}
             </TableCell>
             <TableCell className="text-right font-mono text-xs">
               {formatUsd(order.limitPrice)}
@@ -82,7 +88,8 @@ export function OrdersTable({
               </div>
             </TableCell>
           </TableRow>
-        ))}
+          );
+        })}
       </TableBody>
     </Table>
   );
