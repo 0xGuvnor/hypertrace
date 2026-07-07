@@ -8,11 +8,16 @@ import {
   createFundingResolver,
   resolveDepositBlockNumber,
 } from "./funding-resolution";
-import { fetchWalletSnapshot } from "./hyperliquid";
+import { fetchWalletSnapshot, configureHyperliquid } from "./hyperliquid";
 import { HyperliquidSocket } from "./hyperliquid-socket";
 import type { DepositRow } from "./types";
 
 const config = loadConfig();
+configureHyperliquid({
+  metaCacheTtlMs: config.metaCacheTtlMs,
+  hlMaxConcurrency: config.hlMaxConcurrency,
+  hlMinRequestIntervalMs: config.hlMinRequestIntervalMs,
+});
 const convex = createConvexIngestClient(config.convexSiteUrl, config.ingestSecret);
 
 const arbitrumClient = createPublicClient({
@@ -182,8 +187,14 @@ async function syncWatches(socket: HyperliquidSocket) {
     socket.syncAddresses(addresses);
     console.log(`[watches] tracking ${addresses.length} address(es)`);
 
+    const timestamps = await convex.getSnapshotTimestamps(addresses);
+    const now = Date.now();
     for (const address of addresses) {
-      scheduleRefresh(address, "watch-sync");
+      const normalized = address.toLowerCase();
+      const updatedAt = timestamps[normalized];
+      if (updatedAt == null || now - updatedAt >= config.snapshotStaleMs) {
+        scheduleRefresh(normalized, "watch-sync");
+      }
     }
 
     void syncDepositScans(addresses);

@@ -60,6 +60,10 @@ export type WorkerConfig = {
   arbitrumLogChunkBlocks: number;
   depositScanConcurrency: number;
   fundingLookbackDays: number;
+  snapshotStaleMs: number;
+  metaCacheTtlMs: number;
+  hlMaxConcurrency: number;
+  hlMinRequestIntervalMs: number;
 };
 
 export const JUNE_1_2026_START_BLOCK = 468_748_168;

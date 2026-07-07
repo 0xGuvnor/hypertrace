@@ -1,4 +1,5 @@
 import type { WalletSnapshot } from "./types";
+import { HlRequestQueue } from "./hl-request-queue";
 
 const HL_INFO_URL = "https://api.hyperliquid.xyz/info";
 const XYZ_DEX = "xyz";
@@ -57,7 +58,39 @@ type MetaAndAssetCtxs = [
   Array<{ markPx: string }>,
 ];
 
-async function postInfo<T>(body: Record<string, unknown>, attempt = 0): Promise<T> {
+type HyperliquidClientConfig = {
+  metaCacheTtlMs: number;
+  hlMaxConcurrency: number;
+  hlMinRequestIntervalMs: number;
+};
+
+let hlQueue: HlRequestQueue | null = null;
+let metaCacheTtlMs = 30_000;
+let metaCache: {
+  fetchedAt: number;
+  default: MetaAndAssetCtxs;
+  xyz: MetaAndAssetCtxs;
+} | null = null;
+
+export function configureHyperliquid(config: HyperliquidClientConfig): void {
+  hlQueue = new HlRequestQueue({
+    maxConcurrency: config.hlMaxConcurrency,
+    minIntervalMs: config.hlMinRequestIntervalMs,
+  });
+  metaCacheTtlMs = config.metaCacheTtlMs;
+}
+
+function getQueue(): HlRequestQueue {
+  if (!hlQueue) {
+    throw new Error("configureHyperliquid must be called before fetching snapshots");
+  }
+  return hlQueue;
+}
+
+async function postInfoOnce<T>(
+  body: Record<string, unknown>,
+  attempt = 0,
+): Promise<T> {
   const response = await fetch(HL_INFO_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -65,8 +98,10 @@ async function postInfo<T>(body: Record<string, unknown>, attempt = 0): Promise<
   });
 
   if (response.status === 429 && attempt < 3) {
-    await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
-    return postInfo(body, attempt + 1);
+    const backoffMs = 1000 * (attempt + 1);
+    getQueue().notifyRateLimited(backoffMs);
+    await new Promise((resolve) => setTimeout(resolve, backoffMs));
+    return postInfoOnce(body, attempt + 1);
   }
 
   if (!response.ok) {
@@ -74,6 +109,33 @@ async function postInfo<T>(body: Record<string, unknown>, attempt = 0): Promise<
   }
 
   return (await response.json()) as T;
+}
+
+async function postInfo<T>(body: Record<string, unknown>): Promise<T> {
+  return getQueue().run(() => postInfoOnce<T>(body));
+}
+
+async function fetchMetaAndAssetCtxs(): Promise<{
+  default: MetaAndAssetCtxs;
+  xyz: MetaAndAssetCtxs;
+}> {
+  const now = Date.now();
+  if (metaCache && now - metaCache.fetchedAt < metaCacheTtlMs) {
+    return { default: metaCache.default, xyz: metaCache.xyz };
+  }
+
+  const [defaultMeta, xyzMeta] = await Promise.all([
+    postInfo<MetaAndAssetCtxs>({ type: "metaAndAssetCtxs", dex: "" }),
+    postInfo<MetaAndAssetCtxs>({ type: "metaAndAssetCtxs", dex: XYZ_DEX }),
+  ]);
+
+  metaCache = {
+    fetchedAt: now,
+    default: defaultMeta,
+    xyz: xyzMeta,
+  };
+
+  return { default: defaultMeta, xyz: xyzMeta };
 }
 
 function fundingFeeFromCumFunding(sinceOpen: string): string {
@@ -237,8 +299,7 @@ export async function fetchWalletSnapshot(address: string): Promise<WalletSnapsh
     fills,
     ordersDefault,
     ordersXyz,
-    metaDefault,
-    metaXyz,
+    meta,
   ] = await Promise.all([
     postInfo<ClearinghouseState>({
       type: "clearinghouseState",
@@ -261,13 +322,12 @@ export async function fetchWalletSnapshot(address: string): Promise<WalletSnapsh
       user: address,
       dex: XYZ_DEX,
     }),
-    postInfo<MetaAndAssetCtxs>({ type: "metaAndAssetCtxs", dex: "" }),
-    postInfo<MetaAndAssetCtxs>({ type: "metaAndAssetCtxs", dex: XYZ_DEX }),
+    fetchMetaAndAssetCtxs(),
   ]);
 
   const markByCoin = mergeMarkPriceMaps(
-    buildMarkPriceByCoin(metaDefault),
-    buildMarkPriceByCoin(metaXyz),
+    buildMarkPriceByCoin(meta.default),
+    buildMarkPriceByCoin(meta.xyz),
   );
   const positions = [
     ...parsePositions(clearinghouseDefault.assetPositions, markByCoin),

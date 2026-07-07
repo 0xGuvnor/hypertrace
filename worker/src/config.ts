@@ -26,6 +26,10 @@ export function loadConfig(): WorkerConfig {
     arbitrumLogChunkBlocks: numberEnv("ARBITRUM_LOG_CHUNK_BLOCKS", 2_000),
     depositScanConcurrency: numberEnv("DEPOSIT_SCAN_CONCURRENCY", 3),
     fundingLookbackDays: numberEnv("FUNDING_LOOKBACK_DAYS", 7),
+    snapshotStaleMs: numberEnv("SNAPSHOT_STALE_MS", 120_000),
+    metaCacheTtlMs: numberEnv("META_CACHE_TTL_MS", 30_000),
+    hlMaxConcurrency: numberEnv("HL_MAX_CONCURRENCY", 3),
+    hlMinRequestIntervalMs: numberEnv("HL_MIN_REQUEST_INTERVAL_MS", 100),
   };
 }
 

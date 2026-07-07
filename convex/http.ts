@@ -46,6 +46,28 @@ http.route({
 });
 
 http.route({
+  path: "/ingest/snapshot-timestamps",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    if (!verifyIngestSecret(request)) {
+      return unauthorizedResponse();
+    }
+
+    const url = new URL(request.url);
+    const raw = url.searchParams.get("addresses") ?? "";
+    const addresses = raw
+      .split(",")
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+
+    const timestamps = await ctx.runQuery(internal.wallets.getSnapshotTimestamps, {
+      addresses,
+    });
+    return Response.json({ timestamps });
+  }),
+});
+
+http.route({
   path: "/ingest/deposit-cursors",
   method: "GET",
   handler: httpAction(async (ctx, request) => {

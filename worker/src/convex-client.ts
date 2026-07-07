@@ -20,6 +20,9 @@ export type ConvexIngestClient = {
   patchDepositSources(
     updates: DepositSourceUpdate[],
   ): Promise<{ updated: number; skipped: number }>;
+  getSnapshotTimestamps(
+    addresses: string[],
+  ): Promise<Record<string, number | null>>;
 };
 
 export function createConvexIngestClient(
@@ -115,6 +118,24 @@ export function createConvexIngestClient(
         throw new Error(`Failed to patch deposit sources (${response.status}): ${text}`);
       }
       return (await response.json()) as { updated: number; skipped: number };
+    },
+
+    async getSnapshotTimestamps(addresses) {
+      if (addresses.length === 0) {
+        return {};
+      }
+      const query = encodeURIComponent(addresses.join(","));
+      const response = await fetch(
+        `${convexSiteUrl}/ingest/snapshot-timestamps?addresses=${query}`,
+        { headers },
+      );
+      if (!response.ok) {
+        throw new Error(`Failed to get snapshot timestamps (${response.status})`);
+      }
+      const body = (await response.json()) as {
+        timestamps?: Record<string, number | null>;
+      };
+      return body.timestamps ?? {};
     },
   };
 }

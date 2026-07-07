@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 
-import { action, internalMutation, query } from "./_generated/server";
+import { action, internalMutation, internalQuery, query } from "./_generated/server";
 import { isValidAddress, normalizeAddress } from "./lib/address";
 import { fetchWalletSnapshot } from "./lib/hyperliquid";
 import {
@@ -49,6 +49,32 @@ export const getLiveSnapshot = query({
       recentFills: row.recentFills,
       updatedAt: row.updatedAt,
     };
+  },
+});
+
+export const getSnapshotTimestamps = internalQuery({
+  args: { addresses: v.array(v.string()) },
+  returns: v.record(v.string(), v.union(v.number(), v.null())),
+  handler: async (ctx, args) => {
+    const result: Record<string, number | null> = {};
+
+    for (const raw of args.addresses) {
+      const trimmed = raw.trim();
+      if (!isValidAddress(trimmed)) {
+        result[trimmed] = null;
+        continue;
+      }
+
+      const address = normalizeAddress(trimmed);
+      const row = await ctx.db
+        .query("walletSnapshots")
+        .withIndex("by_address", (q) => q.eq("address", address))
+        .unique();
+
+      result[address] = row?.updatedAt ?? null;
+    }
+
+    return result;
   },
 });
 

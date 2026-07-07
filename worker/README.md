@@ -19,6 +19,10 @@ Railway service that watches Convex `watchedAddresses`, subscribes to Hyperliqui
 | `FUNDING_LOOKBACK_DAYS` | no | Inbound USDC lookback before each bridge deposit (default 7) |
 | `ARBITRUM_LOG_CHUNK_BLOCKS` | no | `eth_getLogs` chunk size (default 2000; use 10 on Alchemy free tier) |
 | `DEPOSIT_SCAN_CONCURRENCY` | no | Parallel deposit scans (default 3) |
+| `SNAPSHOT_STALE_MS` | no | Poll-only snapshot refresh threshold (default 120000) |
+| `META_CACHE_TTL_MS` | no | Shared `metaAndAssetCtxs` cache TTL (default 30000) |
+| `HL_MAX_CONCURRENCY` | no | Max parallel Hyperliquid Info API requests (default 3) |
+| `HL_MIN_REQUEST_INTERVAL_MS` | no | Min gap between HL request starts (default 100) |
 
 Deposit `sourceAddress` is resolved via Alchemy `getAssetTransfers` on the same `ARBITRUM_RPC_URL`. Pay-as-you-go is recommended for backfill volume across many watched wallets.
 
