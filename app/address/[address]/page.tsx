@@ -8,7 +8,6 @@ import { WalletDetailLive } from "@/components/wallet-detail-live";
 import { WalletLoadError } from "@/components/wallet-load-error";
 import { api } from "@/convex/_generated/api";
 import { isValidAddress, normalizeAddress, truncateAddress } from "@/lib/address";
-import { isSnapshotFreshForSsr } from "@/lib/live-status";
 import { walletLoadUserMessage } from "@/lib/wallet-load-error";
 
 type PageProps = {
@@ -44,9 +43,8 @@ export default async function AddressPage({ params }: PageProps) {
       ]);
 
     const initialSnapshot =
-      cachedSnapshot && isSnapshotFreshForSsr(cachedSnapshot.updatedAt)
-        ? cachedSnapshot
-        : await fetchAction(api.wallets.getSnapshot, { address });
+      cachedSnapshot ??
+      (await fetchAction(api.wallets.getSnapshot, { address }));
 
     return (
       <AppShell className="gap-6 sm:gap-8">

@@ -30,6 +30,7 @@ export function loadConfig(): WorkerConfig {
     metaCacheTtlMs: numberEnv("META_CACHE_TTL_MS", 30_000),
     hlMaxConcurrency: numberEnv("HL_MAX_CONCURRENCY", 3),
     hlMinRequestIntervalMs: numberEnv("HL_MIN_REQUEST_INTERVAL_MS", 100),
+    wsRefreshMinIntervalMs: numberEnv("WS_REFRESH_MIN_INTERVAL_MS", 12_000),
   };
 }
 

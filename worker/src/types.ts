@@ -64,6 +64,7 @@ export type WorkerConfig = {
   metaCacheTtlMs: number;
   hlMaxConcurrency: number;
   hlMinRequestIntervalMs: number;
+  wsRefreshMinIntervalMs: number;
 };
 
 export const JUNE_1_2026_START_BLOCK = 468_748_168;

@@ -23,6 +23,7 @@ Railway service that watches Convex `watchedAddresses`, subscribes to Hyperliqui
 | `META_CACHE_TTL_MS` | no | Shared `metaAndAssetCtxs` cache TTL (default 30000) |
 | `HL_MAX_CONCURRENCY` | no | Max parallel Hyperliquid Info API requests (default 3) |
 | `HL_MIN_REQUEST_INTERVAL_MS` | no | Min gap between HL request starts (default 100) |
+| `WS_REFRESH_MIN_INTERVAL_MS` | no | Min gap between WS-triggered snapshot refreshes per wallet (default 12000) |
 
 Deposit `sourceAddress` is resolved via Alchemy `getAssetTransfers` on the same `ARBITRUM_RPC_URL`. Pay-as-you-go is recommended for backfill volume across many watched wallets.
 

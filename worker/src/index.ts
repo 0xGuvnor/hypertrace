@@ -43,6 +43,8 @@ const arbitrumScanner = createArbitrumDepositScanner({
 });
 
 const refreshTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const wsCooldownTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const lastRefreshedAt = new Map<string, number>();
 const inFlight = new Set<string>();
 const depositInFlight = new Set<string>();
 
@@ -66,6 +68,7 @@ async function refreshAddress(address: string, reason: string) {
   try {
     const snapshot = await fetchWalletSnapshot(address);
     await convex.upsertSnapshot(snapshot);
+    lastRefreshedAt.set(address, Date.now());
     console.log(`[snapshot] ${address.slice(0, 8)}… (${reason})`);
   } catch (error) {
     console.error(`[snapshot] failed for ${address}`, error);
@@ -74,16 +77,56 @@ async function refreshAddress(address: string, reason: string) {
   }
 }
 
-function scheduleRefresh(address: string, reason: string) {
+function scheduleRefreshNow(
+  address: string,
+  reason: string,
+  debounceMs: number,
+) {
   const existing = refreshTimers.get(address);
   if (existing) clearTimeout(existing);
 
   const timer = setTimeout(() => {
     refreshTimers.delete(address);
     void refreshAddress(address, reason);
-  }, config.refreshDebounceMs);
+  }, debounceMs);
 
   refreshTimers.set(address, timer);
+}
+
+function scheduleWsRefresh(address: string) {
+  const normalized = address.toLowerCase();
+  if (inFlight.has(normalized)) {
+    return;
+  }
+
+  const last = lastRefreshedAt.get(normalized) ?? 0;
+  const elapsed = Date.now() - last;
+  const remaining = config.wsRefreshMinIntervalMs - elapsed;
+
+  if (remaining <= 0) {
+    scheduleRefreshNow(normalized, "ws-event", config.refreshDebounceMs);
+    return;
+  }
+
+  if (wsCooldownTimers.has(normalized)) {
+    return;
+  }
+
+  const timer = setTimeout(() => {
+    wsCooldownTimers.delete(normalized);
+    scheduleRefreshNow(normalized, "ws-event", config.refreshDebounceMs);
+  }, remaining);
+  wsCooldownTimers.set(normalized, timer);
+}
+
+function scheduleRefresh(address: string, reason: string) {
+  const normalized = address.toLowerCase();
+  if (reason === "ws-event") {
+    scheduleWsRefresh(normalized);
+    return;
+  }
+
+  scheduleRefreshNow(normalized, reason, config.refreshDebounceMs);
 }
 
 async function reconcileSelfSourcedDeposits(address: string) {
