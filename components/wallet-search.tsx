@@ -136,7 +136,7 @@ export function WalletSearch({
           type="submit"
           variant="ghost"
           size="icon-sm"
-          className="absolute top-1/2 right-1 -translate-y-1/2 text-muted-foreground hover:text-[var(--brand-cyan)]"
+          className="absolute top-1/2 right-1 -translate-y-1/2 active:-translate-y-1/2 text-muted-foreground hover:text-[var(--brand-cyan)]"
           aria-label="Search"
         >
           <Search />
