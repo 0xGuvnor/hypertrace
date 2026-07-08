@@ -5,19 +5,17 @@ Hyperliquid whale tracker. Two differentiators over Hyperliquid's native UI:
 1. **Cross-wallet clustering.** Groups of addresses that behave as one entity, starting from shared deposit sources and later correlated trading behavior.
 2. **Filterable leaderboard.** PnL windows, account value, and recent activity filters that `app.hyperliquid.xyz/leaderboard` does not offer.
 
-Standalone app. Unrelated to Stonkseer.
-
 ## Tech stack
 
-| Layer | Choice | Notes |
-| --- | --- | --- |
-| Frontend | Next.js (App Router), shadcn/ui, Tailwind | |
-| Database / API | [Convex](https://convex.dev) | Document store + `query` / `mutation` / `action` API. Reactive queries push updates to the client. No separate Postgres/Mongo. |
-| Ingestion worker | Bun always-on process on [Railway](https://railway.app) | Talks to Convex over HTTPS (`ConvexHttpClient` / HTTP ingest). No direct DB connection. |
-| Chain data | Arbitrum RPC (Alchemy) | Bridge2 + Hyperliquid CCTP deposit tracing |
-| Leaderboard data | `stats-data.hyperliquid.xyz` (undocumented) | Periodic Convex cron pull into `leaderboardSnapshots` |
-| Auth | Better Auth (planned) | Email/password + social. No wallet sign-in. |
-| Alerting | Discord / Telegram (planned) | Webhooks on new or growing clusters |
+| Layer            | Choice                                                  | Notes                                                                                                                          |
+| ---------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Frontend         | Next.js (App Router), shadcn/ui, Tailwind               |                                                                                                                                |
+| Database / API   | [Convex](https://convex.dev)                            | Document store + `query` / `mutation` / `action` API. Reactive queries push updates to the client. No separate Postgres/Mongo. |
+| Ingestion worker | Bun always-on process on [Railway](https://railway.app) | Talks to Convex over HTTPS (`ConvexHttpClient` / HTTP ingest). No direct DB connection.                                        |
+| Chain data       | Arbitrum RPC (Alchemy)                                  | Bridge2 + Hyperliquid CCTP deposit tracing                                                                                     |
+| Leaderboard data | `stats-data.hyperliquid.xyz` (undocumented)             | Periodic Convex cron pull into `leaderboardSnapshots`                                                                          |
+| Auth             | Better Auth (planned)                                   | Email/password + social. No wallet sign-in.                                                                                    |
+| Alerting         | Discord / Telegram (planned)                            | Webhooks on new or growing clusters                                                                                            |
 
 ## Architecture
 
@@ -52,16 +50,16 @@ Arbitrum RPC (deposits)      ├──> Railway worker ──HTTP ingest──> 
 
 ## Data model (Convex)
 
-| Table | Status | Purpose |
-| --- | --- | --- |
-| `walletSnapshots` | Shipped | Cached HL account / positions / open orders / recent fills per address |
-| `watchedAddresses` | Shipped | 24h TTL watch list driving the worker |
-| `deposits` | Shipped | Bridge funding: hlAddress, sourceAddress, amount, timestamp, arbTxHash |
-| `depositScanCursors` | Shipped | Per-wallet Arbitrum scan progress |
-| `wallets` | Shipped | Tracked addresses: firstSeen, tags, clusterId |
-| `clusters` | Shipped | Deposit-source groups: clusterKey, members, confidenceScore, basis |
-| `leaderboardSnapshots` | Backend shipped | accountValue, pnlDay/Week/Month/AllTime, lastActivityTimestamp, fetchedAt |
-| `fills` (dedicated table) | Not yet | Spec target for durable fill history used by behavioral clustering |
+| Table                     | Status          | Purpose                                                                   |
+| ------------------------- | --------------- | ------------------------------------------------------------------------- |
+| `walletSnapshots`         | Shipped         | Cached HL account / positions / open orders / recent fills per address    |
+| `watchedAddresses`        | Shipped         | 24h TTL watch list driving the worker                                     |
+| `deposits`                | Shipped         | Bridge funding: hlAddress, sourceAddress, amount, timestamp, arbTxHash    |
+| `depositScanCursors`      | Shipped         | Per-wallet Arbitrum scan progress                                         |
+| `wallets`                 | Shipped         | Tracked addresses: firstSeen, tags, clusterId                             |
+| `clusters`                | Shipped         | Deposit-source groups: clusterKey, members, confidenceScore, basis        |
+| `leaderboardSnapshots`    | Backend shipped | accountValue, pnlDay/Week/Month/AllTime, lastActivityTimestamp, fetchedAt |
+| `fills` (dedicated table) | Not yet         | Spec target for durable fill history used by behavioral clustering        |
 
 There is no dedicated `fills` table yet. Recent fills live on `walletSnapshots`. Behavioral clustering (signals 2–5) needs durable fill history first.
 
@@ -128,7 +126,7 @@ bun install
 CONVEX_URL=… WORKER_INGEST_SECRET=… ARBITRUM_RPC_URL=… bun run start
 ```
 
-See [`worker/README.md`](worker/README.md) for worker env vars.
+See `[worker/README.md](worker/README.md)` for worker env vars.
 
 For cloud-agent Convex dev:
 
