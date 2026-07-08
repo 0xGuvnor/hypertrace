@@ -12,7 +12,6 @@ import {
 const WALLET = "0xb6db1b4dc6244f86e482d834739d949d799e4da5" as const;
 const BRIDGE2 = "0x2df1c51e09aecf9cacb7bc98cb1742757f163df7" as const;
 const CCTP_EXTENSION = "0xa95d9c1f655341597c94393fddc30cf3c08e4fce" as const;
-const MESSENGER = "0x28b5a0e9c621a5badaa536219b3a228c8168cf5d" as const;
 const USDC = "0xaf88d065e77c8cc2239327c5edb3a432268e5831" as const;
 
 const blockTimestamps = new Map<bigint, number>([

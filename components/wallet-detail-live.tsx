@@ -28,7 +28,7 @@ export function WalletDetailLive({
   const liveSnapshot = useQuery(api.wallets.getLiveSnapshot, { address });
   const walletClusters = usePreloadedQuery(preloadedWalletClusters);
   const walletDeposits = normalizeWalletDeposits(usePreloadedQuery(preloadedDeposits));
-  const [now, setNow] = useState(() => Date.now());
+  const [tick, setTick] = useState(() => Date.now());
 
   useEffect(() => {
     void requestWatch({ address });
@@ -39,20 +39,15 @@ export function WalletDetailLive({
   }, [address, requestWatch]);
 
   useEffect(() => {
-    const tick = setInterval(() => setNow(Date.now()), STATUS_TICK_MS);
-    return () => clearInterval(tick);
+    const interval = setInterval(() => setTick(Date.now()), STATUS_TICK_MS);
+    return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    if (liveSnapshot?.updatedAt) {
-      setNow(Date.now());
-    }
-  }, [liveSnapshot?.updatedAt]);
-
+  const statusNow = Math.max(tick, liveSnapshot?.updatedAt ?? 0);
   const snapshot = liveSnapshot ?? initialSnapshot;
   const feedStatus = deriveLiveFeedStatus(
     liveSnapshot,
-    now,
+    statusNow,
     initialSnapshot.fetchedAt,
   );
 
@@ -60,7 +55,7 @@ export function WalletDetailLive({
     <WalletDetail
       snapshot={snapshot}
       feedStatus={feedStatus}
-      statusNow={now}
+      statusNow={statusNow}
       walletClusters={walletClusters}
       walletDeposits={walletDeposits}
     />

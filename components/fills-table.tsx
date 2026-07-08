@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,16 +18,12 @@ import type { WalletSnapshot } from "@/lib/wallet-types";
 const PAGE_SIZE = 20;
 const HYPERLIQUID_FILLS_CAP = 2000;
 
-export function FillsTable({
+function FillsTablePaged({
   fills,
 }: {
   fills: WalletSnapshot["recentFills"];
 }) {
   const [page, setPage] = useState(0);
-
-  useEffect(() => {
-    setPage(0);
-  }, [fills]);
 
   if (fills.length === 0) {
     return (
@@ -127,4 +123,17 @@ export function FillsTable({
       )}
     </div>
   );
+}
+
+export function FillsTable({
+  fills,
+}: {
+  fills: WalletSnapshot["recentFills"];
+}) {
+  const fillsKey = useMemo(
+    () => fills.map((fill) => `${fill.timestamp}-${fill.coin}`).join("|"),
+    [fills],
+  );
+
+  return <FillsTablePaged key={fillsKey} fills={fills} />;
 }

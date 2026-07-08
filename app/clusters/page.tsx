@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ClustersPage() {
-  await preloadQuery(api.clusters.list, {
+  const preloadedClusters = await preloadQuery(api.clusters.list, {
     paginationOpts: { numItems: CLUSTERS_LIST_PAGE_SIZE, cursor: null },
   });
 
@@ -29,7 +29,7 @@ export default async function ClustersPage() {
             Updated every few minutes from bridge deposit tracing.
           </p>
         </div>
-        <ClustersListLive />
+        <ClustersListLive preloadedClusters={preloadedClusters} />
       </div>
     </AppShell>
   );
