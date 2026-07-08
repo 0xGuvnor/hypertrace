@@ -55,6 +55,8 @@ export type WorkerConfig = {
   port: number;
   arbitrumRpcUrl: string;
   bridge2Address: `0x${string}`;
+  cctpExtensionAddress: `0x${string}`;
+  cctpTokenMessengerV2: `0x${string}`;
   usdcAddress: `0x${string}`;
   bridge2StartBlock: number;
   arbitrumLogChunkBlocks: number;

@@ -35,6 +35,8 @@ const fundingResolver = createFundingResolver(arbitrumClient, {
 const arbitrumScanner = createArbitrumDepositScanner({
   rpcUrl: config.arbitrumRpcUrl,
   bridge2Address: config.bridge2Address,
+  cctpExtensionAddress: config.cctpExtensionAddress,
+  cctpTokenMessengerV2: config.cctpTokenMessengerV2,
   usdcAddress: config.usdcAddress,
   bridge2StartBlock: BigInt(config.bridge2StartBlock),
   logChunkBlocks: BigInt(config.arbitrumLogChunkBlocks),

@@ -1,6 +1,6 @@
 # Hypertrace ingestion worker
 
-Railway service that watches Convex `watchedAddresses`, subscribes to Hyperliquid WebSocket feeds, pushes snapshots to Convex HTTP ingest, and scans Arbitrum Bridge2 USDC transfers per watched wallet.
+Railway service that watches Convex `watchedAddresses`, subscribes to Hyperliquid WebSocket feeds, pushes snapshots to Convex HTTP ingest, and scans Arbitrum USDC deposits per watched wallet (Bridge2 direct transfers plus Hyperliquid CCTP paths via Circle CctpExtension and Token Messenger V2).
 
 ## Env vars
 
@@ -14,6 +14,8 @@ Railway service that watches Convex `watchedAddresses`, subscribes to Hyperliqui
 | `PORT` | no | Health server port (Railway sets automatically) |
 | `ARBITRUM_RPC_URL` | yes | Arbitrum One JSON-RPC URL (Alchemy/Infura) |
 | `BRIDGE2_ADDRESS` | no | Default `0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7` |
+| `CCTP_EXTENSION_ADDRESS` | no | Hyperliquid CCTP Extension on Arbitrum (default `0xa95d9c1f655341597c94393fddc30cf3c08e4fce`) |
+| `CCTP_TOKEN_MESSENGER_V2` | no | Circle CCTP Token Messenger V2 (default `0x28b5a0e9c621a5badaa536219b3a228c8168cf5d`) |
 | `USDC_ADDRESS` | no | Default `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` |
 | `BRIDGE2_START_BLOCK` | no | Backfill start block (default `468748168`, 2026-06-01 UTC) |
 | `FUNDING_LOOKBACK_DAYS` | no | Inbound USDC lookback before each bridge deposit (default 7) |

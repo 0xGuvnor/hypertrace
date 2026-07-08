@@ -270,6 +270,18 @@ export const setCursors = internalMutation({
   },
 });
 
+export const resetAllScanCursors = internalMutation({
+  args: {},
+  returns: v.object({ deleted: v.number() }),
+  handler: async (ctx) => {
+    const cursors = await ctx.db.query("depositScanCursors").collect();
+    for (const cursor of cursors) {
+      await ctx.db.delete(cursor._id);
+    }
+    return { deleted: cursors.length };
+  },
+});
+
 export const listByWallet = query({
   args: { address: v.string() },
   returns: walletDepositsResultValidator,

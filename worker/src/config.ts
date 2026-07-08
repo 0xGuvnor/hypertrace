@@ -18,6 +18,14 @@ export function loadConfig(): WorkerConfig {
       "BRIDGE2_ADDRESS",
       "0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7",
     ),
+    cctpExtensionAddress: addressEnv(
+      "CCTP_EXTENSION_ADDRESS",
+      "0xa95d9c1f655341597c94393fddc30cf3c08e4fce",
+    ),
+    cctpTokenMessengerV2: addressEnv(
+      "CCTP_TOKEN_MESSENGER_V2",
+      "0x28b5a0e9c621a5badaa536219b3a228c8168cf5d",
+    ),
     usdcAddress: addressEnv(
       "USDC_ADDRESS",
       "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
