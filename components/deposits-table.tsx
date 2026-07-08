@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { truncateAddress } from "@/lib/address";
 import { arbiscanAddressUrl, arbiscanTxUrl } from "@/lib/cluster-routes";
+import { DEPOSIT_SCAN_START_DATE_LABEL } from "@/lib/deposit-scan";
 import type { Deposit } from "@/lib/cluster-types";
 import { formatTimestamp, formatUsd } from "@/lib/format";
 
@@ -31,8 +32,9 @@ export function DepositsTable({
   if (deposits.length === 0) {
     return (
       <p className="text-muted-foreground py-8 text-center text-sm leading-relaxed">
-        No bridge deposits on record for this wallet. Deposits appear after the
-        wallet is watched and the worker scans Arbitrum Bridge2.
+        No bridge deposits on record for this wallet. Hypertrace scans Arbitrum
+        bridge transfers from {DEPOSIT_SCAN_START_DATE_LABEL} onward. Deposits
+        appear once the wallet is watched and indexing completes.
       </p>
     );
   }

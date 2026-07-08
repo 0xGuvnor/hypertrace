@@ -1,0 +1,2 @@
+/** Mirrors worker default JUNE_1_2026_START_BLOCK / BRIDGE2_START_BLOCK (468748168). */
+export const DEPOSIT_SCAN_START_DATE_LABEL = "June 1, 2026";
