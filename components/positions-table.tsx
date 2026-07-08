@@ -1,4 +1,10 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -9,6 +15,29 @@ import {
 } from "@/components/ui/table";
 import { formatUsd, formatSize } from "@/lib/format";
 import type { WalletSnapshot } from "@/lib/wallet-types";
+
+type SortKey = "value" | "fundingFee" | "unrealizedPnl";
+type SortDir = "asc" | "desc";
+
+type Position = WalletSnapshot["positions"][number];
+
+function parseHlNumeric(value: string): number {
+  const num = Number.parseFloat(value);
+  return Number.isFinite(num) ? num : Number.NEGATIVE_INFINITY;
+}
+
+function comparePositions(
+  a: Position,
+  b: Position,
+  sortKey: SortKey,
+  sortDir: SortDir,
+): number {
+  const aVal = parseHlNumeric(a[sortKey]);
+  const bVal = parseHlNumeric(b[sortKey]);
+  const diff = sortDir === "asc" ? aVal - bVal : bVal - aVal;
+  if (diff !== 0) return diff;
+  return a.coin.localeCompare(b.coin);
+}
 
 function unrealizedPnlClass(value: string): string {
   const num = Number.parseFloat(value);
@@ -25,8 +54,52 @@ function fundingFeeClass(value: string): string {
   return "text-emerald-600 dark:text-emerald-400";
 }
 
-function formatMarginMode(mode: WalletSnapshot["positions"][number]["marginMode"]): string {
+function formatMarginMode(mode: Position["marginMode"]): string {
   return mode === "cross" ? "Cross" : "Isolated";
+}
+
+function SortableTableHead({
+  label,
+  sortKey,
+  activeSortKey,
+  sortDir,
+  onSort,
+}: {
+  label: string;
+  sortKey: SortKey;
+  activeSortKey: SortKey;
+  sortDir: SortDir;
+  onSort: (key: SortKey) => void;
+}) {
+  const isActive = activeSortKey === sortKey;
+  const ariaSort = isActive
+    ? sortDir === "asc"
+      ? "ascending"
+      : "descending"
+    : "none";
+
+  return (
+    <TableHead className="text-right" aria-sort={ariaSort}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="-mr-2 ml-auto h-7 gap-1 px-2 font-medium"
+        onClick={() => onSort(sortKey)}
+      >
+        {label}
+        {isActive ? (
+          sortDir === "asc" ? (
+            <ChevronUp className="size-3.5 opacity-70" />
+          ) : (
+            <ChevronDown className="size-3.5 opacity-70" />
+          )
+        ) : (
+          <ArrowUpDown className="size-3.5 opacity-40" />
+        )}
+      </Button>
+    </TableHead>
+  );
 }
 
 export function PositionsTable({
@@ -34,6 +107,24 @@ export function PositionsTable({
 }: {
   positions: WalletSnapshot["positions"];
 }) {
+  const [sortKey, setSortKey] = useState<SortKey>("value");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  const sortedPositions = useMemo(
+    () =>
+      [...positions].sort((a, b) => comparePositions(a, b, sortKey, sortDir)),
+    [positions, sortKey, sortDir],
+  );
+
+  function handleSort(key: SortKey) {
+    if (key === sortKey) {
+      setSortDir((dir) => (dir === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setSortKey(key);
+    setSortDir("desc");
+  }
+
   if (positions.length === 0) {
     return (
       <p className="text-muted-foreground py-8 text-center text-sm">
@@ -49,18 +140,36 @@ export function PositionsTable({
           <TableHead>Asset</TableHead>
           <TableHead className="text-right">Leverage</TableHead>
           <TableHead className="text-right">Size</TableHead>
-          <TableHead className="text-right">Value</TableHead>
+          <SortableTableHead
+            label="Value"
+            sortKey="value"
+            activeSortKey={sortKey}
+            sortDir={sortDir}
+            onSort={handleSort}
+          />
           <TableHead className="text-right">Entry</TableHead>
           <TableHead className="text-right">Mark</TableHead>
           <TableHead className="text-right">Liq. price</TableHead>
           <TableHead className="text-right">TP</TableHead>
           <TableHead className="text-right">SL</TableHead>
-          <TableHead className="text-right">Funding fee</TableHead>
-          <TableHead className="text-right">uPnL</TableHead>
+          <SortableTableHead
+            label="Funding fee"
+            sortKey="fundingFee"
+            activeSortKey={sortKey}
+            sortDir={sortDir}
+            onSort={handleSort}
+          />
+          <SortableTableHead
+            label="uPnL"
+            sortKey="unrealizedPnl"
+            activeSortKey={sortKey}
+            sortDir={sortDir}
+            onSort={handleSort}
+          />
         </TableRow>
       </TableHeader>
       <TableBody>
-        {positions.map((position) => {
+        {sortedPositions.map((position) => {
           const isLong = position.side === "long";
           return (
             <TableRow key={position.coin}>
