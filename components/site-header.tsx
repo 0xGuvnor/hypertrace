@@ -4,8 +4,10 @@ import Link from "next/link";
 import { MobileNavMenu } from "@/components/mobile-nav-menu";
 import { cn } from "@/lib/utils";
 
+type SiteHeaderVariant = "compact" | "minimal";
+
 type SiteHeaderProps = {
-  variant?: "hero" | "compact";
+  variant?: SiteHeaderVariant;
   className?: string;
 };
 
@@ -32,64 +34,23 @@ function SiteNavActions({ className }: { className?: string }) {
   );
 }
 
-export function SiteHeader({ variant = "compact", className }: SiteHeaderProps) {
-  const isHero = variant === "hero";
-
-  const logoLink = (
-    <Link
-      href="/"
-      className={cn(
-        "group flex items-center rounded-xl outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--brand-cyan)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        isHero ? "flex-col gap-3 sm:flex-row sm:gap-4" : "flex-row gap-1",
-      )}
-    >
-      <div
-        className={cn(
-          "relative shrink-0",
-          isHero ? "size-16 sm:size-20" : "size-9 sm:size-10",
-        )}
-      >
-        <Image
-          src="/logo.png"
-          alt=""
-          width={96}
-          height={96}
-          priority={isHero}
-          className="size-full object-contain"
-        />
-      </div>
-      <div
-        className={cn(
-          "flex flex-col",
-          isHero ? "items-center text-center sm:items-start sm:text-left" : "items-start",
-        )}
-      >
-        <span
-          className={cn(
-            "font-semibold tracking-tight",
-            isHero ? "text-xl sm:text-2xl" : "text-base sm:text-lg",
-          )}
-        >
-          Hyper<span className="italic">trace</span>
-        </span>
-        {isHero ? (
-          <span className="text-muted-foreground max-w-md text-sm leading-snug">
-            Track Hyperliquid whales and the wallet clusters behind them. Shared
-            funding, correlated entries, live positions.
-          </span>
-        ) : null}
-      </div>
-    </Link>
+function siteHeaderClassName(className?: string) {
+  return cn(
+    "sticky top-0 z-40 -mt-6 w-full self-stretch",
+    "bg-background/90 backdrop-blur-sm",
+    "pt-6 pb-3 sm:-mt-8 sm:pt-8",
+    className,
   );
+}
 
-  if (isHero) {
+export function SiteHeader({
+  variant = "compact",
+  className,
+}: SiteHeaderProps) {
+  if (variant === "minimal") {
     return (
-      <header className={cn("flex w-full flex-col gap-3", className)}>
-        <SiteNavActions className="fixed top-6 right-4 z-50 sm:hidden" />
-        <div className="flex w-full flex-col items-center gap-3 sm:flex-row sm:items-start sm:justify-between">
-          {logoLink}
-          <SiteNavActions className="hidden sm:flex" />
-        </div>
+      <header className={cn(siteHeaderClassName(className), "flex justify-end")}>
+        <SiteNavActions />
       </header>
     );
   }
@@ -97,11 +58,29 @@ export function SiteHeader({ variant = "compact", className }: SiteHeaderProps) 
   return (
     <header
       className={cn(
-        "flex w-full flex-row items-start justify-between",
-        className,
+        siteHeaderClassName(className),
+        "flex flex-row items-start justify-between",
       )}
     >
-      {logoLink}
+      <Link
+        href="/"
+        className="group flex flex-row items-center gap-1 rounded-xl outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--brand-cyan)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
+        <div className="relative size-9 shrink-0 sm:size-10">
+          <Image
+            src="/logo.png"
+            alt=""
+            width={96}
+            height={96}
+            className="size-full object-contain"
+          />
+        </div>
+        <div className="flex flex-col items-start">
+          <span className="text-base font-semibold tracking-tight sm:text-lg">
+            Hyper<span className="italic">trace</span>
+          </span>
+        </div>
+      </Link>
       <SiteNavActions />
     </header>
   );

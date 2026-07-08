@@ -36,16 +36,16 @@ export function MobileNavMenu({ className }: MobileNavMenuProps) {
         render={
           <Button
             variant="ghost"
-            size="icon-sm"
             aria-label="Open menu"
             className={cn(
+              "size-11 shrink-0 [&_svg]:size-6",
               "focus-visible:border-[var(--brand-cyan)]/40 focus-visible:ring-[var(--brand-cyan)]/25",
               className,
             )}
           />
         }
       >
-        <Menu />
+        <Menu className="size-6" />
       </SheetTrigger>
       <SheetContent side="right" className="w-72 border-border">
         <SheetTitle className="sr-only">Menu</SheetTitle>

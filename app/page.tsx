@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/app-shell";
 import { SiteHeader } from "@/components/site-header";
+import { SiteHeroBrand } from "@/components/site-hero-brand";
 import { WalletSearch } from "@/components/wallet-search";
 
 export default function Page() {
@@ -8,8 +9,9 @@ export default function Page() {
       width="narrow"
       className="items-center pb-10 sm:pb-14"
     >
+      <SiteHeader variant="minimal" />
       <div className="flex w-full flex-col items-center gap-6 pt-[clamp(1.5rem,24vh,11rem)] sm:gap-7">
-        <SiteHeader variant="hero" />
+        <SiteHeroBrand />
         <WalletSearch
           autoFocus
           className="w-full"
