@@ -37,6 +37,11 @@ type UserFill = {
   side: "B" | "A";
   time: number;
   hash?: string;
+  liquidation?: {
+    liquidatedUser: string;
+    markPx: string;
+    method: "market" | "backstop";
+  };
 };
 
 type FrontendOpenOrder = {
@@ -229,17 +234,33 @@ function parsePositions(
     .filter((p): p is NonNullable<typeof p> => p !== null);
 }
 
-function parseFills(fills: UserFill[]): WalletSnapshot["recentFills"] {
+function isWalletLiquidationFill(fill: UserFill, walletAddress: string): boolean {
+  if (!fill.liquidation) return false;
+  return (
+    fill.liquidation.liquidatedUser.toLowerCase() === walletAddress.toLowerCase()
+  );
+}
+
+function parseFills(
+  fills: UserFill[],
+  walletAddress: string,
+): WalletSnapshot["recentFills"] {
   return [...fills]
     .sort((a, b) => b.time - a.time)
-    .map((fill) => ({
-      coin: fill.coin,
-      side: fill.side === "B" ? ("buy" as const) : ("sell" as const),
-      size: fill.sz,
-      price: fill.px,
-      timestamp: fill.time,
-      hash: fill.hash,
-    }));
+    .map((fill) => {
+      const parsed = {
+        coin: fill.coin,
+        side: fill.side === "B" ? ("buy" as const) : ("sell" as const),
+        size: fill.sz,
+        price: fill.px,
+        timestamp: fill.time,
+        hash: fill.hash,
+      };
+      if (isWalletLiquidationFill(fill, walletAddress)) {
+        return { ...parsed, isLiquidation: true as const };
+      }
+      return parsed;
+    });
 }
 
 export async function fetchWalletSnapshot(
@@ -318,6 +339,6 @@ export async function fetchWalletSnapshot(
     },
     positions: attachTpslToPositions(positions, rawOpenOrders),
     openOrders,
-    recentFills: parseFills(fills),
+    recentFills: parseFills(fills, address),
   };
 }

@@ -50,6 +50,7 @@ export const fillValidator = v.object({
   price: v.string(),
   timestamp: v.number(),
   hash: v.optional(v.string()),
+  isLiquidation: v.optional(v.literal(true)),
 });
 
 export const walletSnapshotValidator = v.object({

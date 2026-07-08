@@ -64,9 +64,19 @@ export function FillsTable({
               </TableCell>
               <TableCell className="font-medium">{fill.coin}</TableCell>
               <TableCell>
-                <Badge variant={fill.side === "buy" ? "default" : "secondary"}>
-                  {fill.side}
-                </Badge>
+                <div className="flex flex-wrap items-center gap-1">
+                  <Badge variant={fill.side === "buy" ? "default" : "secondary"}>
+                    {fill.side}
+                  </Badge>
+                  {fill.isLiquidation && (
+                    <Badge
+                      variant="outline"
+                      className="border-red-500/30 bg-red-500/10 font-medium text-red-700 dark:text-red-400"
+                    >
+                      Liquidated
+                    </Badge>
+                  )}
+                </div>
               </TableCell>
               <TableCell className="text-right font-mono text-xs">
                 {formatSize(fill.size)}

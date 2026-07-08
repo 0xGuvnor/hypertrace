@@ -43,6 +43,7 @@ export type WalletSnapshot = {
     price: string;
     timestamp: number;
     hash?: string;
+    isLiquidation?: true;
   }>;
 };
 
