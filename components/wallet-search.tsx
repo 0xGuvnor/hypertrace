@@ -125,7 +125,7 @@ export function WalletSearch({
             if (error) setError(null);
           }}
           className={cn(
-            "min-w-0 w-full pr-11 font-mono text-sm",
+            "min-w-0 w-full pr-11 font-mono text-base md:text-sm",
             inputClassName,
           )}
           spellCheck={false}
