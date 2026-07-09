@@ -57,7 +57,8 @@ async function upsertLeaderboardRows(
     };
 
     if (existing) {
-      await ctx.db.patch(existing._id, fields);
+      // replace drops legacy lastActivityTimestamp still present on old docs
+      await ctx.db.replace(existing._id, fields);
     } else {
       await ctx.db.insert("leaderboardSnapshots", fields);
     }
@@ -176,10 +177,10 @@ function toListRow(row: {
   pnlWeek: number;
   pnlMonth: number;
   pnlAllTime: number;
-  vlmDay: number;
-  vlmWeek: number;
-  vlmMonth: number;
-  vlmAllTime: number;
+  vlmDay?: number;
+  vlmWeek?: number;
+  vlmMonth?: number;
+  vlmAllTime?: number;
   displayName: string | null;
   fetchedAt: number;
 }) {
@@ -190,10 +191,10 @@ function toListRow(row: {
     pnlWeek: row.pnlWeek,
     pnlMonth: row.pnlMonth,
     pnlAllTime: row.pnlAllTime,
-    vlmDay: row.vlmDay,
-    vlmWeek: row.vlmWeek,
-    vlmMonth: row.vlmMonth,
-    vlmAllTime: row.vlmAllTime,
+    vlmDay: row.vlmDay ?? 0,
+    vlmWeek: row.vlmWeek ?? 0,
+    vlmMonth: row.vlmMonth ?? 0,
+    vlmAllTime: row.vlmAllTime ?? 0,
     displayName: row.displayName,
     fetchedAt: row.fetchedAt,
   };
@@ -328,6 +329,68 @@ export const list = query({
       page,
       continueCursor: result.continueCursor,
       isDone: result.isDone,
+    };
+  },
+});
+
+const BACKFILL_BATCH_SIZE = 100;
+
+export const backfillVolumeFields = internalMutation({
+  args: {
+    cursor: v.union(v.string(), v.null()),
+  },
+  returns: v.object({
+    patched: v.number(),
+    continued: v.boolean(),
+    continueCursor: v.union(v.string(), v.null()),
+  }),
+  handler: async (ctx, args) => {
+    const page = await ctx.db
+      .query("leaderboardSnapshots")
+      .withIndex("by_fetchedAt")
+      .paginate({
+        numItems: BACKFILL_BATCH_SIZE,
+        cursor: args.cursor,
+      });
+
+    let patched = 0;
+    for (const doc of page.page) {
+      const needsVlm =
+        doc.vlmDay === undefined ||
+        doc.vlmWeek === undefined ||
+        doc.vlmMonth === undefined ||
+        doc.vlmAllTime === undefined;
+      const hasLegacy = "lastActivityTimestamp" in doc;
+      if (!needsVlm && !hasLegacy) {
+        continue;
+      }
+      await ctx.db.replace(doc._id, {
+        address: doc.address,
+        accountValue: doc.accountValue,
+        pnlDay: doc.pnlDay,
+        pnlWeek: doc.pnlWeek,
+        pnlMonth: doc.pnlMonth,
+        pnlAllTime: doc.pnlAllTime,
+        vlmDay: doc.vlmDay ?? 0,
+        vlmWeek: doc.vlmWeek ?? 0,
+        vlmMonth: doc.vlmMonth ?? 0,
+        vlmAllTime: doc.vlmAllTime ?? 0,
+        displayName: doc.displayName,
+        fetchedAt: doc.fetchedAt,
+      });
+      patched += 1;
+    }
+
+    if (!page.isDone) {
+      await ctx.scheduler.runAfter(0, internal.leaderboard.backfillVolumeFields, {
+        cursor: page.continueCursor,
+      });
+    }
+
+    return {
+      patched,
+      continued: !page.isDone,
+      continueCursor: page.continueCursor,
     };
   },
 });
