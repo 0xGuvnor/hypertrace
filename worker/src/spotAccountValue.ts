@@ -117,29 +117,15 @@ export function priceSpotBalances(
   );
 }
 
-export function sumPerpUnrealizedPnl(
-  ...clearinghouses: Array<{
-    assetPositions: Array<{ position: { unrealizedPnl: string } }>;
-  }>
-): string {
-  const values: string[] = [];
-  for (const clearinghouse of clearinghouses) {
-    for (const { position } of clearinghouse.assetPositions) {
-      values.push(position.unrealizedPnl);
-    }
-  }
-  return sumUsdStrings(...values);
-}
-
 export function computeAccountValue(args: {
   userAbstraction: UserAbstraction;
   spotValue: string;
   perpAccountValueSum: string;
-  perpUnrealizedPnlSum: string;
 }): string {
   const mode = args.userAbstraction;
+  // Spot balances are already MTM equity under unified/PM; do not add uPnL.
   if (mode === "unifiedAccount" || mode === "portfolioMargin") {
-    return sumUsdStrings(args.spotValue, args.perpUnrealizedPnlSum);
+    return args.spotValue;
   }
   return sumUsdStrings(args.perpAccountValueSum, args.spotValue);
 }

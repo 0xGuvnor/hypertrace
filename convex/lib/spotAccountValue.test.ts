@@ -4,7 +4,6 @@ import {
   buildSpotHoldings,
   computeAccountValue,
   priceSpotBalances,
-  sumPerpUnrealizedPnl,
   type SpotBalance,
   type SpotMetaAndAssetCtxs,
 } from "./spotAccountValue";
@@ -162,34 +161,15 @@ describe("buildSpotHoldings", () => {
   });
 });
 
-describe("sumPerpUnrealizedPnl", () => {
-  test("sums unrealized PnL across clearinghouses", () => {
-    expect(
-      sumPerpUnrealizedPnl(
-        {
-          assetPositions: [
-            { position: { unrealizedPnl: "10" } },
-            { position: { unrealizedPnl: "-3" } },
-          ],
-        },
-        {
-          assetPositions: [{ position: { unrealizedPnl: "5.5" } }],
-        },
-      ),
-    ).toBe("12.5");
-  });
-});
-
 describe("computeAccountValue", () => {
-  test("unifiedAccount: spot + uPnL, not perp accountValue", () => {
+  test("unifiedAccount: priced spot only (already includes MTM)", () => {
     expect(
       computeAccountValue({
         userAbstraction: "unifiedAccount",
         spotValue: "1000",
         perpAccountValueSum: "99999",
-        perpUnrealizedPnlSum: "250",
       }),
-    ).toBe("1250");
+    ).toBe("1000");
   });
 
   test("portfolioMargin: same as unified", () => {
@@ -198,9 +178,8 @@ describe("computeAccountValue", () => {
         userAbstraction: "portfolioMargin",
         spotValue: "1000",
         perpAccountValueSum: "99999",
-        perpUnrealizedPnlSum: "250",
       }),
-    ).toBe("1250");
+    ).toBe("1000");
   });
 
   test("default: perp accountValue + spot", () => {
@@ -209,7 +188,6 @@ describe("computeAccountValue", () => {
         userAbstraction: "default",
         spotValue: "100",
         perpAccountValueSum: "500",
-        perpUnrealizedPnlSum: "999",
       }),
     ).toBe("600");
   });
@@ -220,7 +198,6 @@ describe("computeAccountValue", () => {
         userAbstraction: "disabled",
         spotValue: "100",
         perpAccountValueSum: "500",
-        perpUnrealizedPnlSum: "999",
       }),
     ).toBe("600");
   });

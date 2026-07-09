@@ -4,7 +4,6 @@ import {
   buildSpotHoldings,
   computeAccountValue,
   parseUserAbstraction,
-  sumPerpUnrealizedPnl,
   sumUsdStrings,
   type SpotBalance,
   type SpotMetaAndAssetCtxs,
@@ -387,15 +386,10 @@ export async function fetchWalletSnapshot(address: string): Promise<WalletSnapsh
     clearinghouseDefault.marginSummary.accountValue,
     clearinghouseXyz.marginSummary.accountValue,
   );
-  const perpUnrealizedPnlSum = sumPerpUnrealizedPnl(
-    clearinghouseDefault,
-    clearinghouseXyz,
-  );
   const accountValue = computeAccountValue({
     userAbstraction: parseUserAbstraction(userAbstractionRaw),
     spotValue,
     perpAccountValueSum,
-    perpUnrealizedPnlSum,
   });
 
   return {
