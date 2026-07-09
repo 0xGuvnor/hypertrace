@@ -11,9 +11,7 @@ export type LeaderboardUpsertRow = {
   displayName: string | null;
 };
 
-const WINDOW_KEYS = ["day", "week", "month", "allTime"] as const;
-
-type WindowKey = (typeof WINDOW_KEYS)[number];
+type WindowKey = "day" | "week" | "month" | "allTime";
 
 const WINDOW_TO_FIELD = {
   day: "pnlDay",
@@ -21,6 +19,10 @@ const WINDOW_TO_FIELD = {
   month: "pnlMonth",
   allTime: "pnlAllTime",
 } as const satisfies Record<WindowKey, keyof LeaderboardUpsertRow>;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
 
 function parseFiniteNumber(value: unknown): number | null {
   if (typeof value === "number") {
@@ -34,7 +36,12 @@ function parseFiniteNumber(value: unknown): number | null {
 }
 
 function isWindowKey(value: unknown): value is WindowKey {
-  return typeof value === "string" && (WINDOW_KEYS as readonly string[]).includes(value);
+  return (
+    value === "day" ||
+    value === "week" ||
+    value === "month" ||
+    value === "allTime"
+  );
 }
 
 function parseDisplayName(value: unknown): string | null {
@@ -64,10 +71,10 @@ function parseWindowPerformances(
       continue;
     }
     const [window, perf] = entry;
-    if (!isWindowKey(window) || typeof perf !== "object" || perf === null) {
+    if (!isWindowKey(window) || !isRecord(perf)) {
       continue;
     }
-    const pnl = parseFiniteNumber((perf as { pnl?: unknown }).pnl);
+    const pnl = parseFiniteNumber(perf.pnl);
     if (pnl === null) {
       continue;
     }
@@ -92,16 +99,15 @@ function parseWindowPerformances(
 }
 
 function parseLeaderboardRow(raw: unknown): LeaderboardUpsertRow | null {
-  if (typeof raw !== "object" || raw === null) {
+  if (!isRecord(raw)) {
     return null;
   }
 
-  const row = raw as Record<string, unknown>;
   const ethAddress =
-    typeof row.ethAddress === "string"
-      ? row.ethAddress
-      : typeof row.eth_address === "string"
-        ? row.eth_address
+    typeof raw.ethAddress === "string"
+      ? raw.ethAddress
+      : typeof raw.eth_address === "string"
+        ? raw.eth_address
         : null;
 
   if (ethAddress === null) {
@@ -113,13 +119,13 @@ function parseLeaderboardRow(raw: unknown): LeaderboardUpsertRow | null {
     return null;
   }
 
-  const accountValue = parseFiniteNumber(row.accountValue ?? row.account_value);
+  const accountValue = parseFiniteNumber(raw.accountValue ?? raw.account_value);
   if (accountValue === null) {
     return null;
   }
 
   const windows = parseWindowPerformances(
-    row.windowPerformances ?? row.window_performances,
+    raw.windowPerformances ?? raw.window_performances,
   );
   if (windows === null) {
     return null;
@@ -130,7 +136,7 @@ function parseLeaderboardRow(raw: unknown): LeaderboardUpsertRow | null {
     accountValue,
     ...windows,
     lastActivityTimestamp: null,
-    displayName: parseDisplayName(row.displayName ?? row.display_name),
+    displayName: parseDisplayName(raw.displayName ?? raw.display_name),
   };
 }
 
@@ -139,17 +145,12 @@ export type ParseLeaderboardResult = {
   skipped: number;
 };
 
-/**
- * Defensively parse the undocumented stats-data leaderboard payload.
- * Accepts camelCase (live API) and snake_case (some community SDKs).
- */
 export function parseLeaderboardResponse(data: unknown): ParseLeaderboardResult {
-  if (typeof data !== "object" || data === null) {
+  if (!isRecord(data)) {
     return { rows: [], skipped: 0 };
   }
 
-  const root = data as Record<string, unknown>;
-  const list = root.leaderboardRows ?? root.leaderboard_rows;
+  const list = data.leaderboardRows ?? data.leaderboard_rows;
   if (!Array.isArray(list)) {
     return { rows: [], skipped: 0 };
   }
@@ -163,7 +164,6 @@ export function parseLeaderboardResponse(data: unknown): ParseLeaderboardResult 
       skipped += 1;
       continue;
     }
-    // Last occurrence wins if the API duplicates an address.
     byAddress.set(parsed.address, parsed);
   }
 

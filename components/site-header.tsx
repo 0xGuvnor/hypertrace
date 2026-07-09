@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { MobileNavMenu } from "@/components/mobile-nav-menu";
+import { SITE_NAV_LINKS } from "@/lib/site-nav";
 import { cn } from "@/lib/utils";
 
 type SiteHeaderVariant = "compact" | "minimal";
@@ -11,17 +12,19 @@ type SiteHeaderProps = {
   className?: string;
 };
 
-function ClustersNavLink({ className }: { className?: string }) {
+function DesktopNavLinks({ className }: { className?: string }) {
   return (
-    <Link
-      href="/clusters"
-      className={cn(
-        "text-muted-foreground hover:text-foreground text-sm transition-colors",
-        className,
-      )}
-    >
-      Clusters
-    </Link>
+    <div className={cn("hidden items-center gap-4 sm:flex", className)}>
+      {SITE_NAV_LINKS.map((link) => (
+        <Link
+          key={link.href}
+          href={link.href}
+          className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+        >
+          {link.label}
+        </Link>
+      ))}
+    </div>
   );
 }
 
@@ -29,7 +32,7 @@ function SiteNavActions({ className }: { className?: string }) {
   return (
     <nav className={cn("flex shrink-0 items-center gap-2 pt-0.5", className)}>
       <MobileNavMenu className="sm:hidden" />
-      <ClustersNavLink className="hidden sm:inline-flex" />
+      <DesktopNavLinks />
     </nav>
   );
 }

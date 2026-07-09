@@ -1,11 +1,19 @@
+import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 
 import { internal } from "./_generated/api";
-import { internalMutation, type MutationCtx } from "./_generated/server";
+import {
+  internalMutation,
+  query,
+  type MutationCtx,
+} from "./_generated/server";
 import { isValidAddress, normalizeAddress } from "./lib/address";
 import type { LeaderboardUpsertRow } from "./lib/leaderboardParse";
 import {
   ingestLeaderboardBatchResultValidator,
+  leaderboardListResultValidator,
+  leaderboardOrderValidator,
+  leaderboardSortByValidator,
   leaderboardUpsertRowValidator,
   pruneStaleResultValidator,
   upsertBatchResultValidator,
@@ -114,7 +122,6 @@ export const pruneStale = internalMutation({
   },
 });
 
-/** Worker-facing batch upsert; optionally kicks off stale prune after the last chunk. */
 export const ingestBatch = internalMutation({
   args: {
     rows: v.array(leaderboardUpsertRowValidator),
@@ -141,6 +148,125 @@ export const ingestBatch = internalMutation({
       walletsCreated: upsert.walletsCreated,
       pruned: prune.pruned,
       continued: prune.continued,
+    };
+  },
+});
+
+type LeaderboardSortBy =
+  | "accountValue"
+  | "pnlDay"
+  | "pnlWeek"
+  | "pnlMonth"
+  | "pnlAllTime"
+  | "lastActivityTimestamp";
+
+function toListRow(row: {
+  address: string;
+  accountValue: number;
+  pnlDay: number;
+  pnlWeek: number;
+  pnlMonth: number;
+  pnlAllTime: number;
+  lastActivityTimestamp: number | null;
+  displayName: string | null;
+  fetchedAt: number;
+}) {
+  return {
+    address: row.address,
+    accountValue: row.accountValue,
+    pnlDay: row.pnlDay,
+    pnlWeek: row.pnlWeek,
+    pnlMonth: row.pnlMonth,
+    pnlAllTime: row.pnlAllTime,
+    lastActivityTimestamp: row.lastActivityTimestamp,
+    displayName: row.displayName,
+    fetchedAt: row.fetchedAt,
+  };
+}
+
+function matchesFilters(
+  row: ReturnType<typeof toListRow>,
+  minAccountValue: number | undefined,
+  activeSince: number | undefined,
+): boolean {
+  if (
+    minAccountValue !== undefined &&
+    row.accountValue < minAccountValue
+  ) {
+    return false;
+  }
+  if (activeSince !== undefined) {
+    if (
+      row.lastActivityTimestamp === null ||
+      row.lastActivityTimestamp < activeSince
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export const list = query({
+  args: {
+    sortBy: leaderboardSortByValidator,
+    order: leaderboardOrderValidator,
+    minAccountValue: v.optional(v.number()),
+    activeSince: v.optional(v.number()),
+    paginationOpts: paginationOptsValidator,
+  },
+  returns: leaderboardListResultValidator,
+  handler: async (ctx, args) => {
+    const sortBy = args.sortBy as LeaderboardSortBy;
+    const ordered = (() => {
+      switch (sortBy) {
+        case "accountValue":
+          return ctx.db
+            .query("leaderboardSnapshots")
+            .withIndex("by_accountValue")
+            .order(args.order);
+        case "pnlDay":
+          return ctx.db
+            .query("leaderboardSnapshots")
+            .withIndex("by_pnlDay")
+            .order(args.order);
+        case "pnlWeek":
+          return ctx.db
+            .query("leaderboardSnapshots")
+            .withIndex("by_pnlWeek")
+            .order(args.order);
+        case "pnlMonth":
+          return ctx.db
+            .query("leaderboardSnapshots")
+            .withIndex("by_pnlMonth")
+            .order(args.order);
+        case "pnlAllTime":
+          return ctx.db
+            .query("leaderboardSnapshots")
+            .withIndex("by_pnlAllTime")
+            .order(args.order);
+        case "lastActivityTimestamp":
+          return ctx.db
+            .query("leaderboardSnapshots")
+            .withIndex("by_lastActivityTimestamp")
+            .order(args.order);
+        default: {
+          const _exhaustive: never = sortBy;
+          return _exhaustive;
+        }
+      }
+    })();
+
+    const result = await ordered.paginate(args.paginationOpts);
+    const page = result.page
+      .map(toListRow)
+      .filter((row) =>
+        matchesFilters(row, args.minAccountValue, args.activeSince),
+      );
+
+    return {
+      page,
+      continueCursor: result.continueCursor,
+      isDone: result.isDone,
     };
   },
 });

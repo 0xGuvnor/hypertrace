@@ -5,4 +5,5 @@ export type SiteNavLink = {
 
 export const SITE_NAV_LINKS: readonly SiteNavLink[] = [
   { href: "/clusters", label: "Clusters" },
+  { href: "/leaderboard", label: "Leaderboard" },
 ] as const;

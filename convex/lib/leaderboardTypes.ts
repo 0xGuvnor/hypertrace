@@ -12,7 +12,6 @@ export const leaderboardSnapshotRecordValidator = v.object({
   fetchedAt: v.number(),
 });
 
-/** Row fields written by upsert (fetchedAt is supplied separately). */
 export const leaderboardUpsertRowValidator = v.object({
   address: v.string(),
   accountValue: v.number(),
@@ -39,4 +38,26 @@ export const ingestLeaderboardBatchResultValidator = v.object({
   walletsCreated: v.number(),
   pruned: v.number(),
   continued: v.boolean(),
+});
+
+export const leaderboardSortByValidator = v.union(
+  v.literal("accountValue"),
+  v.literal("pnlDay"),
+  v.literal("pnlWeek"),
+  v.literal("pnlMonth"),
+  v.literal("pnlAllTime"),
+  v.literal("lastActivityTimestamp"),
+);
+
+export const leaderboardOrderValidator = v.union(
+  v.literal("asc"),
+  v.literal("desc"),
+);
+
+export const leaderboardListRowValidator = leaderboardSnapshotRecordValidator;
+
+export const leaderboardListResultValidator = v.object({
+  page: v.array(leaderboardListRowValidator),
+  continueCursor: v.union(v.string(), v.null()),
+  isDone: v.boolean(),
 });
