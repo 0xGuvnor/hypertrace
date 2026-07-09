@@ -30,11 +30,11 @@ export default function Loading() {
       <SiteHeader variant="compact" className="items-start" />
       <div className="flex min-w-0 flex-col gap-8">
         <div className="flex flex-col gap-2">
-          <div className="flex min-w-0 items-center gap-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <Skeleton className="h-4 w-10 shrink-0" />
             <Skeleton className="h-7 w-44 sm:w-52" />
             <Skeleton className="size-8 shrink-0 rounded-md" />
           </div>
-          <Skeleton className="h-4 w-36" />
           <Skeleton className="h-6 w-44 rounded-full" />
         </div>
 

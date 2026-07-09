@@ -27,16 +27,16 @@ export function WalletDetail({
   return (
     <div className="flex min-w-0 flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <div className="flex min-w-0 items-center gap-1">
+        <div className="flex min-w-0 items-center gap-2">
+          {firstActivityAt !== null ? (
+            <AccountTenure
+              firstActivityAt={firstActivityAt}
+              now={statusNow}
+            />
+          ) : null}
           <AddressWithTooltip address={snapshot.address} />
           <CopyAddressButton address={snapshot.address} />
         </div>
-        {firstActivityAt !== null ? (
-          <AccountTenure
-            firstActivityAt={firstActivityAt}
-            now={statusNow}
-          />
-        ) : null}
         {feedStatus && statusNow !== undefined ? (
           <LiveStatusBadge status={feedStatus} now={statusNow} />
         ) : null}

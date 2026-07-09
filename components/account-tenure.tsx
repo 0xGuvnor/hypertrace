@@ -1,5 +1,7 @@
 "use client";
 
+import { Hourglass } from "lucide-react";
+
 import { ResponsiveHint } from "@/components/responsive-hint";
 import {
   formatAccountAge,
@@ -18,11 +20,12 @@ export function AccountTenure({
   return (
     <ResponsiveHint
       label={
-        <span className="inline-flex items-baseline gap-1.5 text-sm">
-          <span className="text-foreground/80 font-medium tabular-nums">
-            {age}
-          </span>
-          <span className="text-muted-foreground text-xs">on Hyperliquid</span>
+        <span className="text-foreground/80 inline-flex items-center gap-1 text-sm font-medium tabular-nums">
+          <Hourglass
+            aria-hidden
+            className="text-muted-foreground size-3.5 shrink-0"
+          />
+          {age}
         </span>
       }
       content={
@@ -30,7 +33,7 @@ export function AccountTenure({
           First activity {formatFirstActivityTimestamp(firstActivityAt)}
         </span>
       }
-      triggerClassName="w-fit"
+      triggerClassName="w-fit shrink-0"
     />
   );
 }
