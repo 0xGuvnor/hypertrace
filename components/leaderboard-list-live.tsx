@@ -148,7 +148,7 @@ function LeaderboardListTail({
   ]);
 
   const { ref: sentinelRef, inView } = useInView({
-    rootMargin: "240px 0px",
+    rootMargin: "0px",
     enabled: canLoadMore,
   });
 
