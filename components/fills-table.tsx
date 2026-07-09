@@ -12,11 +12,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { RECENT_FILLS_CAP } from "@/lib/fills";
 import { formatSize, formatTimestamp, formatUsd } from "@/lib/format";
 import type { WalletSnapshot } from "@/lib/wallet-types";
 
 const PAGE_SIZE = 20;
-const HYPERLIQUID_FILLS_CAP = 2000;
 
 function FillsTablePaged({
   fills,
@@ -116,9 +116,9 @@ function FillsTablePaged({
         </div>
       )}
 
-      {fills.length === HYPERLIQUID_FILLS_CAP && (
+      {fills.length === RECENT_FILLS_CAP && (
         <p className="text-muted-foreground text-center text-xs">
-          Showing the 2,000 most recent fills from Hyperliquid.
+          Showing the 100 most recent fills.
         </p>
       )}
     </div>
