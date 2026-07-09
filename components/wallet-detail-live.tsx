@@ -12,6 +12,7 @@ import type { WalletSnapshot } from "@/lib/wallet-types";
 type WalletDetailLiveProps = {
   address: string;
   initialSnapshot: WalletSnapshot;
+  firstActivityAt: number | null;
   preloadedWalletClusters: Preloaded<typeof api.clusters.getForWallet>;
   preloadedDeposits: Preloaded<typeof api.deposits.listByWallet>;
 };
@@ -21,6 +22,7 @@ const STATUS_TICK_MS = 10_000;
 export function WalletDetailLive({
   address,
   initialSnapshot,
+  firstActivityAt,
   preloadedWalletClusters,
   preloadedDeposits,
 }: WalletDetailLiveProps) {
@@ -56,6 +58,7 @@ export function WalletDetailLive({
       snapshot={snapshot}
       feedStatus={feedStatus}
       statusNow={statusNow}
+      firstActivityAt={firstActivityAt}
       walletClusters={walletClusters}
       walletDeposits={walletDeposits}
     />

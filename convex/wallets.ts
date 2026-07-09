@@ -1,8 +1,12 @@
 import { v } from "convex/values";
 
+import { internal } from "./_generated/api";
 import { action, internalMutation, internalQuery, query } from "./_generated/server";
 import { isValidAddress, normalizeAddress } from "./lib/address";
-import { fetchWalletSnapshot } from "./lib/hyperliquid";
+import {
+  fetchFirstActivityAt,
+  fetchWalletSnapshot,
+} from "./lib/hyperliquid";
 import {
   liveWalletSnapshotValidator,
   walletSnapshotValidator,
@@ -19,6 +23,88 @@ export const getSnapshot = action({
     }
 
     return await fetchWalletSnapshot(normalizeAddress(trimmed));
+  },
+});
+
+export const getCachedFirstActivity = internalQuery({
+  args: { address: v.string() },
+  returns: v.union(v.number(), v.null()),
+  handler: async (ctx, args) => {
+    const address = normalizeAddress(args.address);
+    const wallet = await ctx.db
+      .query("wallets")
+      .withIndex("by_address", (q) => q.eq("address", address))
+      .unique();
+
+    return wallet?.firstActivityAt ?? null;
+  },
+});
+
+export const setFirstActivityAt = internalMutation({
+  args: {
+    address: v.string(),
+    firstActivityAt: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const address = normalizeAddress(args.address);
+    const existing = await ctx.db
+      .query("wallets")
+      .withIndex("by_address", (q) => q.eq("address", address))
+      .unique();
+
+    if (existing) {
+      if (existing.firstActivityAt === undefined) {
+        await ctx.db.patch(existing._id, {
+          firstActivityAt: args.firstActivityAt,
+        });
+      }
+      return null;
+    }
+
+    await ctx.db.insert("wallets", {
+      address,
+      firstSeen: args.firstActivityAt,
+      firstActivityAt: args.firstActivityAt,
+      tags: [],
+      clusterId: null,
+    });
+    return null;
+  },
+});
+
+export const getFirstActivity = action({
+  args: { address: v.string() },
+  returns: v.union(v.number(), v.null()),
+  handler: async (ctx, args): Promise<number | null> => {
+    const trimmed = args.address.trim();
+    if (!isValidAddress(trimmed)) {
+      return null;
+    }
+
+    const address = normalizeAddress(trimmed);
+    const cached: number | null = await ctx.runQuery(
+      internal.wallets.getCachedFirstActivity,
+      { address },
+    );
+    if (cached !== null) {
+      return cached;
+    }
+
+    try {
+      const firstActivityAt = await fetchFirstActivityAt(address);
+      if (firstActivityAt === null) {
+        return null;
+      }
+
+      await ctx.runMutation(internal.wallets.setFirstActivityAt, {
+        address,
+        firstActivityAt,
+      });
+      return firstActivityAt;
+    } catch {
+      return null;
+    }
   },
 });
 

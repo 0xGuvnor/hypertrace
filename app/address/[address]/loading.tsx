@@ -29,12 +29,12 @@ export default function Loading() {
     <AppShell className="gap-6 sm:gap-8">
       <SiteHeader variant="compact" className="items-start" />
       <div className="flex min-w-0 flex-col gap-8">
-        <div className="flex flex-col gap-1">
-          <Skeleton className="h-4 w-28" />
+        <div className="flex flex-col gap-2">
           <div className="flex min-w-0 items-center gap-1">
             <Skeleton className="h-7 w-44 sm:w-52" />
             <Skeleton className="size-8 shrink-0 rounded-md" />
           </div>
+          <Skeleton className="h-4 w-36" />
           <Skeleton className="h-6 w-44 rounded-full" />
         </div>
 

@@ -20,18 +20,28 @@ type WalletPageLoadResult =
   | {
       ok: true;
       initialSnapshot: WalletSnapshot;
+      firstActivityAt: number | null;
       preloadedWalletClusters: Preloaded<typeof api.clusters.getForWallet>;
       preloadedDeposits: Preloaded<typeof api.deposits.listByWallet>;
     }
   | { ok: false; message: string };
 
+async function loadFirstActivity(address: string): Promise<number | null> {
+  try {
+    return await fetchAction(api.wallets.getFirstActivity, { address });
+  } catch {
+    return null;
+  }
+}
+
 async function loadWalletPageData(address: string): Promise<WalletPageLoadResult> {
   try {
-    const [cachedSnapshot, preloadedWalletClusters, preloadedDeposits] =
+    const [cachedSnapshot, preloadedWalletClusters, preloadedDeposits, firstActivityAt] =
       await Promise.all([
         fetchQuery(api.wallets.getLiveSnapshot, { address }),
         preloadQuery(api.clusters.getForWallet, { address }),
         preloadQuery(api.deposits.listByWallet, { address }),
+        loadFirstActivity(address),
       ]);
 
     const initialSnapshot =
@@ -41,6 +51,7 @@ async function loadWalletPageData(address: string): Promise<WalletPageLoadResult
     return {
       ok: true,
       initialSnapshot,
+      firstActivityAt,
       preloadedWalletClusters,
       preloadedDeposits,
     };
@@ -85,6 +96,7 @@ export default async function AddressPage({ params }: PageProps) {
       <WalletDetailLive
         address={address}
         initialSnapshot={result.initialSnapshot}
+        firstActivityAt={result.firstActivityAt}
         preloadedWalletClusters={result.preloadedWalletClusters}
         preloadedDeposits={result.preloadedDeposits}
       />
