@@ -104,7 +104,7 @@ export function LeaderboardControls({
                   onApplyMinAccountValue();
                 }
               }}
-              className="h-8 w-36 font-mono text-xs"
+              className="h-8 w-36 font-mono text-base md:text-xs"
             />
             <Button
               type="button"
