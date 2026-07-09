@@ -73,19 +73,21 @@ export default function Loading() {
             </div>
           </div>
 
-          <div className="bg-muted/30 mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b px-1 py-2">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-3 w-24" />
-            </div>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              <Skeleton className="h-3 w-28" />
-              <Skeleton className="h-3 w-24" />
-            </div>
-          </div>
-
-          <Table>
+          <Table
+            leading={
+              <div className="bg-muted/30 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b px-3 py-2">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                  <Skeleton className="h-3 w-28" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+            }
+          >
             <TableHeader>
               <TableRow>
                 <TableHead>Asset</TableHead>
