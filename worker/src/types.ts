@@ -47,6 +47,17 @@ export type WalletSnapshot = {
   }>;
 };
 
+export type LeaderboardUpsertRow = {
+  address: string;
+  accountValue: number;
+  pnlDay: number;
+  pnlWeek: number;
+  pnlMonth: number;
+  pnlAllTime: number;
+  lastActivityTimestamp: number | null;
+  displayName: string | null;
+};
+
 export type WorkerConfig = {
   convexSiteUrl: string;
   ingestSecret: string;
@@ -68,6 +79,7 @@ export type WorkerConfig = {
   hlMaxConcurrency: number;
   hlMinRequestIntervalMs: number;
   wsRefreshMinIntervalMs: number;
+  leaderboardPollMs: number;
 };
 
 export const JUNE_1_2026_START_BLOCK = 468_748_168;

@@ -10,6 +10,10 @@ import {
 } from "./funding-resolution";
 import { fetchWalletSnapshot, configureHyperliquid } from "./hyperliquid";
 import { HyperliquidSocket } from "./hyperliquid-socket";
+import {
+  chunkLeaderboardRows,
+  fetchAndParseLeaderboard,
+} from "./leaderboard";
 import type { DepositRow } from "./types";
 
 const config = loadConfig();
@@ -248,6 +252,51 @@ async function syncWatches(socket: HyperliquidSocket) {
   }
 }
 
+let leaderboardInFlight = false;
+
+async function syncLeaderboard() {
+  if (leaderboardInFlight) {
+    console.log("[leaderboard] skip: previous ingest still running");
+    return;
+  }
+  leaderboardInFlight = true;
+  try {
+    const fetched = await fetchAndParseLeaderboard();
+    if (!fetched.ok) {
+      console.error(`[leaderboard] ${fetched.reason}`);
+      return;
+    }
+
+    const fetchedAt = Date.now();
+    const chunks = chunkLeaderboardRows(fetched.rows);
+    let upserted = 0;
+    let walletsCreated = 0;
+    let pruned = 0;
+
+    for (let i = 0; i < chunks.length; i += 1) {
+      const chunk = chunks[i];
+      if (!chunk) continue;
+      const isLast = i === chunks.length - 1;
+      const result = await convex.ingestLeaderboardBatch(
+        chunk,
+        fetchedAt,
+        isLast,
+      );
+      upserted += result.upserted;
+      walletsCreated += result.walletsCreated;
+      pruned += result.pruned;
+    }
+
+    console.log(
+      `[leaderboard] upserted=${upserted} walletsCreated=${walletsCreated} skipped=${fetched.skipped} pruned=${pruned}`,
+    );
+  } catch (error) {
+    console.error("[leaderboard] sync failed", error);
+  } finally {
+    leaderboardInFlight = false;
+  }
+}
+
 async function main() {
   startHealthServer();
 
@@ -266,6 +315,11 @@ async function main() {
   setInterval(() => {
     void syncWatches(socket);
   }, config.watchPollMs);
+
+  void syncLeaderboard();
+  setInterval(() => {
+    void syncLeaderboard();
+  }, config.leaderboardPollMs);
 
   console.log("[worker] hypertrace ingestion worker started");
 }

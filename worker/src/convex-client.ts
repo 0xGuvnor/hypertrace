@@ -2,9 +2,17 @@ import type {
   DepositCursor,
   DepositRow,
   DepositSourceUpdate,
+  LeaderboardUpsertRow,
   SelfSourcedDeposit,
   WalletSnapshot,
 } from "./types";
+
+export type LeaderboardIngestResult = {
+  upserted: number;
+  walletsCreated: number;
+  pruned: number;
+  continued: boolean;
+};
 
 export type ConvexIngestClient = {
   listActiveWatches(): Promise<string[]>;
@@ -23,6 +31,11 @@ export type ConvexIngestClient = {
   getSnapshotTimestamps(
     addresses: string[],
   ): Promise<Record<string, number | null>>;
+  ingestLeaderboardBatch(
+    rows: LeaderboardUpsertRow[],
+    fetchedAt: number,
+    prune: boolean,
+  ): Promise<LeaderboardIngestResult>;
 };
 
 export function createConvexIngestClient(
@@ -136,6 +149,21 @@ export function createConvexIngestClient(
         timestamps?: Record<string, number | null>;
       };
       return body.timestamps ?? {};
+    },
+
+    async ingestLeaderboardBatch(rows, fetchedAt, prune) {
+      const response = await fetch(`${convexSiteUrl}/ingest/leaderboard`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ rows, fetchedAt, prune }),
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(
+          `Failed to ingest leaderboard (${response.status}): ${text}`,
+        );
+      }
+      return (await response.json()) as LeaderboardIngestResult;
     },
   };
 }

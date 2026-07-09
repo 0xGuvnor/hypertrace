@@ -9,6 +9,7 @@ import {
   openOrderValidator,
   positionValidator,
 } from "./lib/hyperliquidTypes";
+import { leaderboardSnapshotRecordValidator } from "./lib/leaderboardTypes";
 
 export default defineSchema({
   watchedAddresses: defineTable({
@@ -48,4 +49,14 @@ export default defineSchema({
   clusters: defineTable(clusterRecordValidator)
     .index("by_clusterKey", ["clusterKey"])
     .index("by_memberCount", ["memberCount", "clusterKey"]),
+
+  leaderboardSnapshots: defineTable(leaderboardSnapshotRecordValidator)
+    .index("by_address", ["address"])
+    .index("by_accountValue", ["accountValue"])
+    .index("by_pnlDay", ["pnlDay"])
+    .index("by_pnlWeek", ["pnlWeek"])
+    .index("by_pnlMonth", ["pnlMonth"])
+    .index("by_pnlAllTime", ["pnlAllTime"])
+    .index("by_lastActivityTimestamp", ["lastActivityTimestamp"])
+    .index("by_fetchedAt", ["fetchedAt"]),
 });

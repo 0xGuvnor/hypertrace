@@ -1,14 +1,18 @@
 import type { Infer } from "convex/values";
 
+import { isValidAddress, normalizeAddress } from "./address";
 import {
   depositCursorValidator,
   depositRowValidator,
   depositSourceUpdateValidator,
 } from "./depositTypes";
+import type { LeaderboardUpsertRow } from "./leaderboardParse";
+import { leaderboardUpsertRowValidator } from "./leaderboardTypes";
 
 type DepositRow = Infer<typeof depositRowValidator>;
 type DepositCursor = Infer<typeof depositCursorValidator>;
 type DepositSourceUpdate = Infer<typeof depositSourceUpdateValidator>;
+type LeaderboardRow = Infer<typeof leaderboardUpsertRowValidator>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -121,4 +125,72 @@ export function parseIngestDepositSourcesBody(
   }
 
   return { updates };
+}
+
+function parseLeaderboardUpsertRow(value: unknown): LeaderboardRow | null {
+  if (!isRecord(value)) return null;
+  if (
+    typeof value.address !== "string" ||
+    typeof value.accountValue !== "number" ||
+    typeof value.pnlDay !== "number" ||
+    typeof value.pnlWeek !== "number" ||
+    typeof value.pnlMonth !== "number" ||
+    typeof value.pnlAllTime !== "number" ||
+    !(typeof value.lastActivityTimestamp === "number" || value.lastActivityTimestamp === null) ||
+    !(typeof value.displayName === "string" || value.displayName === null)
+  ) {
+    return null;
+  }
+  if (
+    !Number.isFinite(value.accountValue) ||
+    !Number.isFinite(value.pnlDay) ||
+    !Number.isFinite(value.pnlWeek) ||
+    !Number.isFinite(value.pnlMonth) ||
+    !Number.isFinite(value.pnlAllTime)
+  ) {
+    return null;
+  }
+  const address = normalizeAddress(value.address.trim());
+  if (!isValidAddress(address)) {
+    return null;
+  }
+  return {
+    address,
+    accountValue: value.accountValue,
+    pnlDay: value.pnlDay,
+    pnlWeek: value.pnlWeek,
+    pnlMonth: value.pnlMonth,
+    pnlAllTime: value.pnlAllTime,
+    lastActivityTimestamp: value.lastActivityTimestamp,
+    displayName: value.displayName,
+  };
+}
+
+export function parseIngestLeaderboardBody(
+  body: unknown,
+): {
+  rows: LeaderboardUpsertRow[];
+  fetchedAt: number;
+  prune: boolean;
+} | null {
+  if (!isRecord(body)) return null;
+  if (!Array.isArray(body.rows) || typeof body.fetchedAt !== "number") {
+    return null;
+  }
+  if (!Number.isFinite(body.fetchedAt)) {
+    return null;
+  }
+
+  const rows: LeaderboardUpsertRow[] = [];
+  for (const row of body.rows) {
+    const parsed = parseLeaderboardUpsertRow(row);
+    if (!parsed) return null;
+    rows.push(parsed);
+  }
+
+  return {
+    rows,
+    fetchedAt: body.fetchedAt,
+    prune: body.prune === true,
+  };
 }

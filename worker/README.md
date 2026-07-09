@@ -1,6 +1,6 @@
 # Hypertrace ingestion worker
 
-Railway service that watches Convex `watchedAddresses`, subscribes to Hyperliquid WebSocket feeds, pushes snapshots to Convex HTTP ingest, and scans Arbitrum USDC deposits per watched wallet (Bridge2 direct transfers plus Hyperliquid CCTP paths via Circle CctpExtension and Token Messenger V2).
+Railway service that watches Convex `watchedAddresses`, subscribes to Hyperliquid WebSocket feeds, pushes snapshots to Convex HTTP ingest, scans Arbitrum USDC deposits per watched wallet (Bridge2 direct transfers plus Hyperliquid CCTP paths via Circle CctpExtension and Token Messenger V2), and periodically fetches the Hyperliquid stats-data leaderboard into Convex.
 
 ## Env vars
 
@@ -26,6 +26,7 @@ Railway service that watches Convex `watchedAddresses`, subscribes to Hyperliqui
 | `HL_MAX_CONCURRENCY` | no | Max parallel Hyperliquid Info API requests (default 3) |
 | `HL_MIN_REQUEST_INTERVAL_MS` | no | Min gap between HL request starts (default 100) |
 | `WS_REFRESH_MIN_INTERVAL_MS` | no | Min gap between WS-triggered snapshot refreshes per wallet (default 12000) |
+| `LEADERBOARD_POLL_MS` | no | Leaderboard fetch interval (default `1800000` = 30 min) |
 
 Deposit `sourceAddress` is resolved via Alchemy `getAssetTransfers` on the same `ARBITRUM_RPC_URL`. Pay-as-you-go is recommended for backfill volume across many watched wallets.
 

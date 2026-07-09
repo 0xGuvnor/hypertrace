@@ -7,6 +7,7 @@ import {
   parseIngestCursorsBody,
   parseIngestDepositsBody,
   parseIngestDepositSourcesBody,
+  parseIngestLeaderboardBody,
 } from "./lib/ingestParse";
 import type { WalletSnapshot } from "./lib/hyperliquidTypes";
 
@@ -170,6 +171,29 @@ http.route({
 
     const result = await ctx.runMutation(internal.deposits.patchSourceBatch, {
       updates: parsed.updates,
+    });
+    return Response.json(result);
+  }),
+});
+
+http.route({
+  path: "/ingest/leaderboard",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    if (!verifyIngestSecret(request)) {
+      return unauthorizedResponse();
+    }
+
+    const body: unknown = await request.json();
+    const parsed = parseIngestLeaderboardBody(body);
+    if (!parsed) {
+      return new Response("Invalid body", { status: 400 });
+    }
+
+    const result = await ctx.runMutation(internal.leaderboard.ingestBatch, {
+      rows: parsed.rows,
+      fetchedAt: parsed.fetchedAt,
+      prune: parsed.prune,
     });
     return Response.json(result);
   }),

@@ -13,7 +13,7 @@ Hyperliquid whale tracker. Two differentiators over Hyperliquid's native UI:
 | Database / API   | [Convex](https://convex.dev)                            | Document store + `query` / `mutation` / `action` API. Reactive queries push updates to the client. No separate Postgres/Mongo. |
 | Ingestion worker | Bun always-on process on [Railway](https://railway.app) | Talks to Convex over HTTPS (`ConvexHttpClient` / HTTP ingest). No direct DB connection.                                        |
 | Chain data       | Arbitrum RPC (Alchemy)                                  | Bridge2 + Hyperliquid CCTP deposit tracing                                                                                     |
-| Leaderboard data | `stats-data.hyperliquid.xyz` (undocumented)             | Periodic Convex cron pull into `leaderboardSnapshots`                                                                          |
+| Leaderboard data | `stats-data.hyperliquid.xyz` (undocumented)             | Railway worker poll (30 min) → HTTP ingest → `leaderboardSnapshots`                                                            |
 | Auth             | Better Auth (planned)                                   | Email/password + social. No wallet sign-in.                                                                                    |
 | Alerting         | Discord / Telegram (planned)                            | Webhooks on new or growing clusters                                                                                            |
 
@@ -22,16 +22,16 @@ Hyperliquid whale tracker. Two differentiators over Hyperliquid's native UI:
 ```
 Hyperliquid WS + Info API  ──┐
 Arbitrum RPC (deposits)      ├──> Railway worker ──HTTP ingest──> Convex
-                             │                              │
+stats-data leaderboard       │                              │
                              │         ┌────────────────────┤
                              │         │                    │
                              │         ▼                    ▼
-                             │   cron: deposit-source    cron: fetch stats-data
-                             │   clustering (3 min)      leaderboard (30 min)
-                             │         │                    │
-                             │         ▼                    ▼
-                             │   clusters table      leaderboardSnapshots
-                             │         │                    │
+                             │   cron: deposit-source    leaderboardSnapshots
+                             │   clustering (3 min)      (worker poll 30 min)
+                             │         │
+                             │         ▼
+                             │   clusters table
+                             │         │
                              └─────────┴────────────────────┘
                                               │
                                               ▼
@@ -81,7 +81,7 @@ Signal 1 runs on a Convex cron every 3 minutes (`internal.clusters.rebuildDeposi
 - Live updates via Railway worker → Convex ingest → `useQuery` on wallet pages
 - Arbitrum deposit tracing (Bridge2 + CCTP) with upstream `sourceAddress` resolution
 - Deposit-source clustering + `/clusters` list and detail pages
-- Leaderboard ingest cron (every 30 min): fetch stats-data endpoint, upsert `leaderboardSnapshots`, auto-create `wallets` rows for surfaced addresses
+- Leaderboard ingest via Railway worker (every 30 min, `LEADERBOARD_POLL_MS`): fetch stats-data, POST `/ingest/leaderboard`, upsert `leaderboardSnapshots`, auto-create `wallets` rows (no `watchedAddresses` required)
 
 ### In progress / next
 

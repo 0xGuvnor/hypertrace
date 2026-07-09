@@ -12,6 +12,7 @@ import type * as clusters from "../clusters.js";
 import type * as crons from "../crons.js";
 import type * as deposits from "../deposits.js";
 import type * as http from "../http.js";
+import type * as leaderboard from "../leaderboard.js";
 import type * as lib_address from "../lib/address.js";
 import type * as lib_clusterTypes from "../lib/clusterTypes.js";
 import type * as lib_depositClustering from "../lib/depositClustering.js";
@@ -20,6 +21,8 @@ import type * as lib_hyperliquid from "../lib/hyperliquid.js";
 import type * as lib_hyperliquidTypes from "../lib/hyperliquidTypes.js";
 import type * as lib_ingestAuth from "../lib/ingestAuth.js";
 import type * as lib_ingestParse from "../lib/ingestParse.js";
+import type * as lib_leaderboardParse from "../lib/leaderboardParse.js";
+import type * as lib_leaderboardTypes from "../lib/leaderboardTypes.js";
 import type * as wallets from "../wallets.js";
 import type * as watches from "../watches.js";
 
@@ -34,6 +37,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   deposits: typeof deposits;
   http: typeof http;
+  leaderboard: typeof leaderboard;
   "lib/address": typeof lib_address;
   "lib/clusterTypes": typeof lib_clusterTypes;
   "lib/depositClustering": typeof lib_depositClustering;
@@ -42,6 +46,8 @@ declare const fullApi: ApiFromModules<{
   "lib/hyperliquidTypes": typeof lib_hyperliquidTypes;
   "lib/ingestAuth": typeof lib_ingestAuth;
   "lib/ingestParse": typeof lib_ingestParse;
+  "lib/leaderboardParse": typeof lib_leaderboardParse;
+  "lib/leaderboardTypes": typeof lib_leaderboardTypes;
   wallets: typeof wallets;
   watches: typeof watches;
 }>;
