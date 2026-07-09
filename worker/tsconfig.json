@@ -8,5 +8,5 @@
     "noEmit": true,
     "types": ["bun"]
   },
-  "include": ["src/**/*.ts", "../convex/lib/leaderboardParse.ts", "../convex/lib/address.ts"]
+  "include": ["src/**/*.ts"]
 }

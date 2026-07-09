@@ -1,5 +1,5 @@
-import { parseLeaderboardResponse } from "../../convex/lib/leaderboardParse";
-import type { LeaderboardUpsertRow } from "../../convex/lib/leaderboardParse";
+import { parseLeaderboardResponse } from "./lib/leaderboardParse";
+import type { LeaderboardUpsertRow } from "./lib/leaderboardParse";
 
 export const LEADERBOARD_URL =
   "https://stats-data.hyperliquid.xyz/Mainnet/leaderboard";
