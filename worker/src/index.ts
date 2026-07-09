@@ -233,12 +233,15 @@ async function syncDepositScans(addresses: string[]) {
 async function syncWatches(socket: HyperliquidSocket) {
   try {
     const addresses = await convex.listActiveWatches();
-    socket.syncAddresses(addresses);
-    console.log(`[watches] tracking ${addresses.length} address(es)`);
+    const hot = addresses.slice(0, config.hlWsMaxUsers);
+    socket.syncAddresses(hot);
+    console.log(
+      `[watches] tracking ${addresses.length} address(es), wsHot=${hot.length}`,
+    );
 
-    const timestamps = await convex.getSnapshotTimestamps(addresses);
+    const timestamps = await convex.getSnapshotTimestamps(hot);
     const now = Date.now();
-    for (const address of addresses) {
+    for (const address of hot) {
       const normalized = address.toLowerCase();
       const updatedAt = timestamps[normalized];
       if (updatedAt == null || now - updatedAt >= config.snapshotStaleMs) {

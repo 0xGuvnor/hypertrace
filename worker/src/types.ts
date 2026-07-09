@@ -81,6 +81,7 @@ export type WorkerConfig = {
   metaCacheTtlMs: number;
   hlMaxConcurrency: number;
   hlMinRequestIntervalMs: number;
+  hlWsMaxUsers: number;
   wsRefreshMinIntervalMs: number;
   leaderboardPollMs: number;
 };
