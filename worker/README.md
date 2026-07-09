@@ -20,11 +20,12 @@ Railway service that watches Convex `watchedAddresses`, subscribes to Hyperliqui
 | `BRIDGE2_START_BLOCK` | no | Backfill start block (default `468748168`, 2026-06-01 UTC) |
 | `FUNDING_LOOKBACK_DAYS` | no | Inbound USDC lookback before each bridge deposit (default 7) |
 | `ARBITRUM_LOG_CHUNK_BLOCKS` | no | `eth_getLogs` chunk size (default 2000; use 10 on Alchemy free tier) |
-| `DEPOSIT_SCAN_CONCURRENCY` | no | Parallel deposit scans (default 3) |
+| `DEPOSIT_SCAN_CONCURRENCY` | no | Parallel deposit scans (default 1) |
 | `SNAPSHOT_STALE_MS` | no | Poll-only snapshot refresh threshold (default 120000) |
 | `META_CACHE_TTL_MS` | no | Shared `metaAndAssetCtxs` cache TTL (default 30000) |
 | `HL_MAX_CONCURRENCY` | no | Max parallel Hyperliquid Info API requests (default 3) |
 | `HL_MIN_REQUEST_INTERVAL_MS` | no | Min gap between HL request starts (default 100) |
+| `HL_WS_MAX_USERS` | no | Max unique wallets on HL user-specific WS + watch-sync refresh (default 10) |
 | `WS_REFRESH_MIN_INTERVAL_MS` | no | Min gap between WS-triggered snapshot refreshes per wallet (default 12000) |
 | `LEADERBOARD_POLL_MS` | no | Leaderboard fetch interval (default `1800000` = 30 min) |
 

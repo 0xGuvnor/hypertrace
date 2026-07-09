@@ -12,7 +12,12 @@ function isRateLimitMessage(message: string): boolean {
 }
 
 function isProductionSanitizedMessage(message: string): boolean {
-  return message.toLowerCase().includes("omitted in production");
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("omitted in production") ||
+    lower.includes("server error") ||
+    lower.includes("request id:")
+  );
 }
 
 export function extractErrorMessage(error: unknown): string {

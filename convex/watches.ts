@@ -42,6 +42,7 @@ export const listActive = internalQuery({
     const watches = await ctx.db.query("watchedAddresses").collect();
     return watches
       .filter((watch) => watch.lastRequestedAt >= cutoff)
+      .sort((a, b) => b.lastRequestedAt - a.lastRequestedAt)
       .map((watch) => watch.address);
   },
 });
