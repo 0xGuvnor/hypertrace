@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -10,6 +13,8 @@ type WalletLoadErrorProps = {
 };
 
 export function WalletLoadError({ message, onRetry }: WalletLoadErrorProps) {
+  const router = useRouter();
+
   return (
     <>
       <Alert variant="destructive">
@@ -17,18 +22,13 @@ export function WalletLoadError({ message, onRetry }: WalletLoadErrorProps) {
         <AlertDescription>{message}</AlertDescription>
       </Alert>
       <div className="flex flex-col gap-2 sm:flex-row">
-        {onRetry ? (
-          <Button type="button" onClick={onRetry} className="w-full sm:w-auto">
-            Try again
-          </Button>
-        ) : (
-          <Link
-            href="."
-            className={cn(buttonVariants(), "w-full sm:w-auto")}
-          >
-            Try again
-          </Link>
-        )}
+        <Button
+          type="button"
+          onClick={onRetry ?? (() => router.refresh())}
+          className="w-full sm:w-auto"
+        >
+          Try again
+        </Button>
         <Link
           href="/"
           className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}
