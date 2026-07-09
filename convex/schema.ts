@@ -57,6 +57,9 @@ export default defineSchema({
     .index("by_pnlWeek", ["pnlWeek"])
     .index("by_pnlMonth", ["pnlMonth"])
     .index("by_pnlAllTime", ["pnlAllTime"])
-    .index("by_lastActivityTimestamp", ["lastActivityTimestamp"])
+    .index("by_vlmDay", ["vlmDay"])
+    .index("by_vlmWeek", ["vlmWeek"])
+    .index("by_vlmMonth", ["vlmMonth"])
+    .index("by_vlmAllTime", ["vlmAllTime"])
     .index("by_fetchedAt", ["fetchedAt"]),
 });

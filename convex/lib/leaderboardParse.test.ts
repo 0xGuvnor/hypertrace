@@ -30,7 +30,10 @@ describe("parseLeaderboardResponse", () => {
       pnlWeek: -1311185.49,
       pnlMonth: 2974025.26,
       pnlAllTime: 1234567.89,
-      lastActivityTimestamp: null,
+      vlmDay: 1608229542.38,
+      vlmWeek: 13287851598.78,
+      vlmMonth: 37254845181.99,
+      vlmAllTime: 98765432.1,
       displayName: "HyperTrader42",
     });
   });
@@ -59,6 +62,8 @@ describe("parseLeaderboardResponse", () => {
     );
     expect(rows[0]?.accountValue).toBe(100.5);
     expect(rows[0]?.pnlAllTime).toBe(4);
+    expect(rows[0]?.vlmDay).toBe(0);
+    expect(rows[0]?.vlmAllTime).toBe(0);
     expect(rows[0]?.displayName).toBeNull();
   });
 

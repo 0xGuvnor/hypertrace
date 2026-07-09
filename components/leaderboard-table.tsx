@@ -13,14 +13,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { truncateAddress } from "@/lib/address";
-import { formatTimestamp, formatUsd } from "@/lib/format";
+import { formatUsd } from "@/lib/format";
 import {
   type LeaderboardOrder,
   type LeaderboardRow,
   type LeaderboardSortBy,
   type PnlWindow,
   PNL_WINDOW_LABELS,
+  PNL_WINDOW_TO_SORT,
+  VLM_WINDOW_TO_SORT,
   pnlValueForWindow,
+  vlmValueForWindow,
 } from "@/lib/leaderboard-list";
 import { cn } from "@/lib/utils";
 
@@ -108,13 +111,15 @@ export function LeaderboardTable({
   if (rows.length === 0) {
     return (
       <p className="text-muted-foreground py-12 text-center text-sm leading-relaxed">
-        No wallets match these filters. Lower the min account value or set
-        Active to Any.
+        No wallets match these filters. Lower the min account value or min
+        volume.
       </p>
     );
   }
 
-  const siblingWindows = SIBLING_WINDOWS.filter((window) => window !== pnlWindow);
+  const siblingWindows = SIBLING_WINDOWS.filter(
+    (window) => window !== pnlWindow,
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -131,15 +136,7 @@ export function LeaderboardTable({
             />
             <SortableTableHead
               label={`${PNL_WINDOW_LABELS[pnlWindow]} PnL`}
-              sortKey={
-                pnlWindow === "day"
-                  ? "pnlDay"
-                  : pnlWindow === "week"
-                    ? "pnlWeek"
-                    : pnlWindow === "month"
-                      ? "pnlMonth"
-                      : "pnlAllTime"
-              }
+              sortKey={PNL_WINDOW_TO_SORT[pnlWindow]}
               activeSortKey={sortBy}
               sortOrder={sortOrder}
               onSort={onSort}
@@ -147,24 +144,34 @@ export function LeaderboardTable({
             />
             {siblingWindows.map((window) => (
               <TableHead
-                key={window}
+                key={`pnl-${window}`}
                 className="text-muted-foreground text-right text-xs font-normal"
               >
                 {PNL_WINDOW_LABELS[window]}
               </TableHead>
             ))}
             <SortableTableHead
-              label="Activity"
-              sortKey="lastActivityTimestamp"
+              label={`${PNL_WINDOW_LABELS[pnlWindow]} Vol`}
+              sortKey={VLM_WINDOW_TO_SORT[pnlWindow]}
               activeSortKey={sortBy}
               sortOrder={sortOrder}
               onSort={onSort}
+              className="text-[var(--brand-cyan)]"
             />
+            {siblingWindows.map((window) => (
+              <TableHead
+                key={`vlm-${window}`}
+                className="text-muted-foreground text-right text-xs font-normal"
+              >
+                {PNL_WINDOW_LABELS[window]} Vol
+              </TableHead>
+            ))}
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.map((row) => {
             const activePnl = pnlValueForWindow(row, pnlWindow);
+            const activeVlm = vlmValueForWindow(row, pnlWindow);
             return (
               <TableRow key={row.address}>
                 <TableCell>
@@ -197,7 +204,7 @@ export function LeaderboardTable({
                   const value = pnlValueForWindow(row, window);
                   return (
                     <TableCell
-                      key={window}
+                      key={`pnl-${window}`}
                       className={cn(
                         "text-right font-mono text-[11px] tabular-nums",
                         pnlClass(value, false),
@@ -207,11 +214,20 @@ export function LeaderboardTable({
                     </TableCell>
                   );
                 })}
-                <TableCell className="text-muted-foreground text-right font-mono text-xs">
-                  {row.lastActivityTimestamp !== null
-                    ? formatTimestamp(row.lastActivityTimestamp)
-                    : "—"}
+                <TableCell className="text-right font-mono text-sm font-medium tabular-nums">
+                  {formatUsd(activeVlm)}
                 </TableCell>
+                {siblingWindows.map((window) => {
+                  const value = vlmValueForWindow(row, window);
+                  return (
+                    <TableCell
+                      key={`vlm-${window}`}
+                      className="text-muted-foreground text-right font-mono text-[11px] tabular-nums"
+                    >
+                      {formatUsd(value)}
+                    </TableCell>
+                  );
+                })}
               </TableRow>
             );
           })}

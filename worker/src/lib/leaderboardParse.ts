@@ -7,17 +7,27 @@ export type LeaderboardUpsertRow = {
   pnlWeek: number;
   pnlMonth: number;
   pnlAllTime: number;
-  lastActivityTimestamp: number | null;
+  vlmDay: number;
+  vlmWeek: number;
+  vlmMonth: number;
+  vlmAllTime: number;
   displayName: string | null;
 };
 
 type WindowKey = "day" | "week" | "month" | "allTime";
 
-const WINDOW_TO_FIELD = {
+const WINDOW_TO_PNL = {
   day: "pnlDay",
   week: "pnlWeek",
   month: "pnlMonth",
   allTime: "pnlAllTime",
+} as const satisfies Record<WindowKey, keyof LeaderboardUpsertRow>;
+
+const WINDOW_TO_VLM = {
+  day: "vlmDay",
+  week: "vlmWeek",
+  month: "vlmMonth",
+  allTime: "vlmAllTime",
 } as const satisfies Record<WindowKey, keyof LeaderboardUpsertRow>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -57,13 +67,33 @@ function parseDisplayName(value: unknown): string | null {
 
 function parseWindowPerformances(
   value: unknown,
-): Pick<LeaderboardUpsertRow, "pnlDay" | "pnlWeek" | "pnlMonth" | "pnlAllTime"> | null {
+): Pick<
+  LeaderboardUpsertRow,
+  | "pnlDay"
+  | "pnlWeek"
+  | "pnlMonth"
+  | "pnlAllTime"
+  | "vlmDay"
+  | "vlmWeek"
+  | "vlmMonth"
+  | "vlmAllTime"
+> | null {
   if (!Array.isArray(value)) {
     return null;
   }
 
-  const pnls: Partial<
-    Record<"pnlDay" | "pnlWeek" | "pnlMonth" | "pnlAllTime", number>
+  const fields: Partial<
+    Record<
+      | "pnlDay"
+      | "pnlWeek"
+      | "pnlMonth"
+      | "pnlAllTime"
+      | "vlmDay"
+      | "vlmWeek"
+      | "vlmMonth"
+      | "vlmAllTime",
+      number
+    >
   > = {};
 
   for (const entry of value) {
@@ -75,26 +105,36 @@ function parseWindowPerformances(
       continue;
     }
     const pnl = parseFiniteNumber(perf.pnl);
-    if (pnl === null) {
+    const vlm = parseFiniteNumber(perf.vlm);
+    if (pnl === null || vlm === null) {
       continue;
     }
-    pnls[WINDOW_TO_FIELD[window]] = pnl;
+    fields[WINDOW_TO_PNL[window]] = pnl;
+    fields[WINDOW_TO_VLM[window]] = vlm;
   }
 
   if (
-    pnls.pnlDay === undefined ||
-    pnls.pnlWeek === undefined ||
-    pnls.pnlMonth === undefined ||
-    pnls.pnlAllTime === undefined
+    fields.pnlDay === undefined ||
+    fields.pnlWeek === undefined ||
+    fields.pnlMonth === undefined ||
+    fields.pnlAllTime === undefined ||
+    fields.vlmDay === undefined ||
+    fields.vlmWeek === undefined ||
+    fields.vlmMonth === undefined ||
+    fields.vlmAllTime === undefined
   ) {
     return null;
   }
 
   return {
-    pnlDay: pnls.pnlDay,
-    pnlWeek: pnls.pnlWeek,
-    pnlMonth: pnls.pnlMonth,
-    pnlAllTime: pnls.pnlAllTime,
+    pnlDay: fields.pnlDay,
+    pnlWeek: fields.pnlWeek,
+    pnlMonth: fields.pnlMonth,
+    pnlAllTime: fields.pnlAllTime,
+    vlmDay: fields.vlmDay,
+    vlmWeek: fields.vlmWeek,
+    vlmMonth: fields.vlmMonth,
+    vlmAllTime: fields.vlmAllTime,
   };
 }
 
@@ -135,7 +175,6 @@ function parseLeaderboardRow(raw: unknown): LeaderboardUpsertRow | null {
     address,
     accountValue,
     ...windows,
-    lastActivityTimestamp: null,
     displayName: parseDisplayName(raw.displayName ?? raw.display_name),
   };
 }
