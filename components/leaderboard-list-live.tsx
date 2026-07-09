@@ -5,7 +5,7 @@ import {
   useConvex,
   usePreloadedQuery,
 } from "convex/react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { LeaderboardControls } from "@/components/leaderboard-controls";
 import { LeaderboardTable } from "@/components/leaderboard-table";
@@ -19,11 +19,13 @@ import {
   type LeaderboardOrder,
   type LeaderboardRow,
   type LeaderboardSortBy,
+  type LeaderboardTailStatus,
   type MinVolumeFilter,
   type PnlWindow,
   minVolumeFilterArgs,
   PNL_WINDOW_TO_SORT,
 } from "@/lib/leaderboard-list";
+import { useInView } from "@/lib/use-in-view";
 
 type LeaderboardListLiveProps = {
   preloadedLeaderboard: Preloaded<typeof api.leaderboard.list>;
@@ -145,6 +147,23 @@ function LeaderboardListTail({
     nextCursor,
   ]);
 
+  const { ref: sentinelRef, inView } = useInView({
+    rootMargin: "240px 0px",
+    enabled: canLoadMore,
+  });
+
+  useEffect(() => {
+    if (inView && canLoadMore && !loadingMore) {
+      void handleLoadMore();
+    }
+  }, [inView, canLoadMore, loadingMore, handleLoadMore]);
+
+  const tail: LeaderboardTailStatus = loadingMore
+    ? "loadingMore"
+    : canLoadMore
+      ? "canLoadMore"
+      : "exhausted";
+
   return (
     <LeaderboardTable
       rows={rows}
@@ -152,9 +171,8 @@ function LeaderboardListTail({
       sortBy={sortBy}
       sortOrder={sortOrder}
       onSort={onSort}
-      canLoadMore={canLoadMore}
-      isLoadingMore={loadingMore}
-      onLoadMore={() => void handleLoadMore()}
+      tail={tail}
+      sentinelRef={sentinelRef}
     />
   );
 }
