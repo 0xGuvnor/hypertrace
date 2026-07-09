@@ -37,6 +37,7 @@ Deposit `sourceAddress` is resolved via Alchemy `getAssetTransfers` on the same 
 - Root directory: `worker`
 - Builder: Dockerfile (`railway.toml` included)
 - Enable public networking if you want Railway health checks on `/health`
+- Leaderboard parse helpers are vendored under `worker/src/lib/` because the Docker context is `worker/` only.
 
 ## Local
 
