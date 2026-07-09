@@ -14,6 +14,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatUsd, formatSize } from "@/lib/format";
+import {
+  summarizeOpenPositions,
+  type PositionsOpenSummary,
+} from "@/lib/positions-summary";
 import type { WalletSnapshot } from "@/lib/wallet-types";
 
 type SortKey = "value" | "fundingFee" | "unrealizedPnl";
@@ -39,6 +43,12 @@ function comparePositions(
   return a.coin.localeCompare(b.coin);
 }
 
+function signedNumberClass(value: number): string {
+  if (!Number.isFinite(value) || value === 0) return "";
+  if (value < 0) return "text-red-600 dark:text-red-400";
+  return "text-emerald-600 dark:text-emerald-400";
+}
+
 function unrealizedPnlClass(value: string): string {
   const num = Number.parseFloat(value);
   if (!Number.isFinite(num)) return "";
@@ -52,6 +62,51 @@ function fundingFeeClass(value: string): string {
   if (!Number.isFinite(num) || num === 0) return "";
   if (num < 0) return "text-red-600 dark:text-red-400";
   return "text-emerald-600 dark:text-emerald-400";
+}
+
+function PositionsSummaryBar({ summary }: { summary: PositionsOpenSummary }) {
+  return (
+    <div className="bg-muted/30 mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b px-1 py-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-muted-foreground text-xs">Long</span>
+          <span className="font-mono text-xs tabular-nums text-emerald-600 dark:text-emerald-400">
+            {formatUsd(summary.longValue)}
+          </span>
+        </div>
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-muted-foreground text-xs">Short</span>
+          <span className="font-mono text-xs tabular-nums text-red-600 dark:text-red-400">
+            {formatUsd(summary.shortValue)}
+          </span>
+        </div>
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-muted-foreground text-xs">Total</span>
+          <span className="font-mono text-xs tabular-nums">
+            {formatUsd(summary.totalValue)}
+          </span>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-muted-foreground text-xs">Funding</span>
+          <span
+            className={`font-mono text-xs tabular-nums ${signedNumberClass(summary.fundingFee)}`}
+          >
+            {formatUsd(summary.fundingFee)}
+          </span>
+        </div>
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-muted-foreground text-xs">uPnL</span>
+          <span
+            className={`font-mono text-xs tabular-nums ${signedNumberClass(summary.unrealizedPnl)}`}
+          >
+            {formatUsd(summary.unrealizedPnl)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function formatMarginMode(mode: Position["marginMode"]): string {
@@ -116,6 +171,11 @@ export function PositionsTable({
     [positions, sortKey, sortDir],
   );
 
+  const summary = useMemo(
+    () => summarizeOpenPositions(positions),
+    [positions],
+  );
+
   function handleSort(key: SortKey) {
     if (key === sortKey) {
       setSortDir((dir) => (dir === "asc" ? "desc" : "asc"));
@@ -134,106 +194,109 @@ export function PositionsTable({
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Asset</TableHead>
-          <TableHead className="text-right">Leverage</TableHead>
-          <TableHead className="text-right">Size</TableHead>
-          <SortableTableHead
-            label="Value"
-            sortKey="value"
-            activeSortKey={sortKey}
-            sortDir={sortDir}
-            onSort={handleSort}
-          />
-          <TableHead className="text-right">Entry</TableHead>
-          <TableHead className="text-right">Mark</TableHead>
-          <TableHead className="text-right">Liq. price</TableHead>
-          <TableHead className="text-right">TP</TableHead>
-          <TableHead className="text-right">SL</TableHead>
-          <SortableTableHead
-            label="Funding fee"
-            sortKey="fundingFee"
-            activeSortKey={sortKey}
-            sortDir={sortDir}
-            onSort={handleSort}
-          />
-          <SortableTableHead
-            label="uPnL"
-            sortKey="unrealizedPnl"
-            activeSortKey={sortKey}
-            sortDir={sortDir}
-            onSort={handleSort}
-          />
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {sortedPositions.map((position) => {
-          const isLong = position.side === "long";
-          return (
-            <TableRow key={position.coin}>
-              <TableCell>
-                <Badge
-                  variant="outline"
-                  className={
-                    isLong
-                      ? "border-emerald-500/30 bg-emerald-500/10 font-medium text-emerald-700 dark:text-emerald-400"
-                      : "border-red-500/30 bg-red-500/10 font-medium text-red-700 dark:text-red-400"
-                  }
+    <div className="min-w-0">
+      <PositionsSummaryBar summary={summary} />
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Asset</TableHead>
+            <TableHead className="text-right">Leverage</TableHead>
+            <TableHead className="text-right">Size</TableHead>
+            <SortableTableHead
+              label="Value"
+              sortKey="value"
+              activeSortKey={sortKey}
+              sortDir={sortDir}
+              onSort={handleSort}
+            />
+            <TableHead className="text-right">Entry</TableHead>
+            <TableHead className="text-right">Mark</TableHead>
+            <TableHead className="text-right">Liq. price</TableHead>
+            <TableHead className="text-right">TP</TableHead>
+            <TableHead className="text-right">SL</TableHead>
+            <SortableTableHead
+              label="Funding fee"
+              sortKey="fundingFee"
+              activeSortKey={sortKey}
+              sortDir={sortDir}
+              onSort={handleSort}
+            />
+            <SortableTableHead
+              label="uPnL"
+              sortKey="unrealizedPnl"
+              activeSortKey={sortKey}
+              sortDir={sortDir}
+              onSort={handleSort}
+            />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sortedPositions.map((position) => {
+            const isLong = position.side === "long";
+            return (
+              <TableRow key={position.coin}>
+                <TableCell>
+                  <Badge
+                    variant="outline"
+                    className={
+                      isLong
+                        ? "border-emerald-500/30 bg-emerald-500/10 font-medium text-emerald-700 dark:text-emerald-400"
+                        : "border-red-500/30 bg-red-500/10 font-medium text-red-700 dark:text-red-400"
+                    }
+                  >
+                    {position.coin}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span className="font-mono text-xs">{position.leverage}x</span>
+                    <span className="text-muted-foreground text-[10px]">
+                      {formatMarginMode(position.marginMode)}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs">
+                  {formatSize(position.size)}
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs">
+                  {formatUsd(position.value)}
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs">
+                  {formatUsd(position.entryPrice)}
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs">
+                  {position.markPrice ? formatUsd(position.markPrice) : "—"}
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs">
+                  {position.liquidationPrice
+                    ? formatUsd(position.liquidationPrice)
+                    : "—"}
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs">
+                  {position.takeProfitPrice
+                    ? formatUsd(position.takeProfitPrice)
+                    : "—"}
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs">
+                  {position.stopLossPrice
+                    ? formatUsd(position.stopLossPrice)
+                    : "—"}
+                </TableCell>
+                <TableCell
+                  className={`text-right font-mono text-xs ${fundingFeeClass(position.fundingFee)}`}
                 >
-                  {position.coin}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex flex-col items-end gap-0.5">
-                  <span className="font-mono text-xs">{position.leverage}x</span>
-                  <span className="text-muted-foreground text-[10px]">
-                    {formatMarginMode(position.marginMode)}
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell className="text-right font-mono text-xs">
-                {formatSize(position.size)}
-              </TableCell>
-              <TableCell className="text-right font-mono text-xs">
-                {formatUsd(position.value)}
-              </TableCell>
-              <TableCell className="text-right font-mono text-xs">
-                {formatUsd(position.entryPrice)}
-              </TableCell>
-              <TableCell className="text-right font-mono text-xs">
-                {position.markPrice ? formatUsd(position.markPrice) : "—"}
-              </TableCell>
-              <TableCell className="text-right font-mono text-xs">
-                {position.liquidationPrice
-                  ? formatUsd(position.liquidationPrice)
-                  : "—"}
-              </TableCell>
-              <TableCell className="text-right font-mono text-xs">
-                {position.takeProfitPrice
-                  ? formatUsd(position.takeProfitPrice)
-                  : "—"}
-              </TableCell>
-              <TableCell className="text-right font-mono text-xs">
-                {position.stopLossPrice
-                  ? formatUsd(position.stopLossPrice)
-                  : "—"}
-              </TableCell>
-              <TableCell
-                className={`text-right font-mono text-xs ${fundingFeeClass(position.fundingFee)}`}
-              >
-                {formatUsd(position.fundingFee)}
-              </TableCell>
-              <TableCell
-                className={`text-right font-mono text-xs ${unrealizedPnlClass(position.unrealizedPnl)}`}
-              >
-                {formatUsd(position.unrealizedPnl)}
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+                  {formatUsd(position.fundingFee)}
+                </TableCell>
+                <TableCell
+                  className={`text-right font-mono text-xs ${unrealizedPnlClass(position.unrealizedPnl)}`}
+                >
+                  {formatUsd(position.unrealizedPnl)}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
