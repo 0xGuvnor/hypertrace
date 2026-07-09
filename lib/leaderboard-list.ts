@@ -1,5 +1,10 @@
 export const LEADERBOARD_LIST_PAGE_SIZE = 20;
 
+export type LeaderboardTailStatus =
+  | "canLoadMore"
+  | "loadingMore"
+  | "exhausted";
+
 export type LeaderboardSortBy =
   | "accountValue"
   | "pnlDay"

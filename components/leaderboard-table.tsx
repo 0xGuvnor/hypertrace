@@ -4,6 +4,7 @@ import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -18,6 +19,7 @@ import {
   type LeaderboardOrder,
   type LeaderboardRow,
   type LeaderboardSortBy,
+  type LeaderboardTailStatus,
   type PnlWindow,
   PNL_WINDOW_LABELS,
   PNL_WINDOW_TO_SORT,
@@ -89,31 +91,146 @@ function SortableTableHead({
   );
 }
 
+function LeaderboardSkeletonRow() {
+  return (
+    <TableRow>
+      <TableCell>
+        <Skeleton className="h-4 w-28" />
+      </TableCell>
+      <TableCell className="text-right">
+        <Skeleton className="ml-auto h-4 w-16" />
+      </TableCell>
+      <TableCell className="text-right">
+        <Skeleton className="ml-auto h-4 w-14" />
+      </TableCell>
+      <TableCell className="text-right">
+        <Skeleton className="ml-auto h-3 w-12" />
+      </TableCell>
+      <TableCell className="text-right">
+        <Skeleton className="ml-auto h-3 w-12" />
+      </TableCell>
+      <TableCell className="text-right">
+        <Skeleton className="ml-auto h-3 w-12" />
+      </TableCell>
+      <TableCell className="text-right">
+        <Skeleton className="ml-auto h-4 w-14" />
+      </TableCell>
+      <TableCell className="text-right">
+        <Skeleton className="ml-auto h-3 w-12" />
+      </TableCell>
+      <TableCell className="text-right">
+        <Skeleton className="ml-auto h-3 w-12" />
+      </TableCell>
+      <TableCell className="text-right">
+        <Skeleton className="ml-auto h-3 w-12" />
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function LeaderboardTableHeader({
+  pnlWindow,
+  sortBy,
+  sortOrder,
+  onSort,
+}: {
+  pnlWindow: PnlWindow;
+  sortBy: LeaderboardSortBy;
+  sortOrder: LeaderboardOrder;
+  onSort: (key: LeaderboardSortBy) => void;
+}) {
+  const siblingWindows = SIBLING_WINDOWS.filter(
+    (window) => window !== pnlWindow,
+  );
+
+  return (
+    <TableHeader>
+      <TableRow>
+        <TableHead>Wallet</TableHead>
+        <SortableTableHead
+          label="Account value"
+          sortKey="accountValue"
+          activeSortKey={sortBy}
+          sortOrder={sortOrder}
+          onSort={onSort}
+        />
+        <SortableTableHead
+          label={`${PNL_WINDOW_LABELS[pnlWindow]} PnL`}
+          sortKey={PNL_WINDOW_TO_SORT[pnlWindow]}
+          activeSortKey={sortBy}
+          sortOrder={sortOrder}
+          onSort={onSort}
+          className="text-[var(--brand-cyan)]"
+        />
+        {siblingWindows.map((window) => (
+          <TableHead
+            key={`pnl-${window}`}
+            className="text-muted-foreground text-right text-xs font-normal"
+          >
+            {PNL_WINDOW_LABELS[window]}
+          </TableHead>
+        ))}
+        <SortableTableHead
+          label={`${PNL_WINDOW_LABELS[pnlWindow]} Vol`}
+          sortKey={VLM_WINDOW_TO_SORT[pnlWindow]}
+          activeSortKey={sortBy}
+          sortOrder={sortOrder}
+          onSort={onSort}
+          className="text-[var(--brand-cyan)]"
+        />
+        {siblingWindows.map((window) => (
+          <TableHead
+            key={`vlm-${window}`}
+            className="text-muted-foreground text-right text-xs font-normal"
+          >
+            {PNL_WINDOW_LABELS[window]} Vol
+          </TableHead>
+        ))}
+      </TableRow>
+    </TableHeader>
+  );
+}
+
 export function LeaderboardTable({
   rows,
   pnlWindow,
   sortBy,
   sortOrder,
   onSort,
-  canLoadMore = false,
-  isLoadingMore = false,
-  onLoadMore,
+  tail,
+  sentinelRef,
 }: {
   rows: LeaderboardRow[];
   pnlWindow: PnlWindow;
   sortBy: LeaderboardSortBy;
   sortOrder: LeaderboardOrder;
   onSort: (key: LeaderboardSortBy) => void;
-  canLoadMore?: boolean;
-  isLoadingMore?: boolean;
-  onLoadMore?: () => void;
+  tail: LeaderboardTailStatus;
+  sentinelRef: (node: Element | null) => void;
 }) {
-  if (rows.length === 0) {
+  if (rows.length === 0 && tail === "exhausted") {
     return (
       <p className="text-muted-foreground py-12 text-center text-sm leading-relaxed">
         No wallets match these filters. Lower the min account value or min
         volume.
       </p>
+    );
+  }
+
+  if (rows.length === 0) {
+    return (
+      <div className="flex flex-col gap-4">
+        {tail === "loadingMore" ? (
+          <Table>
+            <TableBody>
+              {Array.from({ length: 2 }).map((_, index) => (
+                <LeaderboardSkeletonRow key={`ghost-${index}`} />
+              ))}
+            </TableBody>
+          </Table>
+        ) : null}
+        <div ref={sentinelRef} aria-hidden className="h-px w-full" />
+      </div>
     );
   }
 
@@ -124,50 +241,12 @@ export function LeaderboardTable({
   return (
     <div className="flex flex-col gap-4">
       <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Wallet</TableHead>
-            <SortableTableHead
-              label="Account value"
-              sortKey="accountValue"
-              activeSortKey={sortBy}
-              sortOrder={sortOrder}
-              onSort={onSort}
-            />
-            <SortableTableHead
-              label={`${PNL_WINDOW_LABELS[pnlWindow]} PnL`}
-              sortKey={PNL_WINDOW_TO_SORT[pnlWindow]}
-              activeSortKey={sortBy}
-              sortOrder={sortOrder}
-              onSort={onSort}
-              className="text-[var(--brand-cyan)]"
-            />
-            {siblingWindows.map((window) => (
-              <TableHead
-                key={`pnl-${window}`}
-                className="text-muted-foreground text-right text-xs font-normal"
-              >
-                {PNL_WINDOW_LABELS[window]}
-              </TableHead>
-            ))}
-            <SortableTableHead
-              label={`${PNL_WINDOW_LABELS[pnlWindow]} Vol`}
-              sortKey={VLM_WINDOW_TO_SORT[pnlWindow]}
-              activeSortKey={sortBy}
-              sortOrder={sortOrder}
-              onSort={onSort}
-              className="text-[var(--brand-cyan)]"
-            />
-            {siblingWindows.map((window) => (
-              <TableHead
-                key={`vlm-${window}`}
-                className="text-muted-foreground text-right text-xs font-normal"
-              >
-                {PNL_WINDOW_LABELS[window]} Vol
-              </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
+        <LeaderboardTableHeader
+          pnlWindow={pnlWindow}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSort={onSort}
+        />
         <TableBody>
           {rows.map((row) => {
             const activePnl = pnlValueForWindow(row, pnlWindow);
@@ -231,18 +310,15 @@ export function LeaderboardTable({
               </TableRow>
             );
           })}
+          {tail === "loadingMore"
+            ? Array.from({ length: 2 }).map((_, index) => (
+                <LeaderboardSkeletonRow key={`ghost-${index}`} />
+              ))
+            : null}
         </TableBody>
       </Table>
-      {canLoadMore && onLoadMore ? (
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full sm:w-auto"
-          disabled={isLoadingMore}
-          onClick={onLoadMore}
-        >
-          {isLoadingMore ? "Loading…" : "Load more"}
-        </Button>
+      {tail !== "exhausted" ? (
+        <div ref={sentinelRef} aria-hidden className="h-px w-full" />
       ) : null}
     </div>
   );
