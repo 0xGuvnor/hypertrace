@@ -7,6 +7,7 @@ import {
   liveWalletSnapshotValidator,
   walletSnapshotValidator,
 } from "./lib/hyperliquidTypes";
+import { snapshotTradingEqual } from "./lib/snapshotEqual";
 
 export const getSnapshot = action({
   args: { address: v.string() },
@@ -83,14 +84,23 @@ export const upsertSnapshot = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const { snapshot } = args;
+    const address = normalizeAddress(snapshot.address);
     const now = Date.now();
     const existing = await ctx.db
       .query("walletSnapshots")
-      .withIndex("by_address", (q) => q.eq("address", snapshot.address))
+      .withIndex("by_address", (q) => q.eq("address", address))
       .unique();
 
+    if (existing && snapshotTradingEqual(existing, snapshot)) {
+      await ctx.db.patch(existing._id, {
+        fetchedAt: snapshot.fetchedAt,
+        updatedAt: now,
+      });
+      return null;
+    }
+
     const record = {
-      address: snapshot.address,
+      address,
       fetchedAt: snapshot.fetchedAt,
       account: snapshot.account,
       positions: snapshot.positions,
