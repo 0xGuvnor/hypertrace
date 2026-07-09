@@ -7,6 +7,24 @@ export const leaderboardSnapshotRecordValidator = v.object({
   pnlWeek: v.number(),
   pnlMonth: v.number(),
   pnlAllTime: v.number(),
+  // Optional until prod rows are backfilled / rewritten by ingest.
+  vlmDay: v.optional(v.number()),
+  vlmWeek: v.optional(v.number()),
+  vlmMonth: v.optional(v.number()),
+  vlmAllTime: v.optional(v.number()),
+  // Legacy field still present on pre-volume snapshots; strip on upsert/backfill.
+  lastActivityTimestamp: v.optional(v.union(v.number(), v.null())),
+  displayName: v.union(v.string(), v.null()),
+  fetchedAt: v.number(),
+});
+
+export const leaderboardListRowValidator = v.object({
+  address: v.string(),
+  accountValue: v.number(),
+  pnlDay: v.number(),
+  pnlWeek: v.number(),
+  pnlMonth: v.number(),
+  pnlAllTime: v.number(),
   vlmDay: v.number(),
   vlmWeek: v.number(),
   vlmMonth: v.number(),
@@ -69,8 +87,6 @@ export const leaderboardVolumeWindowValidator = v.union(
   v.literal("month"),
   v.literal("allTime"),
 );
-
-export const leaderboardListRowValidator = leaderboardSnapshotRecordValidator;
 
 export const leaderboardListResultValidator = v.object({
   page: v.array(leaderboardListRowValidator),
