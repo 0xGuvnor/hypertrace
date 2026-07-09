@@ -378,3 +378,32 @@ export async function fetchWalletSnapshot(
     spotBalances,
   };
 }
+
+type NonFundingLedgerUpdate = {
+  time: number;
+  hash?: string;
+  delta?: { type: string };
+};
+
+export async function fetchFirstActivityAt(
+  user: string,
+): Promise<number | null> {
+  const updates = await postInfo<NonFundingLedgerUpdate[]>({
+    type: "userNonFundingLedgerUpdates",
+    user,
+    startTime: 0,
+  });
+
+  if (!Array.isArray(updates) || updates.length === 0) {
+    return null;
+  }
+
+  let earliest = Number.POSITIVE_INFINITY;
+  for (const update of updates) {
+    if (typeof update.time === "number" && Number.isFinite(update.time)) {
+      earliest = Math.min(earliest, update.time);
+    }
+  }
+
+  return Number.isFinite(earliest) ? earliest : null;
+}

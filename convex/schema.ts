@@ -44,6 +44,7 @@ export default defineSchema({
   wallets: defineTable({
     address: v.string(),
     firstSeen: v.number(),
+    firstActivityAt: v.optional(v.number()),
     tags: v.array(v.string()),
     clusterId: v.union(v.string(), v.null()),
   }).index("by_address", ["address"]),

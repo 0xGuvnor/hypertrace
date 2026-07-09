@@ -1,6 +1,5 @@
-import Link from "next/link";
-
 import { AddressWithTooltip } from "@/components/address-with-tooltip";
+import { AccountTenure } from "@/components/account-tenure";
 import { CopyAddressButton } from "@/components/copy-address-button";
 import { LiveStatusBadge } from "@/components/live-status-badge";
 import { WalletClusterCard } from "@/components/wallet-cluster-card";
@@ -14,25 +13,27 @@ export function WalletDetail({
   snapshot,
   feedStatus,
   statusNow,
+  firstActivityAt,
   walletClusters,
   walletDeposits,
 }: {
   snapshot: WalletSnapshot;
   feedStatus?: LiveFeedStatus;
   statusNow?: number;
+  firstActivityAt: number | null;
   walletClusters: WalletClusters;
   walletDeposits: WalletDeposits;
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-8">
-      <div className="flex flex-col gap-1">
-        <Link
-          href="/"
-          className="text-muted-foreground hover:text-foreground w-fit text-sm transition-colors"
-        >
-          ← Back to search
-        </Link>
-        <div className="flex min-w-0 items-center gap-1">
+      <div className="flex flex-col gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          {firstActivityAt !== null ? (
+            <AccountTenure
+              firstActivityAt={firstActivityAt}
+              now={statusNow}
+            />
+          ) : null}
           <AddressWithTooltip address={snapshot.address} />
           <CopyAddressButton address={snapshot.address} />
         </div>
