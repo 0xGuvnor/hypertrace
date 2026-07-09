@@ -3,19 +3,26 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  type ActivityWindow,
+  type MinVolumeFilter,
   type PnlWindow,
   PNL_WINDOW_LABELS,
 } from "@/lib/leaderboard-list";
 import { cn } from "@/lib/utils";
 
 const PNL_WINDOWS: PnlWindow[] = ["day", "week", "month", "allTime"];
-const ACTIVITY_WINDOWS: ActivityWindow[] = ["any", "24h", "7d", "30d"];
-const ACTIVITY_LABELS: Record<ActivityWindow, string> = {
+const MIN_VOLUME_FILTERS: MinVolumeFilter[] = [
+  "any",
+  "positive",
+  "1m",
+  "10m",
+  "100m",
+];
+const MIN_VOLUME_LABELS: Record<MinVolumeFilter, string> = {
   any: "Any",
-  "24h": "24h",
-  "7d": "7d",
-  "30d": "30d",
+  positive: ">0",
+  "1m": "$1M",
+  "10m": "$10M",
+  "100m": "$100M",
 };
 
 type LeaderboardControlsProps = {
@@ -24,8 +31,8 @@ type LeaderboardControlsProps = {
   minAccountValueDraft: string;
   onMinAccountValueDraftChange: (value: string) => void;
   onApplyMinAccountValue: () => void;
-  activityWindow: ActivityWindow;
-  onActivityWindowChange: (window: ActivityWindow) => void;
+  minVolumeFilter: MinVolumeFilter;
+  onMinVolumeFilterChange: (filter: MinVolumeFilter) => void;
 };
 
 export function LeaderboardControls({
@@ -34,8 +41,8 @@ export function LeaderboardControls({
   minAccountValueDraft,
   onMinAccountValueDraftChange,
   onApplyMinAccountValue,
-  activityWindow,
-  onActivityWindowChange,
+  minVolumeFilter,
+  onMinVolumeFilterChange,
 }: LeaderboardControlsProps) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
@@ -112,13 +119,13 @@ export function LeaderboardControls({
         </div>
 
         <div className="flex min-w-0 flex-col gap-1">
-          <span className="text-muted-foreground text-xs">Active within</span>
+          <span className="text-muted-foreground text-xs">Min volume</span>
           <div className="flex flex-wrap gap-1">
-            {ACTIVITY_WINDOWS.map((window) => {
-              const active = window === activityWindow;
+            {MIN_VOLUME_FILTERS.map((filter) => {
+              const active = filter === minVolumeFilter;
               return (
                 <Button
-                  key={window}
+                  key={filter}
                   type="button"
                   size="sm"
                   variant={active ? "secondary" : "ghost"}
@@ -126,9 +133,9 @@ export function LeaderboardControls({
                     "h-8 px-2.5 text-xs",
                     active && "text-[var(--brand-cyan)]",
                   )}
-                  onClick={() => onActivityWindowChange(window)}
+                  onClick={() => onMinVolumeFilterChange(filter)}
                 >
-                  {ACTIVITY_LABELS[window]}
+                  {MIN_VOLUME_LABELS[filter]}
                 </Button>
               );
             })}

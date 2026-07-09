@@ -15,6 +15,7 @@ import {
   leaderboardOrderValidator,
   leaderboardSortByValidator,
   leaderboardUpsertRowValidator,
+  leaderboardVolumeWindowValidator,
   pruneStaleResultValidator,
   upsertBatchResultValidator,
 } from "./lib/leaderboardTypes";
@@ -47,7 +48,10 @@ async function upsertLeaderboardRows(
       pnlWeek: row.pnlWeek,
       pnlMonth: row.pnlMonth,
       pnlAllTime: row.pnlAllTime,
-      lastActivityTimestamp: row.lastActivityTimestamp,
+      vlmDay: row.vlmDay,
+      vlmWeek: row.vlmWeek,
+      vlmMonth: row.vlmMonth,
+      vlmAllTime: row.vlmAllTime,
       displayName: row.displayName,
       fetchedAt,
     };
@@ -158,7 +162,12 @@ type LeaderboardSortBy =
   | "pnlWeek"
   | "pnlMonth"
   | "pnlAllTime"
-  | "lastActivityTimestamp";
+  | "vlmDay"
+  | "vlmWeek"
+  | "vlmMonth"
+  | "vlmAllTime";
+
+type VolumeWindow = "day" | "week" | "month" | "allTime";
 
 function toListRow(row: {
   address: string;
@@ -167,7 +176,10 @@ function toListRow(row: {
   pnlWeek: number;
   pnlMonth: number;
   pnlAllTime: number;
-  lastActivityTimestamp: number | null;
+  vlmDay: number;
+  vlmWeek: number;
+  vlmMonth: number;
+  vlmAllTime: number;
   displayName: string | null;
   fetchedAt: number;
 }) {
@@ -178,16 +190,41 @@ function toListRow(row: {
     pnlWeek: row.pnlWeek,
     pnlMonth: row.pnlMonth,
     pnlAllTime: row.pnlAllTime,
-    lastActivityTimestamp: row.lastActivityTimestamp,
+    vlmDay: row.vlmDay,
+    vlmWeek: row.vlmWeek,
+    vlmMonth: row.vlmMonth,
+    vlmAllTime: row.vlmAllTime,
     displayName: row.displayName,
     fetchedAt: row.fetchedAt,
   };
 }
 
+function volumeForWindow(
+  row: ReturnType<typeof toListRow>,
+  window: VolumeWindow,
+): number {
+  switch (window) {
+    case "day":
+      return row.vlmDay;
+    case "week":
+      return row.vlmWeek;
+    case "month":
+      return row.vlmMonth;
+    case "allTime":
+      return row.vlmAllTime;
+    default: {
+      const _exhaustive: never = window;
+      return _exhaustive;
+    }
+  }
+}
+
 function matchesFilters(
   row: ReturnType<typeof toListRow>,
   minAccountValue: number | undefined,
-  activeSince: number | undefined,
+  minVolume: number | undefined,
+  requirePositiveVolume: boolean | undefined,
+  volumeWindow: VolumeWindow,
 ): boolean {
   if (
     minAccountValue !== undefined &&
@@ -195,13 +232,13 @@ function matchesFilters(
   ) {
     return false;
   }
-  if (activeSince !== undefined) {
-    if (
-      row.lastActivityTimestamp === null ||
-      row.lastActivityTimestamp < activeSince
-    ) {
+  const volume = volumeForWindow(row, volumeWindow);
+  if (requirePositiveVolume) {
+    if (!(volume > 0)) {
       return false;
     }
+  } else if (minVolume !== undefined && volume < minVolume) {
+    return false;
   }
   return true;
 }
@@ -211,12 +248,15 @@ export const list = query({
     sortBy: leaderboardSortByValidator,
     order: leaderboardOrderValidator,
     minAccountValue: v.optional(v.number()),
-    activeSince: v.optional(v.number()),
+    minVolume: v.optional(v.number()),
+    requirePositiveVolume: v.optional(v.boolean()),
+    volumeWindow: v.optional(leaderboardVolumeWindowValidator),
     paginationOpts: paginationOptsValidator,
   },
   returns: leaderboardListResultValidator,
   handler: async (ctx, args) => {
     const sortBy = args.sortBy as LeaderboardSortBy;
+    const volumeWindow = (args.volumeWindow ?? "day") as VolumeWindow;
     const ordered = (() => {
       switch (sortBy) {
         case "accountValue":
@@ -244,10 +284,25 @@ export const list = query({
             .query("leaderboardSnapshots")
             .withIndex("by_pnlAllTime")
             .order(args.order);
-        case "lastActivityTimestamp":
+        case "vlmDay":
           return ctx.db
             .query("leaderboardSnapshots")
-            .withIndex("by_lastActivityTimestamp")
+            .withIndex("by_vlmDay")
+            .order(args.order);
+        case "vlmWeek":
+          return ctx.db
+            .query("leaderboardSnapshots")
+            .withIndex("by_vlmWeek")
+            .order(args.order);
+        case "vlmMonth":
+          return ctx.db
+            .query("leaderboardSnapshots")
+            .withIndex("by_vlmMonth")
+            .order(args.order);
+        case "vlmAllTime":
+          return ctx.db
+            .query("leaderboardSnapshots")
+            .withIndex("by_vlmAllTime")
             .order(args.order);
         default: {
           const _exhaustive: never = sortBy;
@@ -260,7 +315,13 @@ export const list = query({
     const page = result.page
       .map(toListRow)
       .filter((row) =>
-        matchesFilters(row, args.minAccountValue, args.activeSince),
+        matchesFilters(
+          row,
+          args.minAccountValue,
+          args.minVolume,
+          args.requirePositiveVolume,
+          volumeWindow,
+        ),
       );
 
     return {

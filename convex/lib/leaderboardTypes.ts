@@ -7,7 +7,10 @@ export const leaderboardSnapshotRecordValidator = v.object({
   pnlWeek: v.number(),
   pnlMonth: v.number(),
   pnlAllTime: v.number(),
-  lastActivityTimestamp: v.union(v.number(), v.null()),
+  vlmDay: v.number(),
+  vlmWeek: v.number(),
+  vlmMonth: v.number(),
+  vlmAllTime: v.number(),
   displayName: v.union(v.string(), v.null()),
   fetchedAt: v.number(),
 });
@@ -19,7 +22,10 @@ export const leaderboardUpsertRowValidator = v.object({
   pnlWeek: v.number(),
   pnlMonth: v.number(),
   pnlAllTime: v.number(),
-  lastActivityTimestamp: v.union(v.number(), v.null()),
+  vlmDay: v.number(),
+  vlmWeek: v.number(),
+  vlmMonth: v.number(),
+  vlmAllTime: v.number(),
   displayName: v.union(v.string(), v.null()),
 });
 
@@ -46,12 +52,22 @@ export const leaderboardSortByValidator = v.union(
   v.literal("pnlWeek"),
   v.literal("pnlMonth"),
   v.literal("pnlAllTime"),
-  v.literal("lastActivityTimestamp"),
+  v.literal("vlmDay"),
+  v.literal("vlmWeek"),
+  v.literal("vlmMonth"),
+  v.literal("vlmAllTime"),
 );
 
 export const leaderboardOrderValidator = v.union(
   v.literal("asc"),
   v.literal("desc"),
+);
+
+export const leaderboardVolumeWindowValidator = v.union(
+  v.literal("day"),
+  v.literal("week"),
+  v.literal("month"),
+  v.literal("allTime"),
 );
 
 export const leaderboardListRowValidator = leaderboardSnapshotRecordValidator;

@@ -34,7 +34,10 @@ export default function Loading() {
               <TableHead className="text-right">Week</TableHead>
               <TableHead className="text-right">Month</TableHead>
               <TableHead className="text-right">All</TableHead>
-              <TableHead className="text-right">Activity</TableHead>
+              <TableHead className="text-right">Day Vol</TableHead>
+              <TableHead className="text-right">Week Vol</TableHead>
+              <TableHead className="text-right">Month Vol</TableHead>
+              <TableHead className="text-right">All Vol</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -59,7 +62,16 @@ export default function Loading() {
                   <Skeleton className="ml-auto h-3 w-12" />
                 </TableCell>
                 <TableCell className="text-right">
-                  <Skeleton className="ml-auto h-4 w-20" />
+                  <Skeleton className="ml-auto h-4 w-14" />
+                </TableCell>
+                <TableCell className="text-right">
+                  <Skeleton className="ml-auto h-3 w-12" />
+                </TableCell>
+                <TableCell className="text-right">
+                  <Skeleton className="ml-auto h-3 w-12" />
+                </TableCell>
+                <TableCell className="text-right">
+                  <Skeleton className="ml-auto h-3 w-12" />
                 </TableCell>
               </TableRow>
             ))}

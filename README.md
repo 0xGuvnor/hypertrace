@@ -3,7 +3,7 @@
 Hyperliquid whale tracker. Two differentiators over Hyperliquid's native UI:
 
 1. **Cross-wallet clustering.** Groups of addresses that behave as one entity, starting from shared deposit sources and later correlated trading behavior.
-2. **Filterable leaderboard.** PnL windows, account value, and recent activity filters that `app.hyperliquid.xyz/leaderboard` does not offer.
+2. **Filterable leaderboard.** PnL windows, account value, and traded volume filters that `app.hyperliquid.xyz/leaderboard` does not offer.
 
 ## Tech stack
 
@@ -58,7 +58,7 @@ stats-data leaderboard       │                              │
 | `depositScanCursors`      | Shipped         | Per-wallet Arbitrum scan progress                                         |
 | `wallets`                 | Shipped         | Tracked addresses: firstSeen, tags, clusterId                             |
 | `clusters`                | Shipped         | Deposit-source groups: clusterKey, members, confidenceScore, basis        |
-| `leaderboardSnapshots`    | Backend shipped | accountValue, pnlDay/Week/Month/AllTime, lastActivityTimestamp, fetchedAt |
+| `leaderboardSnapshots`    | Backend shipped | accountValue, pnlDay/Week/Month/AllTime, vlmDay/Week/Month/AllTime, fetchedAt |
 | `fills` (dedicated table) | Not yet         | Spec target for durable fill history used by behavioral clustering        |
 
 There is no dedicated `fills` table yet. Recent fills live on `walletSnapshots`. Behavioral clustering (signals 2–5) needs durable fill history first.
@@ -85,8 +85,7 @@ Signal 1 runs on a Convex cron every 3 minutes (`internal.clusters.rebuildDeposi
 
 ### In progress / next
 
-- Filterable leaderboard UI (sort/filter on PnL windows, account value, recent activity)
-- Cross-reference `lastActivityTimestamp` with tracked fill data where addresses overlap
+- Redeploy worker + Convex after volume schema change; next leaderboard ingest backfills `vlm*`
 
 ### Planned
 
@@ -100,9 +99,9 @@ Signal 1 runs on a Convex cron every 3 minutes (`internal.clusters.rebuildDeposi
 1. Convex schema + CRUD. Done (evolved toward snapshots + watches rather than a pure fills table).
 2. Railway ingestion worker. Done.
 3. Arbitrum deposit tracing. Done.
-4. Leaderboard ingestion. Backend done; UI pending.
+4. Leaderboard ingestion. Done.
 5. Rule-based clustering (deposit source). Done.
-6. Frontend leaderboard view. Next.
+6. Frontend leaderboard view. Done (PnL + volume windows, min-volume filter).
 7. Frontend clusters view. Done.
 8. Better Auth. Planned.
 9. Discord / Telegram alerting. Planned.

@@ -136,7 +136,10 @@ function parseLeaderboardUpsertRow(value: unknown): LeaderboardRow | null {
     typeof value.pnlWeek !== "number" ||
     typeof value.pnlMonth !== "number" ||
     typeof value.pnlAllTime !== "number" ||
-    !(typeof value.lastActivityTimestamp === "number" || value.lastActivityTimestamp === null) ||
+    typeof value.vlmDay !== "number" ||
+    typeof value.vlmWeek !== "number" ||
+    typeof value.vlmMonth !== "number" ||
+    typeof value.vlmAllTime !== "number" ||
     !(typeof value.displayName === "string" || value.displayName === null)
   ) {
     return null;
@@ -146,7 +149,11 @@ function parseLeaderboardUpsertRow(value: unknown): LeaderboardRow | null {
     !Number.isFinite(value.pnlDay) ||
     !Number.isFinite(value.pnlWeek) ||
     !Number.isFinite(value.pnlMonth) ||
-    !Number.isFinite(value.pnlAllTime)
+    !Number.isFinite(value.pnlAllTime) ||
+    !Number.isFinite(value.vlmDay) ||
+    !Number.isFinite(value.vlmWeek) ||
+    !Number.isFinite(value.vlmMonth) ||
+    !Number.isFinite(value.vlmAllTime)
   ) {
     return null;
   }
@@ -161,7 +168,10 @@ function parseLeaderboardUpsertRow(value: unknown): LeaderboardRow | null {
     pnlWeek: value.pnlWeek,
     pnlMonth: value.pnlMonth,
     pnlAllTime: value.pnlAllTime,
-    lastActivityTimestamp: value.lastActivityTimestamp,
+    vlmDay: value.vlmDay,
+    vlmWeek: value.vlmWeek,
+    vlmMonth: value.vlmMonth,
+    vlmAllTime: value.vlmAllTime,
     displayName: value.displayName,
   };
 }

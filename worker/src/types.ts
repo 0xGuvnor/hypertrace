@@ -54,7 +54,10 @@ export type LeaderboardUpsertRow = {
   pnlWeek: number;
   pnlMonth: number;
   pnlAllTime: number;
-  lastActivityTimestamp: number | null;
+  vlmDay: number;
+  vlmWeek: number;
+  vlmMonth: number;
+  vlmAllTime: number;
   displayName: string | null;
 };
 
