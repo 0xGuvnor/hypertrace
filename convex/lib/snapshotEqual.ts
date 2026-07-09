@@ -3,6 +3,7 @@ type SnapshotTradingFields = {
   positions: unknown;
   openOrders: unknown;
   recentFills: unknown;
+  spotBalances?: unknown;
 };
 
 export function snapshotTradingEqual(
@@ -13,6 +14,8 @@ export function snapshotTradingEqual(
     JSON.stringify(existing.account) === JSON.stringify(snapshot.account) &&
     JSON.stringify(existing.positions) === JSON.stringify(snapshot.positions) &&
     JSON.stringify(existing.openOrders) === JSON.stringify(snapshot.openOrders) &&
-    JSON.stringify(existing.recentFills) === JSON.stringify(snapshot.recentFills)
+    JSON.stringify(existing.recentFills) === JSON.stringify(snapshot.recentFills) &&
+    JSON.stringify(existing.spotBalances ?? []) ===
+      JSON.stringify(snapshot.spotBalances ?? [])
   );
 }

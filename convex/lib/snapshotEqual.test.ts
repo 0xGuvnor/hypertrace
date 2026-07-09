@@ -37,6 +37,7 @@ const base = {
       timestamp: 1,
     },
   ],
+  spotBalances: [] as unknown[],
 };
 
 describe("snapshotTradingEqual", () => {

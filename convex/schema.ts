@@ -8,6 +8,7 @@ import {
   fillValidator,
   openOrderValidator,
   positionValidator,
+  spotBalanceValidator,
 } from "./lib/hyperliquidTypes";
 import { leaderboardSnapshotRecordValidator } from "./lib/leaderboardTypes";
 
@@ -24,6 +25,7 @@ export default defineSchema({
     positions: v.array(positionValidator),
     openOrders: v.array(openOrderValidator),
     recentFills: v.array(fillValidator),
+    spotBalances: v.optional(v.array(spotBalanceValidator)),
     updatedAt: v.number(),
   }).index("by_address", ["address"]),
 

@@ -21,7 +21,7 @@ const SUMMARY_LABELS = [
   "Margin used",
   "Withdrawable",
 ] as const;
-const TAB_WIDTHS = ["w-[5.5rem]", "w-20", "w-16", "w-16"] as const;
+const TAB_WIDTHS = ["w-[5.5rem]", "w-16", "w-20", "w-16", "w-16"] as const;
 const TABLE_ROW_COUNT = 3;
 
 export default function Loading() {

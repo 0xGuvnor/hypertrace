@@ -4,6 +4,7 @@ import { DepositsTable } from "@/components/deposits-table";
 import { FillsTable } from "@/components/fills-table";
 import { OrdersTable } from "@/components/orders-table";
 import { PositionsTable } from "@/components/positions-table";
+import { SpotHoldingsTable } from "@/components/spot-holdings-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { WalletDeposits } from "@/lib/cluster-types";
 import type { WalletSnapshot } from "@/lib/wallet-types";
@@ -17,6 +18,7 @@ export function WalletTabs({
 }) {
   const { deposits, hasMore } = walletDeposits;
   const depositCountLabel = hasMore ? `${deposits.length}+` : `${deposits.length}`;
+  const spotCount = snapshot.spotBalances?.length ?? 0;
 
   return (
     <Tabs defaultValue="positions" className="min-w-0">
@@ -26,6 +28,10 @@ export function WalletTabs({
             <span className="sm:hidden">Pos</span>
             <span className="hidden sm:inline">Positions</span>
             <span className="text-muted-foreground">({snapshot.positions.length})</span>
+          </TabsTrigger>
+          <TabsTrigger value="spot" className="min-w-0 flex-1 text-xs sm:flex-none sm:text-sm">
+            Spot
+            <span className="text-muted-foreground">({spotCount})</span>
           </TabsTrigger>
           <TabsTrigger value="orders" className="min-w-0 flex-1 text-xs sm:flex-none sm:text-sm">
             Orders
@@ -44,6 +50,9 @@ export function WalletTabs({
       </div>
       <TabsContent value="positions" className="min-w-0">
         <PositionsTable positions={snapshot.positions} />
+      </TabsContent>
+      <TabsContent value="spot" className="min-w-0">
+        <SpotHoldingsTable holdings={snapshot.spotBalances ?? []} />
       </TabsContent>
       <TabsContent value="orders" className="min-w-0">
         <OrdersTable orders={snapshot.openOrders} />

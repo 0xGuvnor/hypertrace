@@ -51,6 +51,7 @@ export const getLiveSnapshot = query({
       positions: row.positions,
       openOrders: row.openOrders,
       recentFills: row.recentFills,
+      spotBalances: row.spotBalances ?? [],
       updatedAt: row.updatedAt,
     };
   },
@@ -109,6 +110,7 @@ export const upsertSnapshot = internalMutation({
       positions: snapshot.positions,
       openOrders: snapshot.openOrders,
       recentFills: snapshot.recentFills,
+      spotBalances: snapshot.spotBalances ?? [],
       updatedAt: now,
     };
 

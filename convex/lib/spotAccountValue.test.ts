@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  buildSpotHoldings,
   computeAccountValue,
   priceSpotBalances,
   sumPerpUnrealizedPnl,
@@ -79,6 +80,85 @@ describe("priceSpotBalances", () => {
         emptySpotMeta,
       ),
     ).toBe("50");
+  });
+});
+
+describe("buildSpotHoldings", () => {
+  test("USDC row has markPrice 1 and value = total", () => {
+    expect(
+      buildSpotHoldings(
+        [bal({ coin: "USDC", token: 0, total: "1500.5" })],
+        emptySpotMeta,
+      ),
+    ).toEqual([
+      {
+        coin: "USDC",
+        size: "1500.5",
+        hold: "0",
+        markPrice: "1",
+        value: "1500.5",
+      },
+    ]);
+  });
+
+  test("priced ETH row", () => {
+    expect(
+      buildSpotHoldings(
+        [bal({ coin: "ETH", token: 1, total: "2" })],
+        emptySpotMeta,
+      ),
+    ).toEqual([
+      {
+        coin: "ETH",
+        size: "2",
+        hold: "0",
+        markPrice: "2000",
+        value: "4000",
+      },
+    ]);
+  });
+
+  test("unpriceable still listed with value 0", () => {
+    expect(
+      buildSpotHoldings(
+        [bal({ coin: "UNKNOWN", token: 99, total: "1000" })],
+        emptySpotMeta,
+      ),
+    ).toEqual([
+      {
+        coin: "UNKNOWN",
+        size: "1000",
+        hold: "0",
+        markPrice: null,
+        value: "0",
+      },
+    ]);
+  });
+
+  test("dust skipped", () => {
+    expect(
+      buildSpotHoldings(
+        [
+          bal({ coin: "USDC", token: 0, total: "0" }),
+          bal({ coin: "ETH", token: 1, total: "-1" }),
+          bal({ coin: "PURR", token: 2, total: "0.0" }),
+        ],
+        emptySpotMeta,
+      ),
+    ).toEqual([]);
+  });
+
+  test("sorted by value desc", () => {
+    expect(
+      buildSpotHoldings(
+        [
+          bal({ coin: "USDC", token: 0, total: "100" }),
+          bal({ coin: "ETH", token: 1, total: "2" }),
+          bal({ coin: "PURR", token: 2, total: "10" }),
+        ],
+        emptySpotMeta,
+      ).map((h) => h.coin),
+    ).toEqual(["ETH", "USDC", "PURR"]);
   });
 });
 

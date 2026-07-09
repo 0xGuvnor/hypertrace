@@ -54,6 +54,14 @@ export const fillValidator = v.object({
   isLiquidation: v.optional(v.literal(true)),
 });
 
+export const spotBalanceValidator = v.object({
+  coin: v.string(),
+  size: v.string(),
+  hold: v.string(),
+  markPrice: v.union(v.string(), v.null()),
+  value: v.string(),
+});
+
 export const walletSnapshotValidator = v.object({
   address: v.string(),
   fetchedAt: v.number(),
@@ -61,6 +69,7 @@ export const walletSnapshotValidator = v.object({
   positions: v.array(positionValidator),
   openOrders: v.array(openOrderValidator),
   recentFills: v.array(fillValidator),
+  spotBalances: v.optional(v.array(spotBalanceValidator)),
 });
 
 export const liveWalletSnapshotValidator = v.object({

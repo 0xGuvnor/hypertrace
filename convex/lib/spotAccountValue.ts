@@ -14,6 +14,14 @@ export type SpotMetaAndAssetCtxs = [
   Array<{ markPx: string; coin?: string }>,
 ];
 
+export type SpotHolding = {
+  coin: string;
+  size: string;
+  hold: string;
+  markPrice: string | null;
+  value: string;
+};
+
 export type UserAbstraction =
   | "unifiedAccount"
   | "portfolioMargin"
@@ -31,34 +39,82 @@ export function sumUsdStrings(...values: string[]): string {
   return sum.toString();
 }
 
-export function priceSpotBalances(
+export function buildSpotHoldings(
   balances: SpotBalance[],
   spotMeta: SpotMetaAndAssetCtxs,
-): string {
+): SpotHolding[] {
   const [meta, ctxs] = spotMeta;
-  let sum = 0;
+  const holdings: SpotHolding[] = [];
 
   for (const balance of balances) {
     const total = Number.parseFloat(balance.total);
     if (!Number.isFinite(total) || total <= 0) continue;
 
     if (balance.token === 0 || balance.coin === "USDC") {
-      sum += total;
+      holdings.push({
+        coin: balance.coin,
+        size: balance.total,
+        hold: balance.hold,
+        markPrice: "1",
+        value: balance.total,
+      });
       continue;
     }
 
     const pairIndex = meta.universe.findIndex(
       (pair) => pair.tokens[0] === balance.token,
     );
-    if (pairIndex < 0) continue;
+    if (pairIndex < 0) {
+      holdings.push({
+        coin: balance.coin,
+        size: balance.total,
+        hold: balance.hold,
+        markPrice: null,
+        value: "0",
+      });
+      continue;
+    }
 
-    const markPx = Number.parseFloat(ctxs[pairIndex]?.markPx ?? "");
-    if (!Number.isFinite(markPx)) continue;
+    const markPxRaw = ctxs[pairIndex]?.markPx ?? "";
+    const markPx = Number.parseFloat(markPxRaw);
+    if (!Number.isFinite(markPx)) {
+      holdings.push({
+        coin: balance.coin,
+        size: balance.total,
+        hold: balance.hold,
+        markPrice: null,
+        value: "0",
+      });
+      continue;
+    }
 
-    sum += total * markPx;
+    holdings.push({
+      coin: balance.coin,
+      size: balance.total,
+      hold: balance.hold,
+      markPrice: markPxRaw,
+      value: (total * markPx).toString(),
+    });
   }
 
-  return sum.toString();
+  holdings.sort((a, b) => {
+    const aVal = Number.parseFloat(a.value);
+    const bVal = Number.parseFloat(b.value);
+    const aNum = Number.isFinite(aVal) ? aVal : 0;
+    const bNum = Number.isFinite(bVal) ? bVal : 0;
+    return bNum - aNum;
+  });
+
+  return holdings;
+}
+
+export function priceSpotBalances(
+  balances: SpotBalance[],
+  spotMeta: SpotMetaAndAssetCtxs,
+): string {
+  return sumUsdStrings(
+    ...buildSpotHoldings(balances, spotMeta).map((h) => h.value),
+  );
 }
 
 export function sumPerpUnrealizedPnl(

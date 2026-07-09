@@ -46,6 +46,13 @@ export type WalletSnapshot = {
     hash?: string;
     isLiquidation?: true;
   }>;
+  spotBalances: Array<{
+    coin: string;
+    size: string;
+    hold: string;
+    markPrice: string | null;
+    value: string;
+  }>;
 };
 
 export type LeaderboardUpsertRow = {

@@ -1,8 +1,8 @@
 import type { WalletSnapshot } from "./hyperliquidTypes";
 import {
+  buildSpotHoldings,
   computeAccountValue,
   parseUserAbstraction,
-  priceSpotBalances,
   sumPerpUnrealizedPnl,
   sumUsdStrings,
   type SpotBalance,
@@ -340,7 +340,8 @@ export async function fetchWalletSnapshot(
   const rawOpenOrders = [...ordersDefault, ...ordersXyz];
   const openOrders = parseOpenOrders(rawOpenOrders);
 
-  const spotValue = priceSpotBalances(spotState.balances, spotMeta);
+  const spotBalances = buildSpotHoldings(spotState.balances, spotMeta);
+  const spotValue = sumUsdStrings(...spotBalances.map((h) => h.value));
   const perpAccountValueSum = sumUsdStrings(
     clearinghouseDefault.marginSummary.accountValue,
     clearinghouseXyz.marginSummary.accountValue,
@@ -374,5 +375,6 @@ export async function fetchWalletSnapshot(
     positions: attachTpslToPositions(positions, rawOpenOrders),
     openOrders,
     recentFills: parseFills(fills, address),
+    spotBalances,
   };
 }

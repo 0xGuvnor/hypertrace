@@ -1,9 +1,9 @@
 import type { WalletSnapshot } from "./types";
 import { HlRequestQueue } from "./hl-request-queue";
 import {
+  buildSpotHoldings,
   computeAccountValue,
   parseUserAbstraction,
-  priceSpotBalances,
   sumPerpUnrealizedPnl,
   sumUsdStrings,
   type SpotBalance,
@@ -381,7 +381,8 @@ export async function fetchWalletSnapshot(address: string): Promise<WalletSnapsh
   const rawOpenOrders = [...ordersDefault, ...ordersXyz];
   const openOrders = parseOpenOrders(rawOpenOrders);
 
-  const spotValue = priceSpotBalances(spotState.balances, meta.spot);
+  const spotBalances = buildSpotHoldings(spotState.balances, meta.spot);
+  const spotValue = sumUsdStrings(...spotBalances.map((h) => h.value));
   const perpAccountValueSum = sumUsdStrings(
     clearinghouseDefault.marginSummary.accountValue,
     clearinghouseXyz.marginSummary.accountValue,
@@ -415,5 +416,6 @@ export async function fetchWalletSnapshot(address: string): Promise<WalletSnapsh
     positions: attachTpslToPositions(positions, rawOpenOrders),
     openOrders,
     recentFills: parseFills(fills, address),
+    spotBalances,
   };
 }
