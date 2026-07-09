@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
+import { ResponsiveHint } from "@/components/responsive-hint";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,9 @@ import {
 } from "@/components/ui/table";
 import { formatUsd, formatSize } from "@/lib/format";
 import type { WalletSnapshot } from "@/lib/wallet-types";
+
+const HOLD_HINT =
+  "Amount locked in open spot orders or pending transactions. Available is Size minus Hold.";
 
 type SortDir = "asc" | "desc";
 
@@ -96,8 +100,18 @@ export function SpotHoldingsTable({
         <TableRow>
           <TableHead>Asset</TableHead>
           <TableHead className="text-right">Size</TableHead>
+          <TableHead className="text-right">Price</TableHead>
           <SortableValueHead sortDir={sortDir} onSort={handleSort} />
-          <TableHead className="text-right">Hold</TableHead>
+          <TableHead className="text-right">
+            <div className="flex justify-end">
+              <ResponsiveHint
+                label="Hold"
+                content={HOLD_HINT}
+                triggerClassName="font-medium"
+                contentClassName="max-w-[16rem] text-left font-normal"
+              />
+            </div>
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -110,6 +124,9 @@ export function SpotHoldingsTable({
             </TableCell>
             <TableCell className="text-right font-mono text-xs">
               {formatSize(holding.size)}
+            </TableCell>
+            <TableCell className="text-right font-mono text-xs">
+              {holding.markPrice ? formatUsd(holding.markPrice) : "—"}
             </TableCell>
             <TableCell className="text-right font-mono text-xs">
               {formatUsd(holding.value)}
