@@ -1,6 +1,6 @@
 import type { LiveWalletSnapshot } from "@/lib/wallet-types";
 
-export const LIVE_STALE_AFTER_MS = 90_000;
+export const LIVE_STALE_AFTER_MS = 360_000;
 
 export type LiveFeedStatus =
   | { kind: "connecting" }
