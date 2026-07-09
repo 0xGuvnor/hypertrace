@@ -4,7 +4,7 @@ export const SHELL_WIDTH_NARROW =
   "max-w-xl xl:max-w-2xl 2xl:max-w-3xl 3xl:max-w-4xl 4xl:max-w-5xl";
 
 export const SHELL_WIDTH_WIDE =
-  "max-w-4xl xl:max-w-5xl 2xl:max-w-6xl 3xl:max-w-7xl 4xl:max-w-screen-2xl";
+  "max-w-6xl xl:max-w-7xl 2xl:max-w-[96rem] 3xl:max-w-[120rem] 4xl:max-w-[150rem]";
 
 export const SHELL_PADDING =
   "px-4 py-6 sm:px-6 sm:py-8 3xl:px-8 4xl:px-10";
