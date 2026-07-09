@@ -3,6 +3,7 @@ export type WalletSnapshot = {
   fetchedAt: number;
   account: {
     accountValue: string;
+    spotValue: string;
     totalMarginUsed: string;
     withdrawable: string;
   };

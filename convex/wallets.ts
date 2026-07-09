@@ -44,7 +44,10 @@ export const getLiveSnapshot = query({
     return {
       address: row.address,
       fetchedAt: row.fetchedAt,
-      account: row.account,
+      account: {
+        ...row.account,
+        spotValue: row.account.spotValue ?? "0",
+      },
       positions: row.positions,
       openOrders: row.openOrders,
       recentFills: row.recentFills,

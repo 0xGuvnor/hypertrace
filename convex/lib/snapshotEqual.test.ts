@@ -5,6 +5,7 @@ import { snapshotTradingEqual } from "./snapshotEqual";
 const base = {
   account: {
     accountValue: "1000",
+    spotValue: "0",
     totalMarginUsed: "100",
     withdrawable: "900",
   },

@@ -14,12 +14,13 @@ export function WalletSummary({
 }) {
   const stats = [
     { label: "Account value", value: formatUsd(account.accountValue) },
+    { label: "Spot", value: formatUsd(account.spotValue ?? "0") },
     { label: "Margin used", value: formatUsd(account.totalMarginUsed) },
     { label: "Withdrawable", value: formatUsd(account.withdrawable) },
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {stats.map((stat) => (
         <Card key={stat.label} size="sm">
           <CardHeader>

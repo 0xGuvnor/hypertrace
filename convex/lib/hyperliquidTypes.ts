@@ -2,6 +2,7 @@ import { v, type Infer } from "convex/values";
 
 export const accountSummaryValidator = v.object({
   accountValue: v.string(),
+  spotValue: v.optional(v.string()),
   totalMarginUsed: v.string(),
   withdrawable: v.string(),
 });

@@ -1,5 +1,14 @@
 import type { WalletSnapshot } from "./types";
 import { HlRequestQueue } from "./hl-request-queue";
+import {
+  computeAccountValue,
+  parseUserAbstraction,
+  priceSpotBalances,
+  sumPerpUnrealizedPnl,
+  sumUsdStrings,
+  type SpotBalance,
+  type SpotMetaAndAssetCtxs,
+} from "./spotAccountValue";
 
 const HL_INFO_URL = "https://api.hyperliquid.xyz/info";
 const XYZ_DEX = "xyz";
@@ -64,6 +73,10 @@ type MetaAndAssetCtxs = [
   Array<{ markPx: string }>,
 ];
 
+type SpotClearinghouseState = {
+  balances: SpotBalance[];
+};
+
 type HyperliquidClientConfig = {
   metaCacheTtlMs: number;
   hlMaxConcurrency: number;
@@ -76,6 +89,7 @@ let metaCache: {
   fetchedAt: number;
   default: MetaAndAssetCtxs;
   xyz: MetaAndAssetCtxs;
+  spot: SpotMetaAndAssetCtxs;
 } | null = null;
 
 export function configureHyperliquid(config: HyperliquidClientConfig): void {
@@ -124,24 +138,31 @@ async function postInfo<T>(body: Record<string, unknown>): Promise<T> {
 async function fetchMetaAndAssetCtxs(): Promise<{
   default: MetaAndAssetCtxs;
   xyz: MetaAndAssetCtxs;
+  spot: SpotMetaAndAssetCtxs;
 }> {
   const now = Date.now();
   if (metaCache && now - metaCache.fetchedAt < metaCacheTtlMs) {
-    return { default: metaCache.default, xyz: metaCache.xyz };
+    return {
+      default: metaCache.default,
+      xyz: metaCache.xyz,
+      spot: metaCache.spot,
+    };
   }
 
-  const [defaultMeta, xyzMeta] = await Promise.all([
+  const [defaultMeta, xyzMeta, spotMeta] = await Promise.all([
     postInfo<MetaAndAssetCtxs>({ type: "metaAndAssetCtxs", dex: "" }),
     postInfo<MetaAndAssetCtxs>({ type: "metaAndAssetCtxs", dex: XYZ_DEX }),
+    postInfo<SpotMetaAndAssetCtxs>({ type: "spotMetaAndAssetCtxs" }),
   ]);
 
   metaCache = {
     fetchedAt: now,
     default: defaultMeta,
     xyz: xyzMeta,
+    spot: spotMeta,
   };
 
-  return { default: defaultMeta, xyz: xyzMeta };
+  return { default: defaultMeta, xyz: xyzMeta, spot: spotMeta };
 }
 
 function fundingFeeFromCumFunding(sinceOpen: string): string {
@@ -249,15 +270,6 @@ function mergeMarkPriceMaps(...maps: Map<string, string>[]): Map<string, string>
   return merged;
 }
 
-function sumUsdStrings(...values: string[]): string {
-  let sum = 0;
-  for (const value of values) {
-    const num = Number.parseFloat(value);
-    if (Number.isFinite(num)) sum += num;
-  }
-  return sum.toString();
-}
-
 function parsePositions(
   assetPositions: ClearinghouseState["assetPositions"],
   markByCoin: Map<string, string>,
@@ -323,6 +335,8 @@ export async function fetchWalletSnapshot(address: string): Promise<WalletSnapsh
     ordersDefault,
     ordersXyz,
     meta,
+    spotState,
+    userAbstractionRaw,
   ] = await Promise.all([
     postInfo<ClearinghouseState>({
       type: "clearinghouseState",
@@ -346,6 +360,14 @@ export async function fetchWalletSnapshot(address: string): Promise<WalletSnapsh
       dex: XYZ_DEX,
     }),
     fetchMetaAndAssetCtxs(),
+    postInfo<SpotClearinghouseState>({
+      type: "spotClearinghouseState",
+      user: address,
+    }),
+    postInfo<unknown>({
+      type: "userAbstraction",
+      user: address,
+    }),
   ]);
 
   const markByCoin = mergeMarkPriceMaps(
@@ -359,14 +381,28 @@ export async function fetchWalletSnapshot(address: string): Promise<WalletSnapsh
   const rawOpenOrders = [...ordersDefault, ...ordersXyz];
   const openOrders = parseOpenOrders(rawOpenOrders);
 
+  const spotValue = priceSpotBalances(spotState.balances, meta.spot);
+  const perpAccountValueSum = sumUsdStrings(
+    clearinghouseDefault.marginSummary.accountValue,
+    clearinghouseXyz.marginSummary.accountValue,
+  );
+  const perpUnrealizedPnlSum = sumPerpUnrealizedPnl(
+    clearinghouseDefault,
+    clearinghouseXyz,
+  );
+  const accountValue = computeAccountValue({
+    userAbstraction: parseUserAbstraction(userAbstractionRaw),
+    spotValue,
+    perpAccountValueSum,
+    perpUnrealizedPnlSum,
+  });
+
   return {
     address,
     fetchedAt: Date.now(),
     account: {
-      accountValue: sumUsdStrings(
-        clearinghouseDefault.marginSummary.accountValue,
-        clearinghouseXyz.marginSummary.accountValue,
-      ),
+      accountValue,
+      spotValue,
       totalMarginUsed: sumUsdStrings(
         clearinghouseDefault.marginSummary.totalMarginUsed,
         clearinghouseXyz.marginSummary.totalMarginUsed,

@@ -1,4 +1,13 @@
 import type { WalletSnapshot } from "./hyperliquidTypes";
+import {
+  computeAccountValue,
+  parseUserAbstraction,
+  priceSpotBalances,
+  sumPerpUnrealizedPnl,
+  sumUsdStrings,
+  type SpotBalance,
+  type SpotMetaAndAssetCtxs,
+} from "./spotAccountValue";
 
 const HL_INFO_URL = "https://api.hyperliquid.xyz/info";
 const XYZ_DEX = "xyz";
@@ -64,6 +73,10 @@ type MetaAndAssetCtxs = [
   { universe: Array<{ name: string }> },
   Array<{ markPx: string }>,
 ];
+
+type SpotClearinghouseState = {
+  balances: SpotBalance[];
+};
 
 async function postInfo<T>(
   body: Record<string, unknown>,
@@ -199,15 +212,6 @@ function mergeMarkPriceMaps(...maps: Map<string, string>[]): Map<string, string>
   return merged;
 }
 
-function sumUsdStrings(...values: string[]): string {
-  let sum = 0;
-  for (const value of values) {
-    const num = Number.parseFloat(value);
-    if (Number.isFinite(num)) sum += num;
-  }
-  return sum.toString();
-}
-
 function parsePositions(
   assetPositions: ClearinghouseState["assetPositions"],
   markByCoin: Map<string, string>,
@@ -276,6 +280,9 @@ export async function fetchWalletSnapshot(
     ordersXyz,
     metaDefault,
     metaXyz,
+    spotState,
+    spotMeta,
+    userAbstractionRaw,
   ] = await Promise.all([
     postInfo<ClearinghouseState>({
       type: "clearinghouseState",
@@ -309,6 +316,17 @@ export async function fetchWalletSnapshot(
       type: "metaAndAssetCtxs",
       dex: XYZ_DEX,
     }),
+    postInfo<SpotClearinghouseState>({
+      type: "spotClearinghouseState",
+      user: address,
+    }),
+    postInfo<SpotMetaAndAssetCtxs>({
+      type: "spotMetaAndAssetCtxs",
+    }),
+    postInfo<unknown>({
+      type: "userAbstraction",
+      user: address,
+    }),
   ]);
 
   const markByCoin = mergeMarkPriceMaps(
@@ -322,14 +340,28 @@ export async function fetchWalletSnapshot(
   const rawOpenOrders = [...ordersDefault, ...ordersXyz];
   const openOrders = parseOpenOrders(rawOpenOrders);
 
+  const spotValue = priceSpotBalances(spotState.balances, spotMeta);
+  const perpAccountValueSum = sumUsdStrings(
+    clearinghouseDefault.marginSummary.accountValue,
+    clearinghouseXyz.marginSummary.accountValue,
+  );
+  const perpUnrealizedPnlSum = sumPerpUnrealizedPnl(
+    clearinghouseDefault,
+    clearinghouseXyz,
+  );
+  const accountValue = computeAccountValue({
+    userAbstraction: parseUserAbstraction(userAbstractionRaw),
+    spotValue,
+    perpAccountValueSum,
+    perpUnrealizedPnlSum,
+  });
+
   return {
     address,
     fetchedAt: Date.now(),
     account: {
-      accountValue: sumUsdStrings(
-        clearinghouseDefault.marginSummary.accountValue,
-        clearinghouseXyz.marginSummary.accountValue,
-      ),
+      accountValue,
+      spotValue,
       totalMarginUsed: sumUsdStrings(
         clearinghouseDefault.marginSummary.totalMarginUsed,
         clearinghouseXyz.marginSummary.totalMarginUsed,
