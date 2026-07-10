@@ -32,6 +32,15 @@ function parseDepositRow(value: unknown): DepositRow | null {
   ) {
     return null;
   }
+  const direction =
+    value.direction === "withdrawal"
+      ? "withdrawal"
+      : value.direction === "deposit" || value.direction === undefined
+        ? "deposit"
+        : null;
+  if (direction === null) {
+    return null;
+  }
   return {
     hlAddress: value.hlAddress,
     sourceAddress: value.sourceAddress,
@@ -41,6 +50,7 @@ function parseDepositRow(value: unknown): DepositRow | null {
     logIndex: value.logIndex,
     depositKey: value.depositKey,
     blockNumber: value.blockNumber,
+    direction,
   };
 }
 

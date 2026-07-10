@@ -1,10 +1,10 @@
 "use client";
 
-import { DepositsTable } from "@/components/deposits-table";
 import { FillsTable } from "@/components/fills-table";
 import { OrdersTable } from "@/components/orders-table";
 import { PositionsTable } from "@/components/positions-table";
 import { SpotHoldingsTable } from "@/components/spot-holdings-table";
+import { TransfersTable } from "@/components/transfers-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { WalletDeposits } from "@/lib/cluster-types";
 import type { WalletSnapshot } from "@/lib/wallet-types";
@@ -17,7 +17,7 @@ export function WalletTabs({
   walletDeposits: WalletDeposits;
 }) {
   const { deposits, hasMore } = walletDeposits;
-  const depositCountLabel = hasMore ? `${deposits.length}+` : `${deposits.length}`;
+  const transferCountLabel = hasMore ? `${deposits.length}+` : `${deposits.length}`;
   const spotCount = snapshot.spotBalances?.length ?? 0;
 
   return (
@@ -41,10 +41,10 @@ export function WalletTabs({
             Fills
             <span className="text-muted-foreground">({snapshot.recentFills.length})</span>
           </TabsTrigger>
-          <TabsTrigger value="deposits" className="min-w-0 flex-1 text-xs sm:flex-none sm:text-sm">
-            <span className="sm:hidden">Dep</span>
-            <span className="hidden sm:inline">Deposits</span>
-            <span className="text-muted-foreground">({depositCountLabel})</span>
+          <TabsTrigger value="transfers" className="min-w-0 flex-1 text-xs sm:flex-none sm:text-sm">
+            <span className="sm:hidden">Xfer</span>
+            <span className="hidden sm:inline">Transfers</span>
+            <span className="text-muted-foreground">({transferCountLabel})</span>
           </TabsTrigger>
         </TabsList>
       </div>
@@ -60,8 +60,8 @@ export function WalletTabs({
       <TabsContent value="fills" className="min-w-0">
         <FillsTable fills={snapshot.recentFills} />
       </TabsContent>
-      <TabsContent value="deposits" className="min-w-0">
-        <DepositsTable deposits={deposits} hasMore={hasMore} />
+      <TabsContent value="transfers" className="min-w-0">
+        <TransfersTable transfers={deposits} hasMore={hasMore} />
       </TabsContent>
     </Tabs>
   );

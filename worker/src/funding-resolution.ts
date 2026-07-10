@@ -22,6 +22,7 @@ export type DepositForFunding = {
   arbTxHash: string;
   logIndex: number;
   depositKey: string;
+  direction: "deposit" | "withdrawal";
 };
 
 type TransferCacheKey = string;

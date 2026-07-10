@@ -7,6 +7,7 @@ import {
   depositRowValidator,
   depositSourceUpdateValidator,
   depositValidator,
+  resolveTransferDirection,
   walletDepositsResultValidator,
 } from "./lib/depositTypes";
 
@@ -51,10 +52,14 @@ export const upsertBatch = internalMutation({
         .unique();
 
       if (existing) {
-        if (isImprovedSource(hlAddress, existing.sourceAddress, sourceAddress)) {
+        if (
+          resolveTransferDirection(existing.direction) === "deposit" &&
+          isImprovedSource(hlAddress, existing.sourceAddress, sourceAddress)
+        ) {
           await ctx.db.patch(existing._id, {
             sourceAddress,
             blockNumber: existing.blockNumber ?? deposit.blockNumber,
+            direction: existing.direction ?? "deposit",
           });
           updated += 1;
         } else {
@@ -72,6 +77,7 @@ export const upsertBatch = internalMutation({
         logIndex: deposit.logIndex,
         depositKey: deposit.depositKey,
         blockNumber: deposit.blockNumber,
+        direction: deposit.direction,
       });
       inserted += 1;
 
@@ -136,6 +142,7 @@ export const listSelfSourced = internalQuery({
       arbTxHash: string;
       logIndex: number;
       depositKey: string;
+      direction: "deposit" | "withdrawal";
       blockNumber?: number;
     }> = [];
 
@@ -150,7 +157,11 @@ export const listSelfSourced = internalQuery({
         .collect();
 
       const selfSourced = rows
-        .filter((row) => row.sourceAddress === hlAddress)
+        .filter(
+          (row) =>
+            resolveTransferDirection(row.direction) === "deposit" &&
+            row.sourceAddress === hlAddress,
+        )
         .sort((a, b) => b.timestamp - a.timestamp)
         .slice(0, SELF_SOURCED_LIMIT_PER_ADDRESS);
 
@@ -163,6 +174,7 @@ export const listSelfSourced = internalQuery({
           arbTxHash: row.arbTxHash,
           logIndex: row.logIndex,
           depositKey: row.depositKey,
+          direction: resolveTransferDirection(row.direction),
           blockNumber: row.blockNumber,
         });
       }
@@ -192,6 +204,11 @@ export const patchSourceBatch = internalMutation({
         .unique();
 
       if (!existing) {
+        skipped += 1;
+        continue;
+      }
+
+      if (resolveTransferDirection(existing.direction) !== "deposit") {
         skipped += 1;
         continue;
       }
@@ -307,6 +324,7 @@ export const listByWallet = query({
       arbTxHash: row.arbTxHash,
       logIndex: row.logIndex,
       depositKey: row.depositKey,
+      direction: resolveTransferDirection(row.direction),
       blockNumber: row.blockNumber,
     }));
 

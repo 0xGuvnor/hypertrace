@@ -14,10 +14,16 @@ const TRANSFER_EVENT = parseAbiItem(
   "event Transfer(address indexed from, address indexed to, uint256 value)",
 );
 
+const FINALIZED_WITHDRAWAL_EVENT = parseAbiItem(
+  "event FinalizedWithdrawal(address indexed user, address destination, uint64 usd, uint64 nonce, bytes32 message)",
+);
+
 export const CCTP_MESSENGER_DEPOSIT_TOPIC =
   "0x0c8c1cbdc5190613ebd485511d4e2812cfa45eecb79d845893331fedad5130a5" as const;
 
 const USDC_DECIMALS = 6;
+
+export type TransferDirection = "deposit" | "withdrawal";
 
 export type ParsedDeposit = {
   hlAddress: string;
@@ -28,6 +34,7 @@ export type ParsedDeposit = {
   logIndex: number;
   depositKey: string;
   blockNumber: number;
+  direction: TransferDirection;
 };
 
 export type ArbitrumDepositScannerConfig = {
@@ -102,7 +109,7 @@ export function createArbitrumDepositScanner(
             ? chainHead
             : fromBlock + config.logChunkBlocks - 1n;
 
-        const chunkDeposits = await scanDepositsForRange(
+        const chunkDeposits = await scanTransfersForRange(
           client,
           config,
           hlAddress,
@@ -117,8 +124,13 @@ export function createArbitrumDepositScanner(
       const deduped = dedupeDepositsByKey(deposits);
 
       if (config.fundingResolver && deduped.length > 0) {
-        const resolved = await config.fundingResolver.resolveDeposits(deduped);
-        return { deposits: resolved, lastScannedBlock };
+        const inbound = deduped.filter((row) => row.direction === "deposit");
+        const outbound = deduped.filter((row) => row.direction === "withdrawal");
+        const resolved =
+          inbound.length > 0
+            ? await config.fundingResolver.resolveDeposits(inbound)
+            : [];
+        return { deposits: [...resolved, ...outbound], lastScannedBlock };
       }
 
       return { deposits: deduped, lastScannedBlock };
@@ -126,14 +138,20 @@ export function createArbitrumDepositScanner(
   };
 }
 
-async function scanDepositsForRange(
+async function scanTransfersForRange(
   client: PublicClient,
   config: ArbitrumDepositScannerConfig,
   hlAddress: Address,
   fromBlock: bigint,
   toBlock: bigint,
 ): Promise<ParsedDeposit[]> {
-  const [bridge2Logs, extensionLogs, messengerLogs] = await Promise.all([
+  const [
+    bridge2DepositLogs,
+    extensionDepositLogs,
+    messengerLogs,
+    bridge2WithdrawalLogs,
+    extensionWithdrawalLogs,
+  ] = await Promise.all([
     client.getLogs({
       address: config.usdcAddress,
       event: TRANSFER_EVENT,
@@ -155,12 +173,33 @@ async function scanDepositsForRange(
       toBlock,
     }),
     getCctpMessengerDepositLogs(client, config, hlAddress, fromBlock, toBlock),
+    client.getLogs({
+      address: config.bridge2Address,
+      event: FINALIZED_WITHDRAWAL_EVENT,
+      args: {
+        user: hlAddress,
+      },
+      fromBlock,
+      toBlock,
+    }),
+    client.getLogs({
+      address: config.usdcAddress,
+      event: TRANSFER_EVENT,
+      args: {
+        from: config.cctpExtensionAddress,
+        to: hlAddress,
+      },
+      fromBlock,
+      toBlock,
+    }),
   ]);
 
   const allLogs: DepositLog[] = [
-    ...bridge2Logs,
-    ...extensionLogs,
+    ...bridge2DepositLogs,
+    ...extensionDepositLogs,
     ...messengerLogs,
+    ...bridge2WithdrawalLogs,
+    ...extensionWithdrawalLogs,
   ];
 
   if (allLogs.length === 0) {
@@ -172,18 +211,19 @@ async function scanDepositsForRange(
     allLogs.map((log) => log.blockNumber),
   );
 
-  const deposits: ParsedDeposit[] = [];
-  for (const log of bridge2Logs) {
-    const deposit = parseTransferLog(log, blockTimestamps);
+  const transfers: ParsedDeposit[] = [];
+
+  for (const log of bridge2DepositLogs) {
+    const deposit = parseTransferLog(log, blockTimestamps, "deposit");
     if (deposit) {
-      deposits.push(deposit);
+      transfers.push(deposit);
     }
   }
 
-  for (const log of extensionLogs) {
-    const deposit = parseTransferLog(log, blockTimestamps);
+  for (const log of extensionDepositLogs) {
+    const deposit = parseTransferLog(log, blockTimestamps, "deposit");
     if (deposit) {
-      deposits.push(deposit);
+      transfers.push(deposit);
     }
   }
 
@@ -194,11 +234,25 @@ async function scanDepositsForRange(
       hlAddress,
     );
     if (deposit) {
-      deposits.push(deposit);
+      transfers.push(deposit);
     }
   }
 
-  return deposits;
+  for (const log of bridge2WithdrawalLogs) {
+    const withdrawal = parseFinalizedWithdrawalLog(log, blockTimestamps);
+    if (withdrawal) {
+      transfers.push(withdrawal);
+    }
+  }
+
+  for (const log of extensionWithdrawalLogs) {
+    const withdrawal = parseTransferLog(log, blockTimestamps, "withdrawal");
+    if (withdrawal) {
+      transfers.push(withdrawal);
+    }
+  }
+
+  return transfers;
 }
 
 type RawEthLog = {
@@ -261,6 +315,7 @@ export function dedupeDepositsByKey(
 export function parseTransferLog(
   log: DepositLog,
   blockTimestamps: Map<bigint, number>,
+  direction: TransferDirection = "deposit",
 ): ParsedDeposit | null {
   const decoded = decodeEventLog({
     abi: [TRANSFER_EVENT],
@@ -273,20 +328,58 @@ export function parseTransferLog(
     return null;
   }
 
-  const hlAddress = decoded.args.from.toLowerCase();
+  const from = decoded.args.from.toLowerCase();
+  const to = decoded.args.to.toLowerCase();
+  const hlAddress = direction === "deposit" ? from : to;
+  const sourceAddress = direction === "deposit" ? from : to;
   const amount = Number(decoded.args.value) / 10 ** USDC_DECIMALS;
   const logIndex = log.logIndex ?? 0;
   const arbTxHash = log.transactionHash.toLowerCase();
 
   return {
     hlAddress,
-    sourceAddress: hlAddress,
+    sourceAddress,
     amount,
     timestamp,
     arbTxHash,
     logIndex,
     depositKey: `${arbTxHash}:${logIndex}`,
     blockNumber: Number(log.blockNumber),
+    direction,
+  };
+}
+
+export function parseFinalizedWithdrawalLog(
+  log: DepositLog,
+  blockTimestamps: Map<bigint, number>,
+): ParsedDeposit | null {
+  const decoded = decodeEventLog({
+    abi: [FINALIZED_WITHDRAWAL_EVENT],
+    data: log.data,
+    topics: log.topics,
+  });
+
+  const timestamp = blockTimestamps.get(log.blockNumber);
+  if (timestamp === undefined) {
+    return null;
+  }
+
+  const hlAddress = decoded.args.user.toLowerCase();
+  const destination = decoded.args.destination.toLowerCase();
+  const amount = Number(decoded.args.usd) / 10 ** USDC_DECIMALS;
+  const logIndex = log.logIndex ?? 0;
+  const arbTxHash = log.transactionHash.toLowerCase();
+
+  return {
+    hlAddress,
+    sourceAddress: destination,
+    amount,
+    timestamp,
+    arbTxHash,
+    logIndex,
+    depositKey: `${arbTxHash}:${logIndex}`,
+    blockNumber: Number(log.blockNumber),
+    direction: "withdrawal",
   };
 }
 
@@ -333,6 +426,7 @@ export function parseCctpMessengerDepositLog(
     logIndex,
     depositKey: `${arbTxHash}:${logIndex}`,
     blockNumber: Number(log.blockNumber),
+    direction: "deposit",
   };
 }
 

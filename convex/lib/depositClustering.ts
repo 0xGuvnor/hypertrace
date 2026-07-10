@@ -3,7 +3,12 @@ import { SHARED_DEPOSIT_SOURCE_BASIS } from "./clusterTypes";
 export type DepositRow = {
   hlAddress: string;
   sourceAddress: string;
+  direction?: "deposit" | "withdrawal";
 };
+
+function isDepositRow(deposit: DepositRow): boolean {
+  return deposit.direction !== "withdrawal";
+}
 
 export type DepositSourceCluster = {
   clusterKey: string;
@@ -29,6 +34,9 @@ export function buildDepositSourceClusters(
   const bySource = new Map<string, Map<string, number>>();
 
   for (const deposit of deposits) {
+    if (!isDepositRow(deposit)) {
+      continue;
+    }
     let hlCounts = bySource.get(deposit.sourceAddress);
     if (!hlCounts) {
       hlCounts = new Map();
@@ -90,6 +98,9 @@ export function buildHlAddressSourceCounts(
   const byHl = new Map<string, Map<string, number>>();
 
   for (const deposit of deposits) {
+    if (!isDepositRow(deposit)) {
+      continue;
+    }
     let sourceCounts = byHl.get(deposit.hlAddress);
     if (!sourceCounts) {
       sourceCounts = new Map();

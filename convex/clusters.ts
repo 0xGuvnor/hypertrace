@@ -51,6 +51,7 @@ async function collectAllDeposits(ctx: MutationCtx): Promise<DepositRow[]> {
   return rows.map((row) => ({
     hlAddress: row.hlAddress,
     sourceAddress: row.sourceAddress,
+    direction: row.direction,
   }));
 }
 
@@ -240,7 +241,13 @@ export const getForWallet = query({
       .withIndex("by_hlAddress", (q) => q.eq("hlAddress", hlAddress))
       .collect();
 
-    const sourceAddresses = [...new Set(depositRows.map((row) => row.sourceAddress))];
+    const sourceAddresses = [
+      ...new Set(
+        depositRows
+          .filter((row) => row.direction !== "withdrawal")
+          .map((row) => row.sourceAddress),
+      ),
+    ];
     const seenKeys = new Set<string>();
     const clusters: ReturnType<typeof toCluster>[] = [];
 
