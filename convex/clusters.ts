@@ -17,6 +17,7 @@ import {
   pickPrimaryClusterKey,
   type DepositRow,
 } from "./lib/depositClustering";
+import { isFundingDenylisted } from "./lib/knownAddresses";
 
 type ClusterDoc = {
   clusterKey: string;
@@ -245,7 +246,11 @@ export const getForWallet = query({
       ...new Set(
         depositRows
           .filter((row) => row.direction !== "withdrawal")
-          .map((row) => row.sourceAddress),
+          .map((row) => row.sourceAddress)
+          .filter(
+            (sourceAddress) =>
+              sourceAddress !== hlAddress && !isFundingDenylisted(sourceAddress),
+          ),
       ),
     ];
     const seenKeys = new Set<string>();

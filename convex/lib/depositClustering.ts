@@ -1,4 +1,8 @@
 import { SHARED_DEPOSIT_SOURCE_BASIS } from "./clusterTypes";
+import {
+  CLUSTER_SOURCE_FANOUT_CAP,
+  isFundingDenylisted,
+} from "./knownAddresses";
 
 export type DepositRow = {
   hlAddress: string;
@@ -8,6 +12,16 @@ export type DepositRow = {
 
 function isDepositRow(deposit: DepositRow): boolean {
   return deposit.direction !== "withdrawal";
+}
+
+function isClusterableSource(sourceAddress: string, hlAddress: string): boolean {
+  if (sourceAddress === hlAddress) {
+    return false;
+  }
+  if (isFundingDenylisted(sourceAddress)) {
+    return false;
+  }
+  return true;
 }
 
 export type DepositSourceCluster = {
@@ -37,6 +51,9 @@ export function buildDepositSourceClusters(
     if (!isDepositRow(deposit)) {
       continue;
     }
+    if (!isClusterableSource(deposit.sourceAddress, deposit.hlAddress)) {
+      continue;
+    }
     let hlCounts = bySource.get(deposit.sourceAddress);
     if (!hlCounts) {
       hlCounts = new Map();
@@ -49,6 +66,9 @@ export function buildDepositSourceClusters(
 
   for (const [sourceAddress, hlCounts] of bySource) {
     if (hlCounts.size < 2) {
+      continue;
+    }
+    if (hlCounts.size > CLUSTER_SOURCE_FANOUT_CAP) {
       continue;
     }
 
@@ -99,6 +119,9 @@ export function buildHlAddressSourceCounts(
 
   for (const deposit of deposits) {
     if (!isDepositRow(deposit)) {
+      continue;
+    }
+    if (!isClusterableSource(deposit.sourceAddress, deposit.hlAddress)) {
       continue;
     }
     let sourceCounts = byHl.get(deposit.hlAddress);

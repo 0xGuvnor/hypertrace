@@ -10,7 +10,8 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "sync:funding-denylist": "bun run scripts/sync-funding-denylist.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

@@ -5,6 +5,7 @@ import {
   type AlchemyTransfer,
   type AlchemyTransfersConfig,
 } from "./alchemy-transfers";
+import { isFundingDenylisted } from "./known-addresses";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -133,6 +134,9 @@ export function pickFundingSource(
 ): string {
   const candidates = inbound.filter((transfer) => {
     if (transfer.from === hlAddress) {
+      return false;
+    }
+    if (isFundingDenylisted(transfer.from)) {
       return false;
     }
     if (transfer.blockNum > depositBlock) {
