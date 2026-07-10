@@ -14,14 +14,17 @@ import { formatTimestamp } from "@/lib/format";
 import {
   DEFAULT_LEADERBOARD_ORDER,
   DEFAULT_LEADERBOARD_SORT_BY,
+  DEFAULT_MIN_ACCOUNT_VALUE_FILTER,
   DEFAULT_PNL_WINDOW,
   LEADERBOARD_LIST_PAGE_SIZE,
   type LeaderboardOrder,
   type LeaderboardRow,
   type LeaderboardSortBy,
   type LeaderboardTailStatus,
+  type MinAccountValueFilter,
   type MinVolumeFilter,
   type PnlWindow,
+  minAccountValueFilterArgs,
   minVolumeFilterArgs,
   PNL_WINDOW_TO_SORT,
 } from "@/lib/leaderboard-list";
@@ -46,26 +49,19 @@ type PageResult = {
   isDone: boolean;
 };
 
-function parseMinAccountValue(draft: string): number | undefined {
-  const trimmed = draft.trim();
-  if (trimmed === "") return undefined;
-  const value = Number(trimmed);
-  if (!Number.isFinite(value) || value < 0) return undefined;
-  return value;
-}
-
 function buildListArgs(
   sortBy: LeaderboardSortBy,
   order: LeaderboardOrder,
-  minAccountValue: number | undefined,
+  minAccountValueFilter: MinAccountValueFilter,
   minVolumeFilter: MinVolumeFilter,
   volumeWindow: PnlWindow,
 ): ListArgs {
+  const accountValueArgs = minAccountValueFilterArgs(minAccountValueFilter);
   const volumeArgs = minVolumeFilterArgs(minVolumeFilter);
   return {
     sortBy,
     order,
-    ...(minAccountValue !== undefined ? { minAccountValue } : {}),
+    ...accountValueArgs,
     ...volumeArgs,
     ...(minVolumeFilter !== "any" ? { volumeWindow } : {}),
   };
@@ -74,13 +70,13 @@ function buildListArgs(
 function isDefaultArgs(
   sortBy: LeaderboardSortBy,
   order: LeaderboardOrder,
-  minAccountValue: number | undefined,
+  minAccountValueFilter: MinAccountValueFilter,
   minVolumeFilter: MinVolumeFilter,
 ): boolean {
   return (
     sortBy === DEFAULT_LEADERBOARD_SORT_BY &&
     order === DEFAULT_LEADERBOARD_ORDER &&
-    minAccountValue === undefined &&
+    minAccountValueFilter === DEFAULT_MIN_ACCOUNT_VALUE_FILTER &&
     minVolumeFilter === "any"
   );
 }
@@ -190,8 +186,8 @@ export function LeaderboardListLive({
   const [sortOrder, setSortOrder] = useState<LeaderboardOrder>(
     DEFAULT_LEADERBOARD_ORDER,
   );
-  const [minAccountValueDraft, setMinAccountValueDraft] = useState("");
-  const [minAccountValue, setMinAccountValue] = useState<number | undefined>();
+  const [minAccountValueFilter, setMinAccountValueFilter] =
+    useState<MinAccountValueFilter>(DEFAULT_MIN_ACCOUNT_VALUE_FILTER);
   const [minVolumeFilter, setMinVolumeFilter] =
     useState<MinVolumeFilter>("any");
   const [queriedPage, setQueriedPage] = useState<PageResult | null>(null);
@@ -202,17 +198,17 @@ export function LeaderboardListLive({
       buildListArgs(
         sortBy,
         sortOrder,
-        minAccountValue,
+        minAccountValueFilter,
         minVolumeFilter,
         pnlWindow,
       ),
-    [minAccountValue, minVolumeFilter, pnlWindow, sortBy, sortOrder],
+    [minAccountValueFilter, minVolumeFilter, pnlWindow, sortBy, sortOrder],
   );
 
   const usePreloaded = isDefaultArgs(
     sortBy,
     sortOrder,
-    minAccountValue,
+    minAccountValueFilter,
     minVolumeFilter,
   );
 
@@ -234,14 +230,14 @@ export function LeaderboardListLive({
       [
         sortBy,
         sortOrder,
-        minAccountValue ?? "",
+        minAccountValueFilter,
         minVolumeFilter,
         pnlWindow,
         firstPage.page.map((row) => row.address).join(","),
       ].join("|"),
     [
       firstPage.page,
-      minAccountValue,
+      minAccountValueFilter,
       minVolumeFilter,
       pnlWindow,
       sortBy,
@@ -272,16 +268,21 @@ export function LeaderboardListLive({
     (
       nextSortBy: LeaderboardSortBy,
       nextOrder: LeaderboardOrder,
-      nextMin: number | undefined,
+      nextAccountValueFilter: MinAccountValueFilter,
       nextVolumeFilter: MinVolumeFilter,
       nextWindow: PnlWindow,
     ) => {
       setSortBy(nextSortBy);
       setSortOrder(nextOrder);
-      setMinAccountValue(nextMin);
+      setMinAccountValueFilter(nextAccountValueFilter);
       setMinVolumeFilter(nextVolumeFilter);
       if (
-        isDefaultArgs(nextSortBy, nextOrder, nextMin, nextVolumeFilter)
+        isDefaultArgs(
+          nextSortBy,
+          nextOrder,
+          nextAccountValueFilter,
+          nextVolumeFilter,
+        )
       ) {
         setQueriedPage(null);
         return;
@@ -290,7 +291,7 @@ export function LeaderboardListLive({
         buildListArgs(
           nextSortBy,
           nextOrder,
-          nextMin,
+          nextAccountValueFilter,
           nextVolumeFilter,
           nextWindow,
         ),
@@ -305,12 +306,12 @@ export function LeaderboardListLive({
       applyView(
         PNL_WINDOW_TO_SORT[window],
         "desc",
-        minAccountValue,
+        minAccountValueFilter,
         minVolumeFilter,
         window,
       );
     },
-    [applyView, minAccountValue, minVolumeFilter],
+    [applyView, minAccountValueFilter, minVolumeFilter],
   );
 
   const handleSort = useCallback(
@@ -323,11 +324,17 @@ export function LeaderboardListLive({
       if (key === "pnlMonth" || key === "vlmMonth") nextWindow = "month";
       if (key === "pnlAllTime" || key === "vlmAllTime") nextWindow = "allTime";
       if (nextWindow !== pnlWindow) setPnlWindow(nextWindow);
-      applyView(key, nextOrder, minAccountValue, minVolumeFilter, nextWindow);
+      applyView(
+        key,
+        nextOrder,
+        minAccountValueFilter,
+        minVolumeFilter,
+        nextWindow,
+      );
     },
     [
       applyView,
-      minAccountValue,
+      minAccountValueFilter,
       minVolumeFilter,
       pnlWindow,
       sortBy,
@@ -335,28 +342,18 @@ export function LeaderboardListLive({
     ],
   );
 
-  const handleApplyMinAccountValue = useCallback(() => {
-    applyView(
-      sortBy,
-      sortOrder,
-      parseMinAccountValue(minAccountValueDraft),
-      minVolumeFilter,
-      pnlWindow,
-    );
-  }, [
-    applyView,
-    minAccountValueDraft,
-    minVolumeFilter,
-    pnlWindow,
-    sortBy,
-    sortOrder,
-  ]);
+  const handleMinAccountValueFilterChange = useCallback(
+    (filter: MinAccountValueFilter) => {
+      applyView(sortBy, sortOrder, filter, minVolumeFilter, pnlWindow);
+    },
+    [applyView, minVolumeFilter, pnlWindow, sortBy, sortOrder],
+  );
 
   const handleMinVolumeFilterChange = useCallback(
     (filter: MinVolumeFilter) => {
-      applyView(sortBy, sortOrder, minAccountValue, filter, pnlWindow);
+      applyView(sortBy, sortOrder, minAccountValueFilter, filter, pnlWindow);
     },
-    [applyView, minAccountValue, pnlWindow, sortBy, sortOrder],
+    [applyView, minAccountValueFilter, pnlWindow, sortBy, sortOrder],
   );
 
   return (
@@ -374,9 +371,8 @@ export function LeaderboardListLive({
       <LeaderboardControls
         pnlWindow={pnlWindow}
         onPnlWindowChange={handlePnlWindowChange}
-        minAccountValueDraft={minAccountValueDraft}
-        onMinAccountValueDraftChange={setMinAccountValueDraft}
-        onApplyMinAccountValue={handleApplyMinAccountValue}
+        minAccountValueFilter={minAccountValueFilter}
+        onMinAccountValueFilterChange={handleMinAccountValueFilterChange}
         minVolumeFilter={minVolumeFilter}
         onMinVolumeFilterChange={handleMinVolumeFilterChange}
       />

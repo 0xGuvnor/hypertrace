@@ -24,9 +24,12 @@ export type VlmWindow = "day" | "week" | "month" | "allTime";
 
 export type MinVolumeFilter = "any" | "positive" | "1m" | "10m" | "100m";
 
+export type MinAccountValueFilter = "any" | "100k" | "1m" | "10m" | "100m";
+
 export const DEFAULT_LEADERBOARD_SORT_BY: LeaderboardSortBy = "pnlDay";
 export const DEFAULT_LEADERBOARD_ORDER: LeaderboardOrder = "desc";
 export const DEFAULT_PNL_WINDOW: PnlWindow = "day";
+export const DEFAULT_MIN_ACCOUNT_VALUE_FILTER: MinAccountValueFilter = "any";
 
 export const PNL_WINDOW_TO_SORT: Record<PnlWindow, LeaderboardSortBy> = {
   day: "pnlDay",
@@ -54,6 +57,24 @@ export const MIN_VOLUME_THRESHOLDS = {
   "10m": 1e7,
   "100m": 1e8,
 } as const satisfies Record<Exclude<MinVolumeFilter, "any" | "positive">, number>;
+
+export const MIN_ACCOUNT_VALUE_THRESHOLDS = {
+  "100k": 1e5,
+  "1m": 1e6,
+  "10m": 1e7,
+  "100m": 1e8,
+} as const satisfies Record<
+  Exclude<MinAccountValueFilter, "any">,
+  number
+>;
+
+export const MIN_ACCOUNT_VALUE_LABELS: Record<MinAccountValueFilter, string> = {
+  any: "Any",
+  "100k": "$100k",
+  "1m": "$1M",
+  "10m": "$10M",
+  "100m": "$100M",
+};
 
 export type LeaderboardRow = {
   address: string;
@@ -124,6 +145,27 @@ export function minVolumeFilterArgs(
       return { minVolume: MIN_VOLUME_THRESHOLDS["10m"] };
     case "100m":
       return { minVolume: MIN_VOLUME_THRESHOLDS["100m"] };
+    default: {
+      const _exhaustive: never = filter;
+      return _exhaustive;
+    }
+  }
+}
+
+export function minAccountValueFilterArgs(
+  filter: MinAccountValueFilter,
+): { minAccountValue?: number } {
+  switch (filter) {
+    case "any":
+      return {};
+    case "100k":
+      return { minAccountValue: MIN_ACCOUNT_VALUE_THRESHOLDS["100k"] };
+    case "1m":
+      return { minAccountValue: MIN_ACCOUNT_VALUE_THRESHOLDS["1m"] };
+    case "10m":
+      return { minAccountValue: MIN_ACCOUNT_VALUE_THRESHOLDS["10m"] };
+    case "100m":
+      return { minAccountValue: MIN_ACCOUNT_VALUE_THRESHOLDS["100m"] };
     default: {
       const _exhaustive: never = filter;
       return _exhaustive;
