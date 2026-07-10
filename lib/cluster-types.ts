@@ -7,6 +7,12 @@ export type Cluster = {
   lastUpdated: number;
 };
 
+export type DepositFunder = {
+  address: string;
+  amount: number;
+  weight: number;
+};
+
 export type Deposit = {
   hlAddress: string;
   sourceAddress: string;
@@ -17,6 +23,7 @@ export type Deposit = {
   depositKey: string;
   direction: "deposit" | "withdrawal";
   blockNumber?: number;
+  funders?: DepositFunder[];
 };
 
 export type WalletClusters = {

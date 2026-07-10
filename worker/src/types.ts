@@ -96,6 +96,12 @@ export type WorkerConfig = {
 
 export const JUNE_1_2026_START_BLOCK = 468_748_168;
 
+export type DepositFunder = {
+  address: string;
+  amount: number;
+  weight: number;
+};
+
 export type DepositRow = {
   hlAddress: string;
   sourceAddress: string;
@@ -106,6 +112,7 @@ export type DepositRow = {
   depositKey: string;
   blockNumber: number;
   direction: "deposit" | "withdrawal";
+  funders?: DepositFunder[];
 };
 
 export type DepositCursor = {
@@ -116,6 +123,7 @@ export type DepositCursor = {
 export type DepositSourceUpdate = {
   depositKey: string;
   sourceAddress: string;
+  funders?: DepositFunder[];
 };
 
 export type SelfSourcedDeposit = Omit<DepositRow, "blockNumber"> & {

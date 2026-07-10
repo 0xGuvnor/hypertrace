@@ -12,7 +12,14 @@ import {
 } from "./lib/depositTypes";
 
 const SELF_SOURCED_LIMIT_PER_ADDRESS = 100;
+const MISSING_FUNDERS_LIMIT_PER_ADDRESS = 100;
 const DEPOSIT_LIST_LIMIT = 100;
+
+type DepositFunder = {
+  address: string;
+  amount: number;
+  weight: number;
+};
 
 function isImprovedSource(
   hlAddress: string,
@@ -20,6 +27,58 @@ function isImprovedSource(
   nextSource: string,
 ): boolean {
   return existingSource === hlAddress && nextSource !== hlAddress;
+}
+
+function normalizeFunders(
+  funders: DepositFunder[] | undefined,
+): DepositFunder[] | undefined {
+  if (funders === undefined) {
+    return undefined;
+  }
+  return funders.map((funder) => ({
+    address: normalizeAddress(funder.address),
+    amount: funder.amount,
+    weight: funder.weight,
+  }));
+}
+
+function shouldUpdateFunding(args: {
+  hlAddress: string;
+  existingSource: string;
+  existingFunders: DepositFunder[] | undefined;
+  nextSource: string;
+  nextFunders: DepositFunder[] | undefined;
+}): boolean {
+  if (args.existingFunders === undefined && args.nextFunders !== undefined) {
+    return true;
+  }
+  return isImprovedSource(args.hlAddress, args.existingSource, args.nextSource);
+}
+
+function toPublicDeposit(row: {
+  hlAddress: string;
+  sourceAddress: string;
+  amount: number;
+  timestamp: number;
+  arbTxHash: string;
+  logIndex: number;
+  depositKey: string;
+  direction?: "deposit" | "withdrawal";
+  blockNumber?: number;
+  funders?: DepositFunder[];
+}) {
+  return {
+    hlAddress: row.hlAddress,
+    sourceAddress: row.sourceAddress,
+    amount: row.amount,
+    timestamp: row.timestamp,
+    arbTxHash: row.arbTxHash,
+    logIndex: row.logIndex,
+    depositKey: row.depositKey,
+    direction: resolveTransferDirection(row.direction),
+    blockNumber: row.blockNumber,
+    ...(row.funders !== undefined ? { funders: row.funders } : {}),
+  };
 }
 
 export const upsertBatch = internalMutation({
@@ -40,8 +99,15 @@ export const upsertBatch = internalMutation({
     for (const deposit of args.deposits) {
       const hlAddress = normalizeAddress(deposit.hlAddress);
       const sourceAddress = normalizeAddress(deposit.sourceAddress);
+      const funders = normalizeFunders(deposit.funders);
 
       if (!isValidAddress(hlAddress) || !isValidAddress(sourceAddress)) {
+        skipped += 1;
+        continue;
+      }
+      if (
+        funders?.some((funder) => !isValidAddress(funder.address))
+      ) {
         skipped += 1;
         continue;
       }
@@ -54,10 +120,17 @@ export const upsertBatch = internalMutation({
       if (existing) {
         if (
           resolveTransferDirection(existing.direction) === "deposit" &&
-          isImprovedSource(hlAddress, existing.sourceAddress, sourceAddress)
+          shouldUpdateFunding({
+            hlAddress,
+            existingSource: existing.sourceAddress,
+            existingFunders: existing.funders,
+            nextSource: sourceAddress,
+            nextFunders: funders,
+          })
         ) {
           await ctx.db.patch(existing._id, {
             sourceAddress,
+            ...(funders !== undefined ? { funders } : {}),
             blockNumber: existing.blockNumber ?? deposit.blockNumber,
             direction: existing.direction ?? "deposit",
           });
@@ -78,6 +151,7 @@ export const upsertBatch = internalMutation({
         depositKey: deposit.depositKey,
         blockNumber: deposit.blockNumber,
         direction: deposit.direction,
+        ...(funders !== undefined ? { funders } : {}),
       });
       inserted += 1;
 
@@ -134,17 +208,7 @@ export const listSelfSourced = internalQuery({
   args: { addresses: v.array(v.string()) },
   returns: v.array(depositValidator),
   handler: async (ctx, args) => {
-    const results: Array<{
-      hlAddress: string;
-      sourceAddress: string;
-      amount: number;
-      timestamp: number;
-      arbTxHash: string;
-      logIndex: number;
-      depositKey: string;
-      direction: "deposit" | "withdrawal";
-      blockNumber?: number;
-    }> = [];
+    const results: Array<ReturnType<typeof toPublicDeposit>> = [];
 
     for (const raw of args.addresses) {
       const trimmed = raw.trim();
@@ -166,17 +230,41 @@ export const listSelfSourced = internalQuery({
         .slice(0, SELF_SOURCED_LIMIT_PER_ADDRESS);
 
       for (const row of selfSourced) {
-        results.push({
-          hlAddress: row.hlAddress,
-          sourceAddress: row.sourceAddress,
-          amount: row.amount,
-          timestamp: row.timestamp,
-          arbTxHash: row.arbTxHash,
-          logIndex: row.logIndex,
-          depositKey: row.depositKey,
-          direction: resolveTransferDirection(row.direction),
-          blockNumber: row.blockNumber,
-        });
+        results.push(toPublicDeposit(row));
+      }
+    }
+
+    return results;
+  },
+});
+
+export const listMissingFunders = internalQuery({
+  args: { addresses: v.array(v.string()) },
+  returns: v.array(depositValidator),
+  handler: async (ctx, args) => {
+    const results: Array<ReturnType<typeof toPublicDeposit>> = [];
+
+    for (const raw of args.addresses) {
+      const trimmed = raw.trim();
+      if (!isValidAddress(trimmed)) continue;
+
+      const hlAddress = normalizeAddress(trimmed);
+      const rows = await ctx.db
+        .query("deposits")
+        .withIndex("by_hlAddress", (q) => q.eq("hlAddress", hlAddress))
+        .collect();
+
+      const missing = rows
+        .filter(
+          (row) =>
+            resolveTransferDirection(row.direction) === "deposit" &&
+            row.funders === undefined,
+        )
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, MISSING_FUNDERS_LIMIT_PER_ADDRESS);
+
+      for (const row of missing) {
+        results.push(toPublicDeposit(row));
       }
     }
 
@@ -193,7 +281,12 @@ export const patchSourceBatch = internalMutation({
 
     for (const update of args.updates) {
       const sourceAddress = normalizeAddress(update.sourceAddress);
+      const funders = normalizeFunders(update.funders);
       if (!isValidAddress(sourceAddress)) {
+        skipped += 1;
+        continue;
+      }
+      if (funders?.some((funder) => !isValidAddress(funder.address))) {
         skipped += 1;
         continue;
       }
@@ -213,12 +306,23 @@ export const patchSourceBatch = internalMutation({
         continue;
       }
 
-      if (!isImprovedSource(existing.hlAddress, existing.sourceAddress, sourceAddress)) {
+      if (
+        !shouldUpdateFunding({
+          hlAddress: existing.hlAddress,
+          existingSource: existing.sourceAddress,
+          existingFunders: existing.funders,
+          nextSource: sourceAddress,
+          nextFunders: funders,
+        })
+      ) {
         skipped += 1;
         continue;
       }
 
-      await ctx.db.patch(existing._id, { sourceAddress });
+      await ctx.db.patch(existing._id, {
+        sourceAddress,
+        ...(funders !== undefined ? { funders } : {}),
+      });
       updated += 1;
     }
 
@@ -316,17 +420,9 @@ export const listByWallet = query({
       .take(DEPOSIT_LIST_LIMIT + 1);
 
     const hasMore = rows.length > DEPOSIT_LIST_LIMIT;
-    const deposits = rows.slice(0, DEPOSIT_LIST_LIMIT).map((row) => ({
-      hlAddress: row.hlAddress,
-      sourceAddress: row.sourceAddress,
-      amount: row.amount,
-      timestamp: row.timestamp,
-      arbTxHash: row.arbTxHash,
-      logIndex: row.logIndex,
-      depositKey: row.depositKey,
-      direction: resolveTransferDirection(row.direction),
-      blockNumber: row.blockNumber,
-    }));
+    const deposits = rows.slice(0, DEPOSIT_LIST_LIMIT).map((row) =>
+      toPublicDeposit(row),
+    );
 
     return { deposits, hasMore };
   },

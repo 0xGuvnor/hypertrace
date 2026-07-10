@@ -25,6 +25,7 @@ export type ConvexIngestClient = {
     cursors: DepositCursor[],
   ): Promise<{ inserted: number; skipped: number; updated: number }>;
   listSelfSourcedDeposits(addresses: string[]): Promise<SelfSourcedDeposit[]>;
+  listMissingFundersDeposits(addresses: string[]): Promise<SelfSourcedDeposit[]>;
   patchDepositSources(
     updates: DepositSourceUpdate[],
   ): Promise<{ updated: number; skipped: number }>;
@@ -115,6 +116,24 @@ export function createConvexIngestClient(
       );
       if (!response.ok) {
         throw new Error(`Failed to list self-sourced deposits (${response.status})`);
+      }
+      const body = (await response.json()) as { deposits?: SelfSourcedDeposit[] };
+      return body.deposits ?? [];
+    },
+
+    async listMissingFundersDeposits(addresses) {
+      if (addresses.length === 0) {
+        return [];
+      }
+      const query = encodeURIComponent(addresses.join(","));
+      const response = await fetch(
+        `${convexSiteUrl}/ingest/deposits-missing-funders?addresses=${query}`,
+        { headers },
+      );
+      if (!response.ok) {
+        throw new Error(
+          `Failed to list missing-funders deposits (${response.status})`,
+        );
       }
       const body = (await response.json()) as { deposits?: SelfSourcedDeposit[] };
       return body.deposits ?? [];

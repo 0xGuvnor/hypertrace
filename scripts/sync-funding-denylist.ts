@@ -29,6 +29,12 @@ export type FundingDenylistEntry = {
 /** Sources funding more than this many HL wallets are treated as infrastructure. */
 export const CLUSTER_SOURCE_FANOUT_CAP = 25;
 
+/** Cap amount-weighted funders stored per deposit. */
+export const MAX_FUNDERS = 5;
+
+/** Minimum funder weight to emit a deposit-source cluster edge. */
+export const MIN_CLUSTER_FUNDER_WEIGHT = 0.15;
+
 export const FUNDING_DENYLIST_ENTRIES: FundingDenylistEntry[] = ${entriesLit};
 
 const denylistSet = new Set(

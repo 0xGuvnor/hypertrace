@@ -35,6 +35,7 @@ export type ParsedDeposit = {
   depositKey: string;
   blockNumber: number;
   direction: TransferDirection;
+  funders?: Array<{ address: string; amount: number; weight: number }>;
 };
 
 export type ArbitrumDepositScannerConfig = {

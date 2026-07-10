@@ -14,7 +14,7 @@ import {
   chunkLeaderboardRows,
   fetchAndParseLeaderboard,
 } from "./leaderboard";
-import type { DepositRow } from "./types";
+import type { DepositRow, DepositSourceUpdate, SelfSourcedDeposit } from "./types";
 
 const config = loadConfig();
 configureHyperliquid({
@@ -135,15 +135,26 @@ function scheduleRefresh(address: string, reason: string) {
   scheduleRefreshNow(normalized, reason, config.refreshDebounceMs);
 }
 
-async function reconcileSelfSourcedDeposits(address: string) {
-  const rows = await convex.listSelfSourcedDeposits([address]);
-  const forAddress = rows.filter((row) => row.hlAddress === address);
-  if (forAddress.length === 0) {
+async function reconcileDepositFunding(address: string) {
+  const [selfSourced, missingFunders] = await Promise.all([
+    convex.listSelfSourcedDeposits([address]),
+    convex.listMissingFundersDeposits([address]),
+  ]);
+
+  const byKey = new Map<string, SelfSourcedDeposit>();
+  for (const row of [...selfSourced, ...missingFunders]) {
+    if (row.hlAddress !== address) {
+      continue;
+    }
+    byKey.set(row.depositKey, row);
+  }
+
+  if (byKey.size === 0) {
     return;
   }
 
-  const updates: Array<{ depositKey: string; sourceAddress: string }> = [];
-  for (const row of forAddress) {
+  const updates: DepositSourceUpdate[] = [];
+  for (const row of byKey.values()) {
     const blockNumber = await resolveDepositBlockNumber(arbitrumClient, {
       blockNumber: row.blockNumber,
       arbTxHash: row.arbTxHash as `0x${string}`,
@@ -152,12 +163,14 @@ async function reconcileSelfSourcedDeposits(address: string) {
       ...row,
       blockNumber,
     });
-    if (resolved.sourceAddress !== row.hlAddress) {
-      updates.push({
-        depositKey: row.depositKey,
-        sourceAddress: resolved.sourceAddress,
-      });
+    if (resolved.funders === undefined) {
+      continue;
     }
+    updates.push({
+      depositKey: row.depositKey,
+      sourceAddress: resolved.sourceAddress,
+      funders: resolved.funders,
+    });
   }
 
   if (updates.length === 0) {
@@ -188,7 +201,7 @@ async function scanDepositsForAddress(address: string, cursor: number | null) {
       `[deposits] ${address.slice(0, 8)}… found=${deposits.length} inserted=${result.inserted} updated=${result.updated} skipped=${result.skipped} block=${lastScannedBlock}`,
     );
 
-    await reconcileSelfSourcedDeposits(address);
+    await reconcileDepositFunding(address);
   } catch (error) {
     console.error(`[deposits] failed for ${address}`, error);
   } finally {

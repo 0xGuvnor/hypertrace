@@ -7,6 +7,12 @@ export const transferDirectionValidator = v.union(
 
 export type TransferDirection = "deposit" | "withdrawal";
 
+export const depositFunderValidator = v.object({
+  address: v.string(),
+  amount: v.number(),
+  weight: v.number(),
+});
+
 const depositFields = {
   hlAddress: v.string(),
   sourceAddress: v.string(),
@@ -17,17 +23,19 @@ const depositFields = {
   depositKey: v.string(),
 };
 
-/** Stored docs may omit direction (legacy deposits). */
+/** Stored docs may omit direction/funders (legacy deposits). */
 export const depositRecordValidator = v.object({
   ...depositFields,
   direction: v.optional(transferDirectionValidator),
   blockNumber: v.optional(v.number()),
+  funders: v.optional(v.array(depositFunderValidator)),
 });
 
 export const depositRowValidator = v.object({
   ...depositFields,
   direction: transferDirectionValidator,
   blockNumber: v.number(),
+  funders: v.optional(v.array(depositFunderValidator)),
 });
 
 export const depositCursorValidator = v.object({
@@ -38,6 +46,7 @@ export const depositCursorValidator = v.object({
 export const depositSourceUpdateValidator = v.object({
   depositKey: v.string(),
   sourceAddress: v.string(),
+  funders: v.optional(v.array(depositFunderValidator)),
 });
 
 /** Public list/API rows always include direction. */
@@ -45,6 +54,7 @@ export const depositValidator = v.object({
   ...depositFields,
   direction: transferDirectionValidator,
   blockNumber: v.optional(v.number()),
+  funders: v.optional(v.array(depositFunderValidator)),
 });
 
 export const walletDepositsResultValidator = v.object({

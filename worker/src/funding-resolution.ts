@@ -5,13 +5,19 @@ import {
   type AlchemyTransfer,
   type AlchemyTransfersConfig,
 } from "./alchemy-transfers";
-import { isFundingDenylisted } from "./known-addresses";
+import { isFundingDenylisted, MAX_FUNDERS } from "./known-addresses";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export type FundingResolutionConfig = AlchemyTransfersConfig & {
   lookbackDays: number;
   backfillStartBlock: bigint;
+};
+
+export type DepositFunder = {
+  address: string;
+  amount: number;
+  weight: number;
 };
 
 export type DepositForFunding = {
@@ -24,6 +30,7 @@ export type DepositForFunding = {
   logIndex: number;
   depositKey: string;
   direction: "deposit" | "withdrawal";
+  funders?: DepositFunder[];
 };
 
 type TransferCacheKey = string;
@@ -96,7 +103,7 @@ export function createFundingResolver(
         depositBlock,
       );
 
-      const sourceAddress = pickFundingSource(
+      const attribution = buildFundingAttribution(
         hlAddress,
         deposit.blockNumber,
         inbound,
@@ -104,7 +111,8 @@ export function createFundingResolver(
 
       return {
         ...deposit,
-        sourceAddress,
+        sourceAddress: attribution.sourceAddress,
+        funders: attribution.funders,
       };
     } catch (error) {
       console.warn(
@@ -127,39 +135,66 @@ export function createFundingResolver(
   };
 }
 
+export function buildFundingAttribution(
+  hlAddress: string,
+  depositBlock: number,
+  inbound: AlchemyTransfer[],
+): { sourceAddress: string; funders: DepositFunder[] } {
+  const wallet = hlAddress.toLowerCase();
+  const amountsByFrom = new Map<string, number>();
+
+  for (const transfer of inbound) {
+    const from = transfer.from.toLowerCase();
+    if (from === wallet) {
+      continue;
+    }
+    if (isFundingDenylisted(from)) {
+      continue;
+    }
+    if (transfer.blockNum > depositBlock) {
+      continue;
+    }
+    const value = Number.isFinite(transfer.value) ? transfer.value : 0;
+    if (value <= 0) {
+      continue;
+    }
+    amountsByFrom.set(from, (amountsByFrom.get(from) ?? 0) + value);
+  }
+
+  const ranked = [...amountsByFrom.entries()]
+    .map(([address, amount]) => ({ address, amount }))
+    .sort((a, b) => {
+      if (b.amount !== a.amount) {
+        return b.amount - a.amount;
+      }
+      return a.address.localeCompare(b.address);
+    })
+    .slice(0, MAX_FUNDERS);
+
+  const total = ranked.reduce((sum, row) => sum + row.amount, 0);
+  if (total <= 0 || ranked.length === 0) {
+    return { sourceAddress: wallet, funders: [] };
+  }
+
+  const funders: DepositFunder[] = ranked.map((row) => ({
+    address: row.address,
+    amount: row.amount,
+    weight: row.amount / total,
+  }));
+
+  return {
+    sourceAddress: funders[0]?.address ?? wallet,
+    funders,
+  };
+}
+
+/** @deprecated Prefer buildFundingAttribution; kept for call-site clarity in tests. */
 export function pickFundingSource(
   hlAddress: string,
   depositBlock: number,
   inbound: AlchemyTransfer[],
 ): string {
-  const candidates = inbound.filter((transfer) => {
-    if (transfer.from === hlAddress) {
-      return false;
-    }
-    if (isFundingDenylisted(transfer.from)) {
-      return false;
-    }
-    if (transfer.blockNum > depositBlock) {
-      return false;
-    }
-    if (transfer.blockNum < depositBlock) {
-      return true;
-    }
-    return transfer.hash !== undefined;
-  });
-
-  if (candidates.length === 0) {
-    return hlAddress;
-  }
-
-  candidates.sort((a, b) => {
-    if (b.blockNum !== a.blockNum) {
-      return b.blockNum - a.blockNum;
-    }
-    return b.hash.localeCompare(a.hash);
-  });
-
-  return candidates[0]?.from ?? hlAddress;
+  return buildFundingAttribution(hlAddress, depositBlock, inbound).sourceAddress;
 }
 
 export async function resolveDepositBlockNumber(

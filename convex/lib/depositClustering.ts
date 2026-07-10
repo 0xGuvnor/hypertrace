@@ -2,12 +2,20 @@ import { SHARED_DEPOSIT_SOURCE_BASIS } from "./clusterTypes";
 import {
   CLUSTER_SOURCE_FANOUT_CAP,
   isFundingDenylisted,
+  MIN_CLUSTER_FUNDER_WEIGHT,
 } from "./knownAddresses";
+
+export type DepositFunder = {
+  address: string;
+  amount: number;
+  weight: number;
+};
 
 export type DepositRow = {
   hlAddress: string;
   sourceAddress: string;
   direction?: "deposit" | "withdrawal";
+  funders?: DepositFunder[];
 };
 
 function isDepositRow(deposit: DepositRow): boolean {
@@ -22,6 +30,37 @@ function isClusterableSource(sourceAddress: string, hlAddress: string): boolean 
     return false;
   }
   return true;
+}
+
+/** Funder addresses that should emit deposit-source cluster edges. */
+export function clusterableFunderAddresses(deposit: DepositRow): string[] {
+  if (!isDepositRow(deposit)) {
+    return [];
+  }
+
+  if (deposit.funders !== undefined) {
+    const addresses: string[] = [];
+    const seen = new Set<string>();
+    for (const funder of deposit.funders) {
+      if (funder.weight < MIN_CLUSTER_FUNDER_WEIGHT) {
+        continue;
+      }
+      if (!isClusterableSource(funder.address, deposit.hlAddress)) {
+        continue;
+      }
+      if (seen.has(funder.address)) {
+        continue;
+      }
+      seen.add(funder.address);
+      addresses.push(funder.address);
+    }
+    return addresses;
+  }
+
+  if (isClusterableSource(deposit.sourceAddress, deposit.hlAddress)) {
+    return [deposit.sourceAddress];
+  }
+  return [];
 }
 
 export type DepositSourceCluster = {
@@ -42,24 +81,28 @@ export function confidenceScoreForMemberCount(memberCount: number): number {
   return Math.min(1, 0.5 + 0.1 * (memberCount - 1));
 }
 
+function addEdge(
+  bySource: Map<string, Map<string, number>>,
+  sourceAddress: string,
+  hlAddress: string,
+) {
+  let hlCounts = bySource.get(sourceAddress);
+  if (!hlCounts) {
+    hlCounts = new Map();
+    bySource.set(sourceAddress, hlCounts);
+  }
+  hlCounts.set(hlAddress, (hlCounts.get(hlAddress) ?? 0) + 1);
+}
+
 export function buildDepositSourceClusters(
   deposits: DepositRow[],
 ): DepositSourceCluster[] {
   const bySource = new Map<string, Map<string, number>>();
 
   for (const deposit of deposits) {
-    if (!isDepositRow(deposit)) {
-      continue;
+    for (const sourceAddress of clusterableFunderAddresses(deposit)) {
+      addEdge(bySource, sourceAddress, deposit.hlAddress);
     }
-    if (!isClusterableSource(deposit.sourceAddress, deposit.hlAddress)) {
-      continue;
-    }
-    let hlCounts = bySource.get(deposit.sourceAddress);
-    if (!hlCounts) {
-      hlCounts = new Map();
-      bySource.set(deposit.sourceAddress, hlCounts);
-    }
-    hlCounts.set(deposit.hlAddress, (hlCounts.get(deposit.hlAddress) ?? 0) + 1);
   }
 
   const clusters: DepositSourceCluster[] = [];
@@ -118,10 +161,8 @@ export function buildHlAddressSourceCounts(
   const byHl = new Map<string, Map<string, number>>();
 
   for (const deposit of deposits) {
-    if (!isDepositRow(deposit)) {
-      continue;
-    }
-    if (!isClusterableSource(deposit.sourceAddress, deposit.hlAddress)) {
+    const funders = clusterableFunderAddresses(deposit);
+    if (funders.length === 0) {
       continue;
     }
     let sourceCounts = byHl.get(deposit.hlAddress);
@@ -129,10 +170,12 @@ export function buildHlAddressSourceCounts(
       sourceCounts = new Map();
       byHl.set(deposit.hlAddress, sourceCounts);
     }
-    sourceCounts.set(
-      deposit.sourceAddress,
-      (sourceCounts.get(deposit.sourceAddress) ?? 0) + 1,
-    );
+    for (const sourceAddress of funders) {
+      sourceCounts.set(
+        sourceAddress,
+        (sourceCounts.get(sourceAddress) ?? 0) + 1,
+      );
+    }
   }
 
   return byHl;
