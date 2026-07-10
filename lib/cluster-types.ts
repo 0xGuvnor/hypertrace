@@ -15,6 +15,7 @@ export type Deposit = {
   arbTxHash: string;
   logIndex: number;
   depositKey: string;
+  direction: "deposit" | "withdrawal";
   blockNumber?: number;
 };
 
@@ -28,6 +29,13 @@ export type WalletDeposits = {
   hasMore: boolean;
 };
 
+function withDepositDirection(deposit: Omit<Deposit, "direction"> & { direction?: Deposit["direction"] }): Deposit {
+  return {
+    ...deposit,
+    direction: deposit.direction ?? "deposit",
+  };
+}
+
 /** Accept legacy listByWallet payloads that returned a bare Deposit[]. */
 export function normalizeWalletDeposits(
   value: WalletDeposits | Deposit[] | null | undefined,
@@ -36,7 +44,10 @@ export function normalizeWalletDeposits(
     return { deposits: [], hasMore: false };
   }
   if (Array.isArray(value)) {
-    return { deposits: value, hasMore: false };
+    return { deposits: value.map(withDepositDirection), hasMore: false };
   }
-  return value;
+  return {
+    deposits: value.deposits.map(withDepositDirection),
+    hasMore: value.hasMore,
+  };
 }

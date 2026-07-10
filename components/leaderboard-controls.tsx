@@ -1,15 +1,23 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
+  type MinAccountValueFilter,
   type MinVolumeFilter,
   type PnlWindow,
+  MIN_ACCOUNT_VALUE_LABELS,
   PNL_WINDOW_LABELS,
 } from "@/lib/leaderboard-list";
 import { cn } from "@/lib/utils";
 
 const PNL_WINDOWS: PnlWindow[] = ["day", "week", "month", "allTime"];
+const MIN_ACCOUNT_VALUE_FILTERS: MinAccountValueFilter[] = [
+  "any",
+  "100k",
+  "1m",
+  "10m",
+  "100m",
+];
 const MIN_VOLUME_FILTERS: MinVolumeFilter[] = [
   "any",
   "positive",
@@ -28,9 +36,8 @@ const MIN_VOLUME_LABELS: Record<MinVolumeFilter, string> = {
 type LeaderboardControlsProps = {
   pnlWindow: PnlWindow;
   onPnlWindowChange: (window: PnlWindow) => void;
-  minAccountValueDraft: string;
-  onMinAccountValueDraftChange: (value: string) => void;
-  onApplyMinAccountValue: () => void;
+  minAccountValueFilter: MinAccountValueFilter;
+  onMinAccountValueFilterChange: (filter: MinAccountValueFilter) => void;
   minVolumeFilter: MinVolumeFilter;
   onMinVolumeFilterChange: (filter: MinVolumeFilter) => void;
 };
@@ -38,9 +45,8 @@ type LeaderboardControlsProps = {
 export function LeaderboardControls({
   pnlWindow,
   onPnlWindowChange,
-  minAccountValueDraft,
-  onMinAccountValueDraftChange,
-  onApplyMinAccountValue,
+  minAccountValueFilter,
+  onMinAccountValueFilterChange,
   minVolumeFilter,
   onMinVolumeFilterChange,
 }: LeaderboardControlsProps) {
@@ -83,38 +89,28 @@ export function LeaderboardControls({
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
         <div className="flex min-w-0 flex-col gap-1">
-          <label
-            htmlFor="leaderboard-min-value"
-            className="text-muted-foreground text-xs"
-          >
+          <span className="text-muted-foreground text-xs">
             Min account value
-          </label>
-          <div className="flex gap-2">
-            <Input
-              id="leaderboard-min-value"
-              inputMode="decimal"
-              placeholder="e.g. 100000"
-              value={minAccountValueDraft}
-              onChange={(event) =>
-                onMinAccountValueDraftChange(event.target.value)
-              }
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  onApplyMinAccountValue();
-                }
-              }}
-              className="h-8 w-36 font-mono text-base md:text-xs"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8"
-              onClick={onApplyMinAccountValue}
-            >
-              Apply
-            </Button>
+          </span>
+          <div className="flex flex-wrap gap-1">
+            {MIN_ACCOUNT_VALUE_FILTERS.map((filter) => {
+              const active = filter === minAccountValueFilter;
+              return (
+                <Button
+                  key={filter}
+                  type="button"
+                  size="sm"
+                  variant={active ? "secondary" : "ghost"}
+                  className={cn(
+                    "h-8 px-2.5 text-xs",
+                    active && "text-[var(--brand-cyan)]",
+                  )}
+                  onClick={() => onMinAccountValueFilterChange(filter)}
+                >
+                  {MIN_ACCOUNT_VALUE_LABELS[filter]}
+                </Button>
+              );
+            })}
           </div>
         </div>
 

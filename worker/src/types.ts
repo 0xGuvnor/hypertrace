@@ -105,6 +105,7 @@ export type DepositRow = {
   logIndex: number;
   depositKey: string;
   blockNumber: number;
+  direction: "deposit" | "withdrawal";
 };
 
 export type DepositCursor = {

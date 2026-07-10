@@ -1,22 +1,35 @@
 import { describe, expect, test } from "bun:test";
+import {
+  encodeAbiParameters,
+  encodeEventTopics,
+  parseAbiItem,
+  type Hex,
+} from "viem";
 
 import {
   CCTP_MESSENGER_DEPOSIT_TOPIC,
   dedupeDepositsByKey,
   parseCctpMessengerDepositLog,
+  parseFinalizedWithdrawalLog,
   parseFirstUint256,
   parseTransferLog,
   type ParsedDeposit,
 } from "./arbitrum-deposits";
 
 const WALLET = "0xb6db1b4dc6244f86e482d834739d949d799e4da5" as const;
+const DESTINATION = "0x1111111111111111111111111111111111111111" as const;
 const BRIDGE2 = "0x2df1c51e09aecf9cacb7bc98cb1742757f163df7" as const;
 const CCTP_EXTENSION = "0xa95d9c1f655341597c94393fddc30cf3c08e4fce" as const;
 const USDC = "0xaf88d065e77c8cc2239327c5edb3a432268e5831" as const;
 
+const FINALIZED_WITHDRAWAL_EVENT = parseAbiItem(
+  "event FinalizedWithdrawal(address indexed user, address destination, uint64 usd, uint64 nonce, bytes32 message)",
+);
+
 const blockTimestamps = new Map<bigint, number>([
   [481_333_453n, 1_751_888_761_000],
   [481_234_890n, 1_751_864_433_000],
+  [470_000_000n, 1_750_800_000_000],
 ]);
 
 describe("parseTransferLog", () => {
@@ -35,11 +48,13 @@ describe("parseTransferLog", () => {
         logIndex: 0,
       },
       new Map([[469_154_612n, 1_750_524_495_000]]),
+      "deposit",
     );
 
     expect(deposit).not.toBeNull();
     expect(deposit?.hlAddress).toBe(WALLET);
     expect(deposit?.amount).toBe(4_999_999);
+    expect(deposit?.direction).toBe("deposit");
     expect(deposit?.depositKey).toBe(
       "0x0425f8a608a2351f49ba02100e4a00fa1efe78560db07d8a7747b483f0397eba:0",
     );
@@ -60,13 +75,85 @@ describe("parseTransferLog", () => {
         logIndex: 14,
       },
       blockTimestamps,
+      "deposit",
     );
 
     expect(deposit).not.toBeNull();
     expect(deposit?.hlAddress).toBe(WALLET);
     expect(deposit?.amount).toBe(468.8);
+    expect(deposit?.direction).toBe("deposit");
     expect(deposit?.depositKey).toBe(
       "0x3c3826fec2a48dc2038c216b8d54139bca56af344b587f261c5e6633d1a471b2:14",
+    );
+  });
+
+  test("parses CctpExtension reverse transfer as withdrawal", () => {
+    const withdrawal = parseTransferLog(
+      {
+        blockNumber: 481_234_890n,
+        data: "0x000000000000000000000000000000000000000000000000000000001bf15200",
+        topics: [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          `0x000000000000000000000000${CCTP_EXTENSION.slice(2)}`,
+          `0x000000000000000000000000${WALLET.slice(2)}`,
+        ],
+        transactionHash:
+          "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        logIndex: 3,
+      },
+      blockTimestamps,
+      "withdrawal",
+    );
+
+    expect(withdrawal).not.toBeNull();
+    expect(withdrawal?.hlAddress).toBe(WALLET);
+    expect(withdrawal?.sourceAddress).toBe(WALLET);
+    expect(withdrawal?.amount).toBe(468.8);
+    expect(withdrawal?.direction).toBe("withdrawal");
+  });
+});
+
+describe("parseFinalizedWithdrawalLog", () => {
+  test("parses Bridge2 FinalizedWithdrawal with destination counterparty", () => {
+    const topics = encodeEventTopics({
+      abi: [FINALIZED_WITHDRAWAL_EVENT],
+      eventName: "FinalizedWithdrawal",
+      args: { user: WALLET },
+    });
+    const data = encodeAbiParameters(
+      [
+        { type: "address" },
+        { type: "uint64" },
+        { type: "uint64" },
+        { type: "bytes32" },
+      ],
+      [
+        DESTINATION,
+        250_000_000n,
+        42n,
+        "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" as Hex,
+      ],
+    );
+
+    const withdrawal = parseFinalizedWithdrawalLog(
+      {
+        blockNumber: 470_000_000n,
+        data,
+        topics: topics as [`0x${string}`, ...`0x${string}`[]],
+        transactionHash:
+          "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        logIndex: 7,
+      },
+      blockTimestamps,
+    );
+
+    expect(withdrawal).not.toBeNull();
+    expect(withdrawal?.hlAddress).toBe(WALLET);
+    expect(withdrawal?.sourceAddress).toBe(DESTINATION);
+    expect(withdrawal?.amount).toBe(250);
+    expect(withdrawal?.direction).toBe("withdrawal");
+    expect(withdrawal?.depositKey).toBe(
+      "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc:7",
     );
   });
 });
@@ -94,6 +181,7 @@ describe("parseCctpMessengerDepositLog", () => {
     expect(deposit).not.toBeNull();
     expect(deposit?.hlAddress).toBe(WALLET);
     expect(deposit?.amount).toBe(16.59);
+    expect(deposit?.direction).toBe("deposit");
     expect(deposit?.depositKey).toBe(
       "0x29b8ba31630fe732761cf1448467f18146ab4b3bba20fc81e8489f82931f065a:12",
     );
@@ -142,6 +230,7 @@ describe("dedupeDepositsByKey", () => {
       logIndex: 0,
       depositKey: "0xabc:0",
       blockNumber: 1,
+      direction: "deposit",
     };
     const duplicate: ParsedDeposit = { ...first, amount: 2 };
 
