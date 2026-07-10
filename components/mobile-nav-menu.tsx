@@ -51,9 +51,10 @@ export function MobileNavMenu({ className }: MobileNavMenuProps) {
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="w-[min(18rem,100vw)] gap-0 border-l border-[var(--brand-cyan)]/30"
+        showCloseButton={false}
+        className="w-1/3 gap-0 border-l border-[var(--brand-cyan)]/30 data-[side=right]:w-1/3 data-[side=right]:sm:max-w-none"
       >
-        <SheetHeader className="flex-row items-center gap-2 pr-12">
+        <SheetHeader className="flex-row items-center gap-2">
           <div className="relative size-7 shrink-0">
             <Image
               src="/logo.png"
