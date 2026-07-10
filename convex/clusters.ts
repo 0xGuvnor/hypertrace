@@ -12,12 +12,12 @@ import {
 import {
   buildDepositSourceClusters,
   buildHlAddressSourceCounts,
+  clusterableFunderAddresses,
   depositSourceClusterKey,
   memberAddressesEqual,
   pickPrimaryClusterKey,
   type DepositRow,
 } from "./lib/depositClustering";
-import { isFundingDenylisted } from "./lib/knownAddresses";
 
 type ClusterDoc = {
   clusterKey: string;
@@ -53,6 +53,7 @@ async function collectAllDeposits(ctx: MutationCtx): Promise<DepositRow[]> {
     hlAddress: row.hlAddress,
     sourceAddress: row.sourceAddress,
     direction: row.direction,
+    funders: row.funders,
   }));
 }
 
@@ -244,13 +245,14 @@ export const getForWallet = query({
 
     const sourceAddresses = [
       ...new Set(
-        depositRows
-          .filter((row) => row.direction !== "withdrawal")
-          .map((row) => row.sourceAddress)
-          .filter(
-            (sourceAddress) =>
-              sourceAddress !== hlAddress && !isFundingDenylisted(sourceAddress),
-          ),
+        depositRows.flatMap((row) =>
+          clusterableFunderAddresses({
+            hlAddress,
+            sourceAddress: row.sourceAddress,
+            direction: row.direction,
+            funders: row.funders,
+          }),
+        ),
       ),
     ];
     const seenKeys = new Set<string>();

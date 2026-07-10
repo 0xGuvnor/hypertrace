@@ -13,9 +13,40 @@ type DepositRow = Infer<typeof depositRowValidator>;
 type DepositCursor = Infer<typeof depositCursorValidator>;
 type DepositSourceUpdate = Infer<typeof depositSourceUpdateValidator>;
 type LeaderboardRow = Infer<typeof leaderboardUpsertRowValidator>;
+type DepositFunder = NonNullable<DepositRow["funders"]>[number];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+function parseFunders(value: unknown): DepositFunder[] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+  const funders: DepositFunder[] = [];
+  for (const row of value) {
+    if (!isRecord(row)) {
+      return undefined;
+    }
+    if (
+      typeof row.address !== "string" ||
+      typeof row.amount !== "number" ||
+      typeof row.weight !== "number" ||
+      !Number.isFinite(row.amount) ||
+      !Number.isFinite(row.weight)
+    ) {
+      return undefined;
+    }
+    funders.push({
+      address: row.address,
+      amount: row.amount,
+      weight: row.weight,
+    });
+  }
+  return funders;
 }
 
 function parseDepositRow(value: unknown): DepositRow | null {
@@ -41,6 +72,10 @@ function parseDepositRow(value: unknown): DepositRow | null {
   if (direction === null) {
     return null;
   }
+  const funders = parseFunders(value.funders);
+  if (value.funders !== undefined && funders === undefined) {
+    return null;
+  }
   return {
     hlAddress: value.hlAddress,
     sourceAddress: value.sourceAddress,
@@ -51,6 +86,7 @@ function parseDepositRow(value: unknown): DepositRow | null {
     depositKey: value.depositKey,
     blockNumber: value.blockNumber,
     direction,
+    ...(funders !== undefined ? { funders } : {}),
   };
 }
 
@@ -76,9 +112,14 @@ function parseDepositSourceUpdate(value: unknown): DepositSourceUpdate | null {
   ) {
     return null;
   }
+  const funders = parseFunders(value.funders);
+  if (value.funders !== undefined && funders === undefined) {
+    return null;
+  }
   return {
     depositKey: value.depositKey,
     sourceAddress: value.sourceAddress,
+    ...(funders !== undefined ? { funders } : {}),
   };
 }
 

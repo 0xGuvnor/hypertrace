@@ -20,8 +20,65 @@ import {
 import { truncateAddress } from "@/lib/address";
 import { arbiscanAddressUrl, arbiscanTxUrl } from "@/lib/cluster-routes";
 import { TRANSFER_SCAN_START_DATE_LABEL } from "@/lib/deposit-scan";
-import type { Deposit } from "@/lib/cluster-types";
+import type { Deposit, DepositFunder } from "@/lib/cluster-types";
 import { formatTimestamp, formatUsd } from "@/lib/format";
+
+function formatWeightPercent(weight: number): string {
+  return `${Math.round(weight * 100)}%`;
+}
+
+function CounterpartyLink({
+  address,
+  suffix,
+}: {
+  address: string;
+  suffix?: string;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        className="cursor-default font-mono text-xs underline decoration-dotted decoration-muted-foreground underline-offset-4"
+        render={
+          <Link
+            href={arbiscanAddressUrl(address)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-[var(--brand-cyan)]"
+          />
+        }
+      >
+        {truncateAddress(address, 4)}
+        {suffix ? (
+          <span className="text-muted-foreground ml-1 no-underline">
+            {suffix}
+          </span>
+        ) : null}
+      </TooltipTrigger>
+      <TooltipContent className="max-w-none font-mono break-all">
+        {address}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function CounterpartyCell({ transfer }: { transfer: Deposit }) {
+  const funders = transfer.funders;
+  if (funders && funders.length > 1) {
+    return (
+      <div className="flex flex-col gap-0.5">
+        {funders.map((funder: DepositFunder) => (
+          <CounterpartyLink
+            key={funder.address}
+            address={funder.address}
+            suffix={formatWeightPercent(funder.weight)}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  return <CounterpartyLink address={transfer.sourceAddress} />;
+}
 
 export function TransfersTable({
   transfers,
@@ -78,24 +135,7 @@ export function TransfersTable({
                     {formatUsd(transfer.amount)}
                   </TableCell>
                   <TableCell>
-                    <Tooltip>
-                      <TooltipTrigger
-                        className="cursor-default font-mono text-xs underline decoration-dotted decoration-muted-foreground underline-offset-4"
-                        render={
-                          <Link
-                            href={arbiscanAddressUrl(transfer.sourceAddress)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:text-[var(--brand-cyan)]"
-                          />
-                        }
-                      >
-                        {truncateAddress(transfer.sourceAddress, 4)}
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-none font-mono break-all">
-                        {transfer.sourceAddress}
-                      </TooltipContent>
-                    </Tooltip>
+                    <CounterpartyCell transfer={transfer} />
                   </TableCell>
                   <TableCell>
                     <Link
@@ -121,4 +161,3 @@ export function TransfersTable({
     </div>
   );
 }
-
