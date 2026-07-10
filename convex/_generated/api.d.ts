@@ -21,6 +21,7 @@ import type * as lib_hyperliquid from "../lib/hyperliquid.js";
 import type * as lib_hyperliquidTypes from "../lib/hyperliquidTypes.js";
 import type * as lib_ingestAuth from "../lib/ingestAuth.js";
 import type * as lib_ingestParse from "../lib/ingestParse.js";
+import type * as lib_knownAddresses from "../lib/knownAddresses.js";
 import type * as lib_leaderboardParse from "../lib/leaderboardParse.js";
 import type * as lib_leaderboardTypes from "../lib/leaderboardTypes.js";
 import type * as lib_snapshotEqual from "../lib/snapshotEqual.js";
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   "lib/hyperliquidTypes": typeof lib_hyperliquidTypes;
   "lib/ingestAuth": typeof lib_ingestAuth;
   "lib/ingestParse": typeof lib_ingestParse;
+  "lib/knownAddresses": typeof lib_knownAddresses;
   "lib/leaderboardParse": typeof lib_leaderboardParse;
   "lib/leaderboardTypes": typeof lib_leaderboardTypes;
   "lib/snapshotEqual": typeof lib_snapshotEqual;
