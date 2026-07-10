@@ -102,6 +102,8 @@ export function createArbitrumDepositScanner(
       const deposits: ParsedDeposit[] = [];
       let lastScannedBlock =
         cursorBlock ?? Number(config.bridge2StartBlock) - 1;
+      let chunksThisPass = 0;
+      const maxChunksPerPass = 50;
 
       while (fromBlock <= chainHead) {
         const toBlock =
@@ -119,6 +121,10 @@ export function createArbitrumDepositScanner(
         deposits.push(...chunkDeposits);
         lastScannedBlock = Number(toBlock);
         fromBlock = toBlock + 1n;
+        chunksThisPass += 1;
+        if (chunksThisPass >= maxChunksPerPass && fromBlock <= chainHead) {
+          break;
+        }
       }
 
       const deduped = dedupeDepositsByKey(deposits);
@@ -145,54 +151,52 @@ async function scanTransfersForRange(
   fromBlock: bigint,
   toBlock: bigint,
 ): Promise<ParsedDeposit[]> {
-  const [
-    bridge2DepositLogs,
-    extensionDepositLogs,
-    messengerLogs,
-    bridge2WithdrawalLogs,
-    extensionWithdrawalLogs,
-  ] = await Promise.all([
-    client.getLogs({
-      address: config.usdcAddress,
-      event: TRANSFER_EVENT,
-      args: {
-        from: hlAddress,
-        to: config.bridge2Address,
-      },
-      fromBlock,
-      toBlock,
-    }),
-    client.getLogs({
-      address: config.usdcAddress,
-      event: TRANSFER_EVENT,
-      args: {
-        from: hlAddress,
-        to: config.cctpExtensionAddress,
-      },
-      fromBlock,
-      toBlock,
-    }),
-    getCctpMessengerDepositLogs(client, config, hlAddress, fromBlock, toBlock),
-    client.getLogs({
-      address: config.bridge2Address,
-      event: FINALIZED_WITHDRAWAL_EVENT,
-      args: {
-        user: hlAddress,
-      },
-      fromBlock,
-      toBlock,
-    }),
-    client.getLogs({
-      address: config.usdcAddress,
-      event: TRANSFER_EVENT,
-      args: {
-        from: config.cctpExtensionAddress,
-        to: hlAddress,
-      },
-      fromBlock,
-      toBlock,
-    }),
-  ]);
+  const bridge2DepositLogs = await getLogsWithRetry(client, {
+    address: config.usdcAddress,
+    event: TRANSFER_EVENT,
+    args: {
+      from: hlAddress,
+      to: config.bridge2Address,
+    },
+    fromBlock,
+    toBlock,
+  });
+  const extensionDepositLogs = await getLogsWithRetry(client, {
+    address: config.usdcAddress,
+    event: TRANSFER_EVENT,
+    args: {
+      from: hlAddress,
+      to: config.cctpExtensionAddress,
+    },
+    fromBlock,
+    toBlock,
+  });
+  const messengerLogs = await getCctpMessengerDepositLogs(
+    client,
+    config,
+    hlAddress,
+    fromBlock,
+    toBlock,
+  );
+  const bridge2WithdrawalLogs = await getLogsWithRetry(client, {
+    address: config.bridge2Address,
+    event: FINALIZED_WITHDRAWAL_EVENT,
+    args: {
+      user: hlAddress,
+    },
+    fromBlock,
+    toBlock,
+  });
+  const extensionWithdrawalLogs = await getLogsWithRetry(client, {
+    address: config.usdcAddress,
+    event: TRANSFER_EVENT,
+    args: {
+      from: config.cctpExtensionAddress,
+      to: hlAddress,
+    },
+    fromBlock,
+    toBlock,
+  });
 
   const allLogs: DepositLog[] = [
     ...bridge2DepositLogs,
@@ -255,6 +259,23 @@ async function scanTransfersForRange(
   return transfers;
 }
 
+async function getLogsWithRetry(
+  client: PublicClient,
+  params: Parameters<PublicClient["getLogs"]>[0],
+  attempt = 1,
+): Promise<DepositLog[]> {
+  try {
+    return (await client.getLogs(params)) as DepositLog[];
+  } catch (error) {
+    if (isAlchemyRateLimitError(error) && attempt < 5) {
+      const delayMs = 250 * 2 ** (attempt - 1);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      return getLogsWithRetry(client, params, attempt + 1);
+    }
+    throw error;
+  }
+}
+
 type RawEthLog = {
   blockNumber: `0x${string}`;
   data: `0x${string}`;
@@ -281,10 +302,7 @@ async function getCctpMessengerDepositLogs(
     toBlock: `0x${toBlock.toString(16)}`,
   };
 
-  const logs = (await client.request({
-    method: "eth_getLogs",
-    params: [filter] as never,
-  })) as RawEthLog[];
+  const logs = await requestEthLogsWithRetry(client, filter);
 
   return logs.map((log) => ({
     blockNumber: BigInt(log.blockNumber),
@@ -293,6 +311,35 @@ async function getCctpMessengerDepositLogs(
     transactionHash: log.transactionHash,
     logIndex: Number.parseInt(log.logIndex, 16),
   }));
+}
+
+async function requestEthLogsWithRetry(
+  client: PublicClient,
+  filter: Record<string, unknown>,
+  attempt = 1,
+): Promise<RawEthLog[]> {
+  try {
+    return (await client.request({
+      method: "eth_getLogs",
+      params: [filter] as never,
+    })) as RawEthLog[];
+  } catch (error) {
+    if (isAlchemyRateLimitError(error) && attempt < 5) {
+      const delayMs = 250 * 2 ** (attempt - 1);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      return requestEthLogsWithRetry(client, filter, attempt + 1);
+    }
+    throw error;
+  }
+}
+
+function isAlchemyRateLimitError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes("429") ||
+    message.includes("compute units per second") ||
+    message.includes("capacity")
+  );
 }
 
 export function dedupeDepositsByKey(
