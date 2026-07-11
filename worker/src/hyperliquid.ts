@@ -90,6 +90,11 @@ let metaCache: {
   xyz: MetaAndAssetCtxs;
   spot: SpotMetaAndAssetCtxs;
 } | null = null;
+let metaCacheInflight: Promise<{
+  default: MetaAndAssetCtxs;
+  xyz: MetaAndAssetCtxs;
+  spot: SpotMetaAndAssetCtxs;
+}> | null = null;
 
 export function configureHyperliquid(config: HyperliquidClientConfig): void {
   hlQueue = new HlRequestQueue({
@@ -148,20 +153,30 @@ async function fetchMetaAndAssetCtxs(): Promise<{
     };
   }
 
-  const [defaultMeta, xyzMeta, spotMeta] = await Promise.all([
-    postInfo<MetaAndAssetCtxs>({ type: "metaAndAssetCtxs", dex: "" }),
-    postInfo<MetaAndAssetCtxs>({ type: "metaAndAssetCtxs", dex: XYZ_DEX }),
-    postInfo<SpotMetaAndAssetCtxs>({ type: "spotMetaAndAssetCtxs" }),
-  ]);
+  if (metaCacheInflight) {
+    return metaCacheInflight;
+  }
 
-  metaCache = {
-    fetchedAt: now,
-    default: defaultMeta,
-    xyz: xyzMeta,
-    spot: spotMeta,
-  };
+  metaCacheInflight = (async () => {
+    const [defaultMeta, xyzMeta, spotMeta] = await Promise.all([
+      postInfo<MetaAndAssetCtxs>({ type: "metaAndAssetCtxs", dex: "" }),
+      postInfo<MetaAndAssetCtxs>({ type: "metaAndAssetCtxs", dex: XYZ_DEX }),
+      postInfo<SpotMetaAndAssetCtxs>({ type: "spotMetaAndAssetCtxs" }),
+    ]);
 
-  return { default: defaultMeta, xyz: xyzMeta, spot: spotMeta };
+    metaCache = {
+      fetchedAt: Date.now(),
+      default: defaultMeta,
+      xyz: xyzMeta,
+      spot: spotMeta,
+    };
+
+    return { default: defaultMeta, xyz: xyzMeta, spot: spotMeta };
+  })().finally(() => {
+    metaCacheInflight = null;
+  });
+
+  return metaCacheInflight;
 }
 
 function fundingFeeFromCumFunding(sinceOpen: string): string {
