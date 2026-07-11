@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useLayoutEffect, useState } from "react";
 
 import { FillsTable } from "@/components/fills-table";
 import { OrdersTable } from "@/components/orders-table";
@@ -14,11 +15,17 @@ import {
   type PositionsSortKey,
   type WalletView,
   isWalletTab,
+  parseWalletSearchParams,
   walletHref,
 } from "@/lib/wallet-view";
 
-function replaceWalletUrl(address: string, view: WalletView): void {
-  window.history.replaceState(null, "", walletHref(address, view));
+function viewsEqual(a: WalletView, b: WalletView): boolean {
+  return (
+    a.tab === b.tab &&
+    a.positionsSortKey === b.positionsSortKey &&
+    a.positionsOrder === b.positionsOrder &&
+    a.spotOrder === b.spotOrder
+  );
 }
 
 export function WalletTabs({
@@ -30,6 +37,7 @@ export function WalletTabs({
   walletDeposits: WalletDeposits;
   initialView: WalletView;
 }) {
+  const router = useRouter();
   const { deposits, hasMore } = walletDeposits;
   const transferCountLabel = hasMore
     ? `${deposits.length}+`
@@ -39,15 +47,28 @@ export function WalletTabs({
   const [view, setView] = useState<WalletView>(initialView);
 
   const applyView = useCallback(
-    (updater: (prev: WalletView) => WalletView) => {
+    (
+      updater: (prev: WalletView) => WalletView,
+      options?: { syncUrl?: boolean },
+    ) => {
       setView((prev) => {
         const next = updater(prev);
-        replaceWalletUrl(snapshot.address, next);
+        if (options?.syncUrl !== false) {
+          router.replace(walletHref(snapshot.address, next), { scroll: false });
+        }
         return next;
       });
     },
-    [snapshot.address],
+    [router, snapshot.address],
   );
+
+  useLayoutEffect(() => {
+    const fromUrl = parseWalletSearchParams(
+      new URLSearchParams(window.location.search),
+    );
+    if (viewsEqual(fromUrl, initialView)) return;
+    applyView(() => fromUrl, { syncUrl: false });
+  }, [applyView, initialView]);
 
   const handleTabChange = useCallback(
     (value: string | number | null) => {
