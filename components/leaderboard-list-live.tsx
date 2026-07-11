@@ -5,7 +5,8 @@ import {
   useConvex,
   usePreloadedQuery,
 } from "convex/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 
 import { LeaderboardControls } from "@/components/leaderboard-controls";
 import { LeaderboardTable } from "@/components/leaderboard-table";
@@ -24,6 +25,7 @@ import {
   type PnlWindow,
   leaderboardHref,
   leaderboardListArgsFromView,
+  parseLeaderboardSearchParams,
   PNL_WINDOW_TO_SORT,
 } from "@/lib/leaderboard-list";
 import { useInView } from "@/lib/use-in-view";
@@ -52,8 +54,10 @@ function matchesPreloadedView(
   );
 }
 
-function replaceLeaderboardUrl(view: LeaderboardView): void {
-  window.history.replaceState(null, "", leaderboardHref(view));
+function viewFromLocation(): LeaderboardView {
+  return parseLeaderboardSearchParams(
+    new URLSearchParams(window.location.search),
+  );
 }
 
 function LeaderboardListTail({
@@ -154,6 +158,7 @@ export function LeaderboardListLive({
   preloadedLeaderboard,
   initialView,
 }: LeaderboardListLiveProps) {
+  const router = useRouter();
   const preloadedPage = usePreloadedQuery(preloadedLeaderboard);
   const convex = useConvex();
 
@@ -251,6 +256,7 @@ export function LeaderboardListLive({
       nextAccountValueFilter: MinAccountValueFilter,
       nextVolumeFilter: MinVolumeFilter,
       nextWindow: PnlWindow,
+      options?: { syncUrl?: boolean },
     ) => {
       const nextView: LeaderboardView = {
         pnlWindow: nextWindow,
@@ -264,15 +270,30 @@ export function LeaderboardListLive({
       setMinAccountValueFilter(nextAccountValueFilter);
       setMinVolumeFilter(nextVolumeFilter);
       setPnlWindow(nextWindow);
-      replaceLeaderboardUrl(nextView);
+      if (options?.syncUrl !== false) {
+        router.replace(leaderboardHref(nextView), { scroll: false });
+      }
       if (matchesPreloadedView(nextView, initialView)) {
         setQueriedPage(null);
         return;
       }
       void refetch(leaderboardListArgsFromView(nextView));
     },
-    [initialView, refetch],
+    [initialView, refetch, router],
   );
+
+  useLayoutEffect(() => {
+    const fromUrl = viewFromLocation();
+    if (matchesPreloadedView(fromUrl, initialView)) return;
+    applyView(
+      fromUrl.sortBy,
+      fromUrl.order,
+      fromUrl.minAccountValueFilter,
+      fromUrl.minVolumeFilter,
+      fromUrl.pnlWindow,
+      { syncUrl: false },
+    );
+  }, [applyView, initialView]);
 
   const handlePnlWindowChange = useCallback(
     (window: PnlWindow) => {
