@@ -40,3 +40,10 @@ export function formatTimestamp(ms: number): string {
     minute: "2-digit",
   });
 }
+
+export function formatSignedPercent(value: number): string {
+  const abs = Math.abs(value).toFixed(2);
+  if (value > 0) return `+${abs}%`;
+  if (value < 0) return `-${abs}%`;
+  return `${abs}%`;
+}

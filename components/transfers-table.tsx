@@ -1,7 +1,9 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
 
+import { TablePagination } from "@/components/table-pagination";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -22,6 +24,7 @@ import { arbiscanAddressUrl, arbiscanTxUrl } from "@/lib/cluster-routes";
 import { TRANSFER_SCAN_START_DATE_LABEL } from "@/lib/deposit-scan";
 import type { Deposit, DepositFunder } from "@/lib/cluster-types";
 import { formatTimestamp, formatUsd } from "@/lib/format";
+import { paginateItems } from "@/lib/table-page";
 
 function formatWeightPercent(weight: number): string {
   return `${Math.round(weight * 100)}%`;
@@ -80,23 +83,23 @@ function CounterpartyCell({ transfer }: { transfer: Deposit }) {
   return <CounterpartyLink address={transfer.sourceAddress} />;
 }
 
-export function TransfersTable({
+function TransfersTablePaged({
   transfers,
-  hasMore = false,
+  hasMore,
 }: {
   transfers: Deposit[];
-  hasMore?: boolean;
+  hasMore: boolean;
 }) {
-  if (transfers.length === 0) {
-    return (
-      <p className="text-muted-foreground py-8 text-center text-sm leading-relaxed">
-        No bridge transfers on record for this wallet. Hypertrace scans Arbitrum
-        bridge deposits and withdrawals from {TRANSFER_SCAN_START_DATE_LABEL}{" "}
-        onward. Transfers appear once the wallet is watched and indexing
-        completes.
-      </p>
-    );
-  }
+  const [page, setPage] = useState(0);
+
+  const {
+    page: currentPage,
+    pageItems,
+    pageCount,
+    rangeStart,
+    rangeEnd,
+    showPagination,
+  } = paginateItems(transfers, page);
 
   return (
     <div className="flex flex-col gap-3">
@@ -112,7 +115,7 @@ export function TransfersTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transfers.map((transfer) => {
+            {pageItems.map((transfer) => {
               const isDeposit = transfer.direction === "deposit";
               return (
                 <TableRow key={transfer.depositKey}>
@@ -153,11 +156,55 @@ export function TransfersTable({
           </TableBody>
         </Table>
       </TooltipProvider>
+
+      {showPagination && (
+        <TablePagination
+          page={currentPage}
+          pageCount={pageCount}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          total={transfers.length}
+          onPageChange={setPage}
+        />
+      )}
+
       {hasMore ? (
         <p className="text-muted-foreground text-center text-xs">
           Showing 100 most recent transfers.
         </p>
       ) : null}
     </div>
+  );
+}
+
+export function TransfersTable({
+  transfers,
+  hasMore = false,
+}: {
+  transfers: Deposit[];
+  hasMore?: boolean;
+}) {
+  const remountKey = useMemo(
+    () => transfers.map((t) => t.depositKey).join("|"),
+    [transfers],
+  );
+
+  if (transfers.length === 0) {
+    return (
+      <p className="text-muted-foreground py-8 text-center text-sm leading-relaxed">
+        No bridge transfers on record for this wallet. Hypertrace scans Arbitrum
+        bridge deposits and withdrawals from {TRANSFER_SCAN_START_DATE_LABEL}{" "}
+        onward. Transfers appear once the wallet is watched and indexing
+        completes.
+      </p>
+    );
+  }
+
+  return (
+    <TransfersTablePaged
+      key={remountKey}
+      transfers={transfers}
+      hasMore={hasMore}
+    />
   );
 }

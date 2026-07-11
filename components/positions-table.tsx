@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
 
+import { TablePagination } from "@/components/table-pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,11 +14,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatUsd, formatSize } from "@/lib/format";
+import { formatSignedPercent, formatUsd, formatSize } from "@/lib/format";
+import { positionUnrealizedPnlPercent } from "@/lib/position-roe";
 import {
   summarizeOpenPositions,
   type PositionsOpenSummary,
 } from "@/lib/positions-summary";
+import { paginateItems } from "@/lib/table-page";
 import type { WalletSnapshot } from "@/lib/wallet-types";
 import type { PositionsSortKey, WalletSortOrder } from "@/lib/wallet-view";
 
@@ -155,7 +158,7 @@ function SortableTableHead({
   );
 }
 
-export function PositionsTable({
+function PositionsTablePaged({
   positions,
   sortKey,
   sortDir,
@@ -166,6 +169,8 @@ export function PositionsTable({
   sortDir: WalletSortOrder;
   onSort: (key: PositionsSortKey) => void;
 }) {
+  const [page, setPage] = useState(0);
+
   const sortedPositions = useMemo(
     () =>
       [...positions].sort((a, b) => comparePositions(a, b, sortKey, sortDir)),
@@ -177,6 +182,161 @@ export function PositionsTable({
     [positions],
   );
 
+  const {
+    page: currentPage,
+    pageItems,
+    pageCount,
+    rangeStart,
+    rangeEnd,
+    showPagination,
+  } = paginateItems(sortedPositions, page);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <Table leading={<PositionsSummaryBar summary={summary} />}>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Asset</TableHead>
+            <TableHead className="text-right">Leverage</TableHead>
+            <TableHead className="text-right">Size</TableHead>
+            <SortableTableHead
+              label="Value"
+              sortKey="value"
+              activeSortKey={sortKey}
+              sortDir={sortDir}
+              onSort={onSort}
+            />
+            <TableHead className="text-right">Entry</TableHead>
+            <TableHead className="text-right">Mark</TableHead>
+            <TableHead className="text-right">Liq. price</TableHead>
+            <TableHead className="text-right">TP</TableHead>
+            <TableHead className="text-right">SL</TableHead>
+            <SortableTableHead
+              label="Funding fee"
+              sortKey="fundingFee"
+              activeSortKey={sortKey}
+              sortDir={sortDir}
+              onSort={onSort}
+            />
+            <SortableTableHead
+              label="uPnL"
+              sortKey="unrealizedPnl"
+              activeSortKey={sortKey}
+              sortDir={sortDir}
+              onSort={onSort}
+            />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {pageItems.map((position) => {
+            const isLong = position.side === "long";
+            const pct = positionUnrealizedPnlPercent(
+              position.unrealizedPnl,
+              position.marginUsed,
+            );
+            return (
+              <TableRow key={position.coin}>
+                <TableCell>
+                  <Badge
+                    variant="outline"
+                    className={
+                      isLong
+                        ? "border-emerald-500/30 bg-emerald-500/10 font-medium text-emerald-700 dark:text-emerald-400"
+                        : "border-red-500/30 bg-red-500/10 font-medium text-red-700 dark:text-red-400"
+                    }
+                  >
+                    {position.coin}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span className="font-mono text-xs">{position.leverage}x</span>
+                    <span className="text-muted-foreground text-[10px]">
+                      {formatMarginMode(position.marginMode)}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs">
+                  {formatSize(position.size)}
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs">
+                  {formatUsd(position.value)}
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs">
+                  {formatUsd(position.entryPrice)}
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs">
+                  {position.markPrice ? formatUsd(position.markPrice) : "—"}
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs">
+                  {position.liquidationPrice
+                    ? formatUsd(position.liquidationPrice)
+                    : "—"}
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs">
+                  {position.takeProfitPrice
+                    ? formatUsd(position.takeProfitPrice)
+                    : "—"}
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs">
+                  {position.stopLossPrice
+                    ? formatUsd(position.stopLossPrice)
+                    : "—"}
+                </TableCell>
+                <TableCell
+                  className={`text-right font-mono text-xs ${fundingFeeClass(position.fundingFee)}`}
+                >
+                  {formatUsd(position.fundingFee)}
+                </TableCell>
+                <TableCell
+                  className={`text-right font-mono text-xs ${unrealizedPnlClass(position.unrealizedPnl)}`}
+                >
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span>{formatUsd(position.unrealizedPnl)}</span>
+                    {pct != null && (
+                      <span className="text-[11px] opacity-80">
+                        ({formatSignedPercent(pct)})
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+
+      {showPagination && (
+        <TablePagination
+          page={currentPage}
+          pageCount={pageCount}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          total={sortedPositions.length}
+          onPageChange={setPage}
+        />
+      )}
+    </div>
+  );
+}
+
+export function PositionsTable({
+  positions,
+  sortKey,
+  sortDir,
+  onSort,
+}: {
+  positions: WalletSnapshot["positions"];
+  sortKey: PositionsSortKey;
+  sortDir: WalletSortOrder;
+  onSort: (key: PositionsSortKey) => void;
+}) {
+  const remountKey = useMemo(
+    () =>
+      `${positions.map((p) => p.coin).join("|")}:${sortKey}:${sortDir}`,
+    [positions, sortKey, sortDir],
+  );
+
   if (positions.length === 0) {
     return (
       <p className="text-muted-foreground py-8 text-center text-sm">
@@ -186,106 +346,12 @@ export function PositionsTable({
   }
 
   return (
-    <Table leading={<PositionsSummaryBar summary={summary} />}>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Asset</TableHead>
-          <TableHead className="text-right">Leverage</TableHead>
-          <TableHead className="text-right">Size</TableHead>
-          <SortableTableHead
-            label="Value"
-            sortKey="value"
-            activeSortKey={sortKey}
-            sortDir={sortDir}
-            onSort={onSort}
-          />
-          <TableHead className="text-right">Entry</TableHead>
-          <TableHead className="text-right">Mark</TableHead>
-          <TableHead className="text-right">Liq. price</TableHead>
-          <TableHead className="text-right">TP</TableHead>
-          <TableHead className="text-right">SL</TableHead>
-          <SortableTableHead
-            label="Funding fee"
-            sortKey="fundingFee"
-            activeSortKey={sortKey}
-            sortDir={sortDir}
-            onSort={onSort}
-          />
-          <SortableTableHead
-            label="uPnL"
-            sortKey="unrealizedPnl"
-            activeSortKey={sortKey}
-            sortDir={sortDir}
-            onSort={onSort}
-          />
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {sortedPositions.map((position) => {
-          const isLong = position.side === "long";
-          return (
-            <TableRow key={position.coin}>
-              <TableCell>
-                <Badge
-                  variant="outline"
-                  className={
-                    isLong
-                      ? "border-emerald-500/30 bg-emerald-500/10 font-medium text-emerald-700 dark:text-emerald-400"
-                      : "border-red-500/30 bg-red-500/10 font-medium text-red-700 dark:text-red-400"
-                  }
-                >
-                  {position.coin}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex flex-col items-end gap-0.5">
-                  <span className="font-mono text-xs">{position.leverage}x</span>
-                  <span className="text-muted-foreground text-[10px]">
-                    {formatMarginMode(position.marginMode)}
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell className="text-right font-mono text-xs">
-                {formatSize(position.size)}
-              </TableCell>
-              <TableCell className="text-right font-mono text-xs">
-                {formatUsd(position.value)}
-              </TableCell>
-              <TableCell className="text-right font-mono text-xs">
-                {formatUsd(position.entryPrice)}
-              </TableCell>
-              <TableCell className="text-right font-mono text-xs">
-                {position.markPrice ? formatUsd(position.markPrice) : "—"}
-              </TableCell>
-              <TableCell className="text-right font-mono text-xs">
-                {position.liquidationPrice
-                  ? formatUsd(position.liquidationPrice)
-                  : "—"}
-              </TableCell>
-              <TableCell className="text-right font-mono text-xs">
-                {position.takeProfitPrice
-                  ? formatUsd(position.takeProfitPrice)
-                  : "—"}
-              </TableCell>
-              <TableCell className="text-right font-mono text-xs">
-                {position.stopLossPrice
-                  ? formatUsd(position.stopLossPrice)
-                  : "—"}
-              </TableCell>
-              <TableCell
-                className={`text-right font-mono text-xs ${fundingFeeClass(position.fundingFee)}`}
-              >
-                {formatUsd(position.fundingFee)}
-              </TableCell>
-              <TableCell
-                className={`text-right font-mono text-xs ${unrealizedPnlClass(position.unrealizedPnl)}`}
-              >
-                {formatUsd(position.unrealizedPnl)}
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+    <PositionsTablePaged
+      key={remountKey}
+      positions={positions}
+      sortKey={sortKey}
+      sortDir={sortDir}
+      onSort={onSort}
+    />
   );
 }
