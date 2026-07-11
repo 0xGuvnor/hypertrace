@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 
+import { TablePagination } from "@/components/table-pagination";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -14,9 +14,8 @@ import {
 } from "@/components/ui/table";
 import { RECENT_FILLS_CAP } from "@/lib/fills";
 import { formatSize, formatTimestamp, formatUsd } from "@/lib/format";
+import { paginateItems } from "@/lib/table-page";
 import type { WalletSnapshot } from "@/lib/wallet-types";
-
-const PAGE_SIZE = 20;
 
 function FillsTablePaged({
   fills,
@@ -33,12 +32,15 @@ function FillsTablePaged({
     );
   }
 
-  const pageCount = Math.ceil(fills.length / PAGE_SIZE);
-  const pageStart = page * PAGE_SIZE;
-  const pageFills = fills.slice(pageStart, pageStart + PAGE_SIZE);
-  const rangeStart = pageStart + 1;
-  const rangeEnd = pageStart + pageFills.length;
-  const showPagination = fills.length > PAGE_SIZE;
+  const {
+    page: currentPage,
+    pageItems,
+    pageCount,
+    pageStart,
+    rangeStart,
+    rangeEnd,
+    showPagination,
+  } = paginateItems(fills, page);
 
   return (
     <div className="flex flex-col gap-3">
@@ -53,7 +55,7 @@ function FillsTablePaged({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {pageFills.map((fill, index) => (
+          {pageItems.map((fill, index) => (
             <TableRow key={`${fill.timestamp}-${fill.coin}-${pageStart + index}`}>
               <TableCell className="text-muted-foreground font-mono text-xs">
                 {formatTimestamp(fill.timestamp)}
@@ -86,34 +88,14 @@ function FillsTablePaged({
       </Table>
 
       {showPagination && (
-        <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
-          <p className="text-muted-foreground text-xs">
-            Showing {rangeStart}–{rangeEnd} of {fills.length}
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page === 0}
-              onClick={() => setPage((current) => current - 1)}
-            >
-              Previous
-            </Button>
-            <span className="text-muted-foreground text-xs">
-              Page {page + 1} of {pageCount}
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={page >= pageCount - 1}
-              onClick={() => setPage((current) => current + 1)}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+        <TablePagination
+          page={currentPage}
+          pageCount={pageCount}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          total={fills.length}
+          onPageChange={setPage}
+        />
       )}
 
       {fills.length === RECENT_FILLS_CAP && (
