@@ -16,13 +16,19 @@ import { snapshotTradingEqual } from "./lib/snapshotEqual";
 export const getSnapshot = action({
   args: { address: v.string() },
   returns: walletSnapshotValidator,
-  handler: async (_ctx, args) => {
+  handler: async (ctx, args) => {
     const trimmed = args.address.trim();
     if (!isValidAddress(trimmed)) {
       throw new Error("Invalid wallet address");
     }
 
-    return await fetchWalletSnapshot(normalizeAddress(trimmed));
+    const snapshot = await fetchWalletSnapshot(normalizeAddress(trimmed));
+    try {
+      await ctx.runMutation(internal.wallets.upsertSnapshot, { snapshot });
+    } catch (error) {
+      console.error("getSnapshot writeback failed", error);
+    }
+    return snapshot;
   },
 });
 

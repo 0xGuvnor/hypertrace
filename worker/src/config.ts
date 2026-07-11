@@ -1,10 +1,20 @@
 import type { WorkerConfig } from "./types";
 import { JUNE_1_2026_START_BLOCK } from "./types";
 
+const HL_WS_UNIQUE_USER_CAP = 10;
+
 export function loadConfig(): WorkerConfig {
   const convexUrl = requiredEnv("CONVEX_URL");
   const convexSiteUrl =
     process.env.CONVEX_SITE_URL ?? convexUrl.replace(".convex.cloud", ".convex.site");
+
+  const requestedHlWsMaxUsers = numberEnv("HL_WS_MAX_USERS", HL_WS_UNIQUE_USER_CAP);
+  if (requestedHlWsMaxUsers > HL_WS_UNIQUE_USER_CAP) {
+    console.warn(
+      `HL_WS_MAX_USERS=${requestedHlWsMaxUsers} exceeds Hyperliquid's unique-user WS cap; clamping to ${HL_WS_UNIQUE_USER_CAP}`,
+    );
+  }
+  const hlWsMaxUsers = Math.min(requestedHlWsMaxUsers, HL_WS_UNIQUE_USER_CAP);
 
   return {
     convexSiteUrl,
@@ -38,7 +48,7 @@ export function loadConfig(): WorkerConfig {
     metaCacheTtlMs: numberEnv("META_CACHE_TTL_MS", 30_000),
     hlMaxConcurrency: numberEnv("HL_MAX_CONCURRENCY", 3),
     hlMinRequestIntervalMs: numberEnv("HL_MIN_REQUEST_INTERVAL_MS", 100),
-    hlWsMaxUsers: numberEnv("HL_WS_MAX_USERS", 10),
+    hlWsMaxUsers,
     wsRefreshMinIntervalMs: numberEnv("WS_REFRESH_MIN_INTERVAL_MS", 300_000),
     leaderboardPollMs: numberEnv("LEADERBOARD_POLL_MS", 30 * 60_000),
   };
