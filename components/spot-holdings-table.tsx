@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { ResponsiveHint } from "@/components/responsive-hint";
@@ -16,11 +16,10 @@ import {
 } from "@/components/ui/table";
 import { formatUsd, formatSize } from "@/lib/format";
 import type { WalletSnapshot } from "@/lib/wallet-types";
+import type { WalletSortOrder } from "@/lib/wallet-view";
 
 const HOLD_HINT =
   "Amount locked in open spot orders or pending transactions. Available is Size minus Hold.";
-
-type SortDir = "asc" | "desc";
 
 type SpotHolding = NonNullable<WalletSnapshot["spotBalances"]>[number];
 
@@ -32,7 +31,7 @@ function parseHlNumeric(value: string): number {
 function compareHoldings(
   a: SpotHolding,
   b: SpotHolding,
-  sortDir: SortDir,
+  sortDir: WalletSortOrder,
 ): number {
   const aVal = parseHlNumeric(a.value);
   const bVal = parseHlNumeric(b.value);
@@ -45,7 +44,7 @@ function SortableValueHead({
   sortDir,
   onSort,
 }: {
-  sortDir: SortDir;
+  sortDir: WalletSortOrder;
   onSort: () => void;
 }) {
   const ariaSort = sortDir === "asc" ? "ascending" : "descending";
@@ -72,19 +71,17 @@ function SortableValueHead({
 
 export function SpotHoldingsTable({
   holdings = [],
+  sortDir,
+  onSort,
 }: {
   holdings?: NonNullable<WalletSnapshot["spotBalances"]>;
+  sortDir: WalletSortOrder;
+  onSort: () => void;
 }) {
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
-
   const sortedHoldings = useMemo(
     () => [...holdings].sort((a, b) => compareHoldings(a, b, sortDir)),
     [holdings, sortDir],
   );
-
-  function handleSort() {
-    setSortDir((dir) => (dir === "asc" ? "desc" : "asc"));
-  }
 
   if (holdings.length === 0) {
     return (
@@ -101,7 +98,7 @@ export function SpotHoldingsTable({
           <TableHead>Asset</TableHead>
           <TableHead className="text-right">Size</TableHead>
           <TableHead className="text-right">Price</TableHead>
-          <SortableValueHead sortDir={sortDir} onSort={handleSort} />
+          <SortableValueHead sortDir={sortDir} onSort={onSort} />
           <TableHead className="text-right">
             <div className="flex justify-end">
               <ResponsiveHint

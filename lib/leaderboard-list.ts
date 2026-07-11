@@ -30,6 +30,77 @@ export const DEFAULT_LEADERBOARD_SORT_BY: LeaderboardSortBy = "pnlDay";
 export const DEFAULT_LEADERBOARD_ORDER: LeaderboardOrder = "desc";
 export const DEFAULT_PNL_WINDOW: PnlWindow = "day";
 export const DEFAULT_MIN_ACCOUNT_VALUE_FILTER: MinAccountValueFilter = "any";
+export const DEFAULT_MIN_VOLUME_FILTER: MinVolumeFilter = "any";
+
+export type LeaderboardView = {
+  pnlWindow: PnlWindow;
+  sortBy: LeaderboardSortBy;
+  order: LeaderboardOrder;
+  minAccountValueFilter: MinAccountValueFilter;
+  minVolumeFilter: MinVolumeFilter;
+};
+
+export const DEFAULT_LEADERBOARD_VIEW: LeaderboardView = {
+  pnlWindow: DEFAULT_PNL_WINDOW,
+  sortBy: DEFAULT_LEADERBOARD_SORT_BY,
+  order: DEFAULT_LEADERBOARD_ORDER,
+  minAccountValueFilter: DEFAULT_MIN_ACCOUNT_VALUE_FILTER,
+  minVolumeFilter: DEFAULT_MIN_VOLUME_FILTER,
+};
+
+const SORT_BY_VALUES = [
+  "accountValue",
+  "pnlDay",
+  "pnlWeek",
+  "pnlMonth",
+  "pnlAllTime",
+  "vlmDay",
+  "vlmWeek",
+  "vlmMonth",
+  "vlmAllTime",
+] as const satisfies readonly LeaderboardSortBy[];
+
+const PNL_WINDOW_VALUES = [
+  "day",
+  "week",
+  "month",
+  "allTime",
+] as const satisfies readonly PnlWindow[];
+
+const ORDER_VALUES = ["asc", "desc"] as const satisfies readonly LeaderboardOrder[];
+
+const MIN_ACCOUNT_VALUE_FILTER_VALUES = [
+  "any",
+  "100k",
+  "1m",
+  "10m",
+  "100m",
+] as const satisfies readonly MinAccountValueFilter[];
+
+const MIN_VOLUME_FILTER_VALUES = [
+  "any",
+  "positive",
+  "1m",
+  "10m",
+  "100m",
+] as const satisfies readonly MinVolumeFilter[];
+
+function firstParam(
+  value: string | string[] | undefined,
+): string | undefined {
+  if (Array.isArray(value)) return value[0];
+  return value;
+}
+
+function parseEnum<T extends string>(
+  raw: string | undefined,
+  allowed: readonly T[],
+): T | undefined {
+  if (raw === undefined) return undefined;
+  return (allowed as readonly string[]).includes(raw)
+    ? (raw as T)
+    : undefined;
+}
 
 export const PNL_WINDOW_TO_SORT: Record<PnlWindow, LeaderboardSortBy> = {
   day: "pnlDay",
@@ -171,4 +242,85 @@ export function minAccountValueFilterArgs(
       return _exhaustive;
     }
   }
+}
+
+export type LeaderboardListArgs = {
+  sortBy: LeaderboardSortBy;
+  order: LeaderboardOrder;
+  minAccountValue?: number;
+  minVolume?: number;
+  requirePositiveVolume?: boolean;
+  volumeWindow?: PnlWindow;
+};
+
+export function leaderboardListArgsFromView(
+  view: LeaderboardView,
+): LeaderboardListArgs {
+  const accountValueArgs = minAccountValueFilterArgs(
+    view.minAccountValueFilter,
+  );
+  const volumeArgs = minVolumeFilterArgs(view.minVolumeFilter);
+  return {
+    sortBy: view.sortBy,
+    order: view.order,
+    ...accountValueArgs,
+    ...volumeArgs,
+    ...(view.minVolumeFilter !== "any"
+      ? { volumeWindow: view.pnlWindow }
+      : {}),
+  };
+}
+
+export function parseLeaderboardSearchParams(
+  searchParams: Record<string, string | string[] | undefined> | URLSearchParams,
+): LeaderboardView {
+  const get = (key: string): string | undefined => {
+    if (searchParams instanceof URLSearchParams) {
+      return searchParams.get(key) ?? undefined;
+    }
+    return firstParam(searchParams[key]);
+  };
+
+  return {
+    pnlWindow:
+      parseEnum(get("window"), PNL_WINDOW_VALUES) ?? DEFAULT_PNL_WINDOW,
+    sortBy:
+      parseEnum(get("sort"), SORT_BY_VALUES) ?? DEFAULT_LEADERBOARD_SORT_BY,
+    order:
+      parseEnum(get("order"), ORDER_VALUES) ?? DEFAULT_LEADERBOARD_ORDER,
+    minAccountValueFilter:
+      parseEnum(get("minAv"), MIN_ACCOUNT_VALUE_FILTER_VALUES) ??
+      DEFAULT_MIN_ACCOUNT_VALUE_FILTER,
+    minVolumeFilter:
+      parseEnum(get("minVol"), MIN_VOLUME_FILTER_VALUES) ??
+      DEFAULT_MIN_VOLUME_FILTER,
+  };
+}
+
+export function serializeLeaderboardSearchParams(
+  view: LeaderboardView,
+): URLSearchParams {
+  const params = new URLSearchParams();
+  if (view.pnlWindow !== DEFAULT_PNL_WINDOW) {
+    params.set("window", view.pnlWindow);
+  }
+  if (view.sortBy !== DEFAULT_LEADERBOARD_SORT_BY) {
+    params.set("sort", view.sortBy);
+  }
+  if (view.order !== DEFAULT_LEADERBOARD_ORDER) {
+    params.set("order", view.order);
+  }
+  if (view.minAccountValueFilter !== DEFAULT_MIN_ACCOUNT_VALUE_FILTER) {
+    params.set("minAv", view.minAccountValueFilter);
+  }
+  if (view.minVolumeFilter !== DEFAULT_MIN_VOLUME_FILTER) {
+    params.set("minVol", view.minVolumeFilter);
+  }
+  return params;
+}
+
+export function leaderboardHref(view: LeaderboardView): string {
+  const params = serializeLeaderboardSearchParams(view);
+  const query = params.toString();
+  return query.length > 0 ? `/leaderboard?${query}` : "/leaderboard";
 }

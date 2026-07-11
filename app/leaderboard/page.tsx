@@ -6,19 +6,23 @@ import { LeaderboardListLive } from "@/components/leaderboard-list-live";
 import { SiteHeader } from "@/components/site-header";
 import { api } from "@/convex/_generated/api";
 import {
-  DEFAULT_LEADERBOARD_ORDER,
-  DEFAULT_LEADERBOARD_SORT_BY,
   LEADERBOARD_LIST_PAGE_SIZE,
+  leaderboardListArgsFromView,
+  parseLeaderboardSearchParams,
 } from "@/lib/leaderboard-list";
 
 export const metadata: Metadata = {
   title: "Leaderboard",
 };
 
-export default async function LeaderboardPage() {
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function LeaderboardPage({ searchParams }: PageProps) {
+  const initialView = parseLeaderboardSearchParams(await searchParams);
   const preloadedLeaderboard = await preloadQuery(api.leaderboard.list, {
-    sortBy: DEFAULT_LEADERBOARD_SORT_BY,
-    order: DEFAULT_LEADERBOARD_ORDER,
+    ...leaderboardListArgsFromView(initialView),
     paginationOpts: { numItems: LEADERBOARD_LIST_PAGE_SIZE, cursor: null },
   });
 
@@ -35,7 +39,10 @@ export default async function LeaderboardPage() {
             stats-data.
           </p>
         </div>
-        <LeaderboardListLive preloadedLeaderboard={preloadedLeaderboard} />
+        <LeaderboardListLive
+          preloadedLeaderboard={preloadedLeaderboard}
+          initialView={initialView}
+        />
       </div>
     </AppShell>
   );
