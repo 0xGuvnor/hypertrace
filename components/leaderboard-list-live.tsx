@@ -12,35 +12,25 @@ import { LeaderboardTable } from "@/components/leaderboard-table";
 import { api } from "@/convex/_generated/api";
 import { formatTimestamp } from "@/lib/format";
 import {
-  DEFAULT_LEADERBOARD_ORDER,
-  DEFAULT_LEADERBOARD_SORT_BY,
-  DEFAULT_MIN_ACCOUNT_VALUE_FILTER,
-  DEFAULT_PNL_WINDOW,
   LEADERBOARD_LIST_PAGE_SIZE,
+  type LeaderboardListArgs,
   type LeaderboardOrder,
   type LeaderboardRow,
   type LeaderboardSortBy,
   type LeaderboardTailStatus,
+  type LeaderboardView,
   type MinAccountValueFilter,
   type MinVolumeFilter,
   type PnlWindow,
-  minAccountValueFilterArgs,
-  minVolumeFilterArgs,
+  leaderboardHref,
+  leaderboardListArgsFromView,
   PNL_WINDOW_TO_SORT,
 } from "@/lib/leaderboard-list";
 import { useInView } from "@/lib/use-in-view";
 
 type LeaderboardListLiveProps = {
   preloadedLeaderboard: Preloaded<typeof api.leaderboard.list>;
-};
-
-type ListArgs = {
-  sortBy: LeaderboardSortBy;
-  order: LeaderboardOrder;
-  minAccountValue?: number;
-  minVolume?: number;
-  requirePositiveVolume?: boolean;
-  volumeWindow?: PnlWindow;
+  initialView: LeaderboardView;
 };
 
 type PageResult = {
@@ -49,36 +39,21 @@ type PageResult = {
   isDone: boolean;
 };
 
-function buildListArgs(
-  sortBy: LeaderboardSortBy,
-  order: LeaderboardOrder,
-  minAccountValueFilter: MinAccountValueFilter,
-  minVolumeFilter: MinVolumeFilter,
-  volumeWindow: PnlWindow,
-): ListArgs {
-  const accountValueArgs = minAccountValueFilterArgs(minAccountValueFilter);
-  const volumeArgs = minVolumeFilterArgs(minVolumeFilter);
-  return {
-    sortBy,
-    order,
-    ...accountValueArgs,
-    ...volumeArgs,
-    ...(minVolumeFilter !== "any" ? { volumeWindow } : {}),
-  };
-}
-
-function isDefaultArgs(
-  sortBy: LeaderboardSortBy,
-  order: LeaderboardOrder,
-  minAccountValueFilter: MinAccountValueFilter,
-  minVolumeFilter: MinVolumeFilter,
+function matchesPreloadedView(
+  view: LeaderboardView,
+  initialView: LeaderboardView,
 ): boolean {
   return (
-    sortBy === DEFAULT_LEADERBOARD_SORT_BY &&
-    order === DEFAULT_LEADERBOARD_ORDER &&
-    minAccountValueFilter === DEFAULT_MIN_ACCOUNT_VALUE_FILTER &&
-    minVolumeFilter === "any"
+    view.sortBy === initialView.sortBy &&
+    view.order === initialView.order &&
+    view.minAccountValueFilter === initialView.minAccountValueFilter &&
+    view.minVolumeFilter === initialView.minVolumeFilter &&
+    view.pnlWindow === initialView.pnlWindow
   );
+}
+
+function replaceLeaderboardUrl(view: LeaderboardView): void {
+  window.history.replaceState(null, "", leaderboardHref(view));
 }
 
 function LeaderboardListTail({
@@ -90,7 +65,7 @@ function LeaderboardListTail({
   onSort,
 }: {
   firstPage: PageResult;
-  listArgs: ListArgs;
+  listArgs: LeaderboardListArgs;
   pnlWindow: PnlWindow;
   sortBy: LeaderboardSortBy;
   sortOrder: LeaderboardOrder;
@@ -109,7 +84,9 @@ function LeaderboardListTail({
 
   const canLoadMore =
     !exhausted &&
-    (additionalRows.length > 0 ? nextCursor !== null : !firstPage.isDone);
+    (additionalRows.length > 0
+      ? nextCursor !== null
+      : !firstPage.isDone && firstPage.continueCursor !== null);
 
   const handleLoadMore = useCallback(async () => {
     if (loadingMore || exhausted) return;
@@ -175,46 +152,49 @@ function LeaderboardListTail({
 
 export function LeaderboardListLive({
   preloadedLeaderboard,
+  initialView,
 }: LeaderboardListLiveProps) {
   const preloadedPage = usePreloadedQuery(preloadedLeaderboard);
   const convex = useConvex();
 
-  const [pnlWindow, setPnlWindow] = useState<PnlWindow>(DEFAULT_PNL_WINDOW);
-  const [sortBy, setSortBy] = useState<LeaderboardSortBy>(
-    DEFAULT_LEADERBOARD_SORT_BY,
-  );
+  const [pnlWindow, setPnlWindow] = useState<PnlWindow>(initialView.pnlWindow);
+  const [sortBy, setSortBy] = useState<LeaderboardSortBy>(initialView.sortBy);
   const [sortOrder, setSortOrder] = useState<LeaderboardOrder>(
-    DEFAULT_LEADERBOARD_ORDER,
+    initialView.order,
   );
   const [minAccountValueFilter, setMinAccountValueFilter] =
-    useState<MinAccountValueFilter>(DEFAULT_MIN_ACCOUNT_VALUE_FILTER);
-  const [minVolumeFilter, setMinVolumeFilter] =
-    useState<MinVolumeFilter>("any");
+    useState<MinAccountValueFilter>(initialView.minAccountValueFilter);
+  const [minVolumeFilter, setMinVolumeFilter] = useState<MinVolumeFilter>(
+    initialView.minVolumeFilter,
+  );
   const [queriedPage, setQueriedPage] = useState<PageResult | null>(null);
   const [querying, setQuerying] = useState(false);
 
-  const listArgs = useMemo(
-    () =>
-      buildListArgs(
-        sortBy,
-        sortOrder,
-        minAccountValueFilter,
-        minVolumeFilter,
-        pnlWindow,
-      ),
+  const currentView = useMemo(
+    (): LeaderboardView => ({
+      pnlWindow,
+      sortBy,
+      order: sortOrder,
+      minAccountValueFilter,
+      minVolumeFilter,
+    }),
     [minAccountValueFilter, minVolumeFilter, pnlWindow, sortBy, sortOrder],
   );
 
-  const usePreloaded = isDefaultArgs(
-    sortBy,
-    sortOrder,
-    minAccountValueFilter,
-    minVolumeFilter,
+  const listArgs = useMemo(
+    () => leaderboardListArgsFromView(currentView),
+    [currentView],
   );
+
+  const usePreloaded = matchesPreloadedView(currentView, initialView);
 
   const firstPage = usePreloaded
     ? preloadedPage
-    : (queriedPage ?? { page: [], continueCursor: null, isDone: true });
+    : (queriedPage ?? {
+        page: [],
+        continueCursor: null,
+        isDone: !querying,
+      });
 
   const snapshotAt = useMemo(() => {
     const rows = firstPage.page;
@@ -246,7 +226,7 @@ export function LeaderboardListLive({
   );
 
   const refetch = useCallback(
-    async (nextArgs: ListArgs) => {
+    async (nextArgs: LeaderboardListArgs) => {
       setQuerying(true);
       try {
         const result = await convex.query(api.leaderboard.list, {
@@ -272,37 +252,30 @@ export function LeaderboardListLive({
       nextVolumeFilter: MinVolumeFilter,
       nextWindow: PnlWindow,
     ) => {
+      const nextView: LeaderboardView = {
+        pnlWindow: nextWindow,
+        sortBy: nextSortBy,
+        order: nextOrder,
+        minAccountValueFilter: nextAccountValueFilter,
+        minVolumeFilter: nextVolumeFilter,
+      };
       setSortBy(nextSortBy);
       setSortOrder(nextOrder);
       setMinAccountValueFilter(nextAccountValueFilter);
       setMinVolumeFilter(nextVolumeFilter);
-      if (
-        isDefaultArgs(
-          nextSortBy,
-          nextOrder,
-          nextAccountValueFilter,
-          nextVolumeFilter,
-        )
-      ) {
+      setPnlWindow(nextWindow);
+      replaceLeaderboardUrl(nextView);
+      if (matchesPreloadedView(nextView, initialView)) {
         setQueriedPage(null);
         return;
       }
-      void refetch(
-        buildListArgs(
-          nextSortBy,
-          nextOrder,
-          nextAccountValueFilter,
-          nextVolumeFilter,
-          nextWindow,
-        ),
-      );
+      void refetch(leaderboardListArgsFromView(nextView));
     },
-    [refetch],
+    [initialView, refetch],
   );
 
   const handlePnlWindowChange = useCallback(
     (window: PnlWindow) => {
-      setPnlWindow(window);
       applyView(
         PNL_WINDOW_TO_SORT[window],
         "desc",
@@ -323,7 +296,6 @@ export function LeaderboardListLive({
       if (key === "pnlWeek" || key === "vlmWeek") nextWindow = "week";
       if (key === "pnlMonth" || key === "vlmMonth") nextWindow = "month";
       if (key === "pnlAllTime" || key === "vlmAllTime") nextWindow = "allTime";
-      if (nextWindow !== pnlWindow) setPnlWindow(nextWindow);
       applyView(
         key,
         nextOrder,

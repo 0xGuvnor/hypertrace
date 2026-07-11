@@ -8,6 +8,7 @@ import { WalletTabs } from "@/components/wallet-tabs";
 import type { WalletClusters, WalletDeposits } from "@/lib/cluster-types";
 import type { LiveFeedStatus } from "@/lib/live-status";
 import type { WalletSnapshot } from "@/lib/wallet-types";
+import type { WalletView } from "@/lib/wallet-view";
 
 export function WalletDetail({
   snapshot,
@@ -16,6 +17,7 @@ export function WalletDetail({
   firstActivityAt,
   walletClusters,
   walletDeposits,
+  initialView,
 }: {
   snapshot: WalletSnapshot;
   feedStatus?: LiveFeedStatus;
@@ -23,6 +25,7 @@ export function WalletDetail({
   firstActivityAt: number | null;
   walletClusters: WalletClusters;
   walletDeposits: WalletDeposits;
+  initialView: WalletView;
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-8">
@@ -50,7 +53,11 @@ export function WalletDetail({
       ) : null}
 
       <WalletSummary account={snapshot.account} />
-      <WalletTabs snapshot={snapshot} walletDeposits={walletDeposits} />
+      <WalletTabs
+        snapshot={snapshot}
+        walletDeposits={walletDeposits}
+        initialView={initialView}
+      />
     </div>
   );
 }

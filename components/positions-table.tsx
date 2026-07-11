@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -19,9 +19,7 @@ import {
   type PositionsOpenSummary,
 } from "@/lib/positions-summary";
 import type { WalletSnapshot } from "@/lib/wallet-types";
-
-type SortKey = "value" | "fundingFee" | "unrealizedPnl";
-type SortDir = "asc" | "desc";
+import type { PositionsSortKey, WalletSortOrder } from "@/lib/wallet-view";
 
 type Position = WalletSnapshot["positions"][number];
 
@@ -33,8 +31,8 @@ function parseHlNumeric(value: string): number {
 function comparePositions(
   a: Position,
   b: Position,
-  sortKey: SortKey,
-  sortDir: SortDir,
+  sortKey: PositionsSortKey,
+  sortDir: WalletSortOrder,
 ): number {
   const aVal = parseHlNumeric(a[sortKey]);
   const bVal = parseHlNumeric(b[sortKey]);
@@ -121,10 +119,10 @@ function SortableTableHead({
   onSort,
 }: {
   label: string;
-  sortKey: SortKey;
-  activeSortKey: SortKey;
-  sortDir: SortDir;
-  onSort: (key: SortKey) => void;
+  sortKey: PositionsSortKey;
+  activeSortKey: PositionsSortKey;
+  sortDir: WalletSortOrder;
+  onSort: (key: PositionsSortKey) => void;
 }) {
   const isActive = activeSortKey === sortKey;
   const ariaSort = isActive
@@ -159,12 +157,15 @@ function SortableTableHead({
 
 export function PositionsTable({
   positions,
+  sortKey,
+  sortDir,
+  onSort,
 }: {
   positions: WalletSnapshot["positions"];
+  sortKey: PositionsSortKey;
+  sortDir: WalletSortOrder;
+  onSort: (key: PositionsSortKey) => void;
 }) {
-  const [sortKey, setSortKey] = useState<SortKey>("value");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
-
   const sortedPositions = useMemo(
     () =>
       [...positions].sort((a, b) => comparePositions(a, b, sortKey, sortDir)),
@@ -175,15 +176,6 @@ export function PositionsTable({
     () => summarizeOpenPositions(positions),
     [positions],
   );
-
-  function handleSort(key: SortKey) {
-    if (key === sortKey) {
-      setSortDir((dir) => (dir === "asc" ? "desc" : "asc"));
-      return;
-    }
-    setSortKey(key);
-    setSortDir("desc");
-  }
 
   if (positions.length === 0) {
     return (
@@ -205,7 +197,7 @@ export function PositionsTable({
             sortKey="value"
             activeSortKey={sortKey}
             sortDir={sortDir}
-            onSort={handleSort}
+            onSort={onSort}
           />
           <TableHead className="text-right">Entry</TableHead>
           <TableHead className="text-right">Mark</TableHead>
@@ -217,14 +209,14 @@ export function PositionsTable({
             sortKey="fundingFee"
             activeSortKey={sortKey}
             sortDir={sortDir}
-            onSort={handleSort}
+            onSort={onSort}
           />
           <SortableTableHead
             label="uPnL"
             sortKey="unrealizedPnl"
             activeSortKey={sortKey}
             sortDir={sortDir}
-            onSort={handleSort}
+            onSort={onSort}
           />
         </TableRow>
       </TableHeader>

@@ -8,6 +8,7 @@ import { api } from "@/convex/_generated/api";
 import { deriveLiveFeedStatus } from "@/lib/live-status";
 import { normalizeWalletDeposits } from "@/lib/cluster-types";
 import type { WalletSnapshot } from "@/lib/wallet-types";
+import type { WalletView } from "@/lib/wallet-view";
 
 type WalletDetailLiveProps = {
   address: string;
@@ -15,6 +16,7 @@ type WalletDetailLiveProps = {
   firstActivityAt: number | null;
   preloadedWalletClusters: Preloaded<typeof api.clusters.getForWallet>;
   preloadedDeposits: Preloaded<typeof api.deposits.listByWallet>;
+  initialView: WalletView;
 };
 
 const STATUS_TICK_MS = 10_000;
@@ -25,6 +27,7 @@ export function WalletDetailLive({
   firstActivityAt,
   preloadedWalletClusters,
   preloadedDeposits,
+  initialView,
 }: WalletDetailLiveProps) {
   const requestWatch = useMutation(api.watches.request);
   const liveSnapshot = useQuery(api.wallets.getLiveSnapshot, { address });
@@ -61,6 +64,7 @@ export function WalletDetailLive({
       firstActivityAt={firstActivityAt}
       walletClusters={walletClusters}
       walletDeposits={walletDeposits}
+      initialView={initialView}
     />
   );
 }

@@ -11,9 +11,14 @@ import { api } from "@/convex/_generated/api";
 import { isValidAddress, normalizeAddress, truncateAddress } from "@/lib/address";
 import { walletLoadUserMessage } from "@/lib/wallet-load-error";
 import type { WalletSnapshot } from "@/lib/wallet-types";
+import {
+  parseWalletSearchParams,
+  type WalletView,
+} from "@/lib/wallet-view";
 
 type PageProps = {
   params: Promise<{ address: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 type WalletPageLoadResult =
@@ -74,11 +79,12 @@ export async function generateMetadata({
   };
 }
 
-export default async function AddressPage({ params }: PageProps) {
+export default async function AddressPage({ params, searchParams }: PageProps) {
   const { address: raw } = await params;
   if (!isValidAddress(raw)) notFound();
 
   const address = normalizeAddress(raw);
+  const initialView: WalletView = parseWalletSearchParams(await searchParams);
   const result = await loadWalletPageData(address);
 
   if (!result.ok) {
@@ -99,6 +105,7 @@ export default async function AddressPage({ params }: PageProps) {
         firstActivityAt={result.firstActivityAt}
         preloadedWalletClusters={result.preloadedWalletClusters}
         preloadedDeposits={result.preloadedDeposits}
+        initialView={initialView}
       />
     </AppShell>
   );
