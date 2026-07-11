@@ -25,7 +25,7 @@ Railway service that watches Convex `watchedAddresses`, subscribes to Hyperliqui
 | `META_CACHE_TTL_MS` | no | Shared `metaAndAssetCtxs` cache TTL (default 30000) |
 | `HL_MAX_CONCURRENCY` | no | Max parallel Hyperliquid Info API requests (default 3) |
 | `HL_MIN_REQUEST_INTERVAL_MS` | no | Min gap between HL request starts (default 100) |
-| `HL_WS_MAX_USERS` | no | Max unique wallets on HL user-specific WS + watch-sync refresh (default 10) |
+| `HL_WS_MAX_USERS` | no | Max unique wallets on HL user-specific WS + watch-sync refresh (default 10; hard-capped at 10 per HL unique-user WS subscription limit) |
 | `WS_REFRESH_MIN_INTERVAL_MS` | no | Min gap between WS-triggered snapshot refreshes per wallet (default 300000) |
 | `LEADERBOARD_POLL_MS` | no | Leaderboard fetch interval (default `1800000` = 30 min) |
 
@@ -37,6 +37,7 @@ Deposit `sourceAddress` is resolved via Alchemy `getAssetTransfers` on the same 
 
 - Root directory: `worker`
 - Builder: Dockerfile (`railway.toml` included)
+- Keep the service at 1 replica (one multiplexed HL WS connection per process).
 - Enable public networking if you want Railway health checks on `/health`
 - Leaderboard parse helpers are vendored under `worker/src/lib/` because the Docker context is `worker/` only.
 
