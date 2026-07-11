@@ -52,7 +52,7 @@ export function MobileNavMenu({ className }: MobileNavMenuProps) {
       <SheetContent
         side="right"
         showCloseButton={false}
-        className="w-[40%] gap-0 border-l border-[var(--brand-cyan)]/30 data-[side=right]:w-[40%] data-[side=right]:sm:max-w-none"
+        className="w-[45%] gap-0 border-l border-[var(--brand-cyan)]/30 data-[side=right]:w-[45%] data-[side=right]:sm:max-w-none"
       >
         <SheetHeader className="flex-row items-center gap-2">
           <div className="relative size-7 shrink-0">
