@@ -55,18 +55,27 @@ export function MobileNavMenu({ className }: MobileNavMenuProps) {
         className="w-[45%] gap-0 border-l border-[var(--brand-cyan)]/30 data-[side=right]:w-[45%] data-[side=right]:sm:max-w-none"
       >
         <SheetHeader className="flex-row items-center gap-2">
-          <div className="relative size-7 shrink-0">
-            <Image
-              src="/logo.png"
-              alt=""
-              width={56}
-              height={56}
-              className="size-full object-contain"
-            />
-          </div>
-          <SheetTitle className="text-base font-semibold tracking-tight">
-            Hyper<span className="italic">trace</span>
-          </SheetTitle>
+          <Link
+            href="/"
+            onClick={() => setOpen(false)}
+            className={cn(
+              "flex min-h-11 flex-1 items-center gap-2 rounded-xl outline-none",
+              "focus-visible:ring-2 focus-visible:ring-[var(--brand-cyan)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+            )}
+          >
+            <div className="relative size-7 shrink-0">
+              <Image
+                src="/logo.png"
+                alt=""
+                width={56}
+                height={56}
+                className="size-full object-contain"
+              />
+            </div>
+            <SheetTitle className="text-base font-semibold tracking-tight">
+              Hyper<span className="italic">trace</span>
+            </SheetTitle>
+          </Link>
         </SheetHeader>
         <nav className="flex flex-1 flex-col gap-1 px-3 py-3">
           {SITE_NAV_LINKS.map((item) => {
