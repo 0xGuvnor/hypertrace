@@ -260,11 +260,22 @@ export const list = query({
     const volumeWindow = (args.volumeWindow ?? "day") as VolumeWindow;
     const ordered = (() => {
       switch (sortBy) {
-        case "accountValue":
+        case "accountValue": {
+          // Index-bound min AV so ascending pages are not emptied by post-filter.
+          const minAccountValue = args.minAccountValue;
+          if (minAccountValue === undefined) {
+            return ctx.db
+              .query("leaderboardSnapshots")
+              .withIndex("by_accountValue")
+              .order(args.order);
+          }
           return ctx.db
             .query("leaderboardSnapshots")
-            .withIndex("by_accountValue")
+            .withIndex("by_accountValue", (q) =>
+              q.gte("accountValue", minAccountValue),
+            )
             .order(args.order);
+        }
         case "pnlDay":
           return ctx.db
             .query("leaderboardSnapshots")
