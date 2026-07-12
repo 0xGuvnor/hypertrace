@@ -1,8 +1,8 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { ArrowRight, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ type WalletSearchProps = {
   autoFocus?: boolean;
   className?: string;
   inputClassName?: string;
+  showLabel?: boolean;
 };
 
 const RECENT_KEY = "hypertrace:recent-addresses";
@@ -82,8 +83,10 @@ export function WalletSearch({
   autoFocus = false,
   className,
   inputClassName,
+  showLabel = false,
 }: WalletSearchProps = {}) {
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const recent = useSyncExternalStore(
@@ -91,6 +94,18 @@ export function WalletSearch({
     getRecentSnapshot,
     getRecentServerSnapshot,
   );
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "k") {
+        return;
+      }
+      event.preventDefault();
+      inputRef.current?.focus();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   function searchAddress() {
     const trimmed = value.trim();
@@ -115,33 +130,67 @@ export function WalletSearch({
 
   return (
     <div className={cn("flex w-full flex-col gap-4", className)}>
-      <form onSubmit={handleSubmit} className="relative w-full">
-        <Input
-          type="text"
-          placeholder="0x..."
-          value={value}
-          onChange={(e) => {
-            setValue(e.target.value);
-            if (error) setError(null);
-          }}
-          className={cn(
-            "min-w-0 w-full pr-11 font-mono text-base md:text-sm",
-            inputClassName,
-          )}
-          spellCheck={false}
-          autoComplete="off"
-          autoFocus={autoFocus}
-        />
-        <Button
-          type="submit"
-          variant="ghost"
-          size="icon-sm"
-          className="absolute top-1/2 right-1 -translate-y-1/2 active:not-aria-[haspopup]:-translate-y-1/2 text-muted-foreground hover:text-[var(--brand-cyan)]"
-          aria-label="Search"
-        >
-          <Search />
-        </Button>
-      </form>
+      <div className="flex w-full flex-col gap-2">
+        {showLabel ? (
+          <label
+            htmlFor="wallet-search-input"
+            className="text-sm text-muted-foreground"
+          >
+            Wallet address
+          </label>
+        ) : null}
+
+        <form onSubmit={handleSubmit} className="relative w-full">
+          <Search
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            ref={inputRef}
+            id={showLabel ? "wallet-search-input" : undefined}
+            type="text"
+            placeholder="0x..."
+            value={value}
+            onChange={(e) => {
+              setValue(e.target.value);
+              if (error) setError(null);
+            }}
+            className={cn(
+              "h-11 min-w-0 w-full pl-9 font-mono text-base md:text-sm",
+              "pr-20 sm:pr-28",
+              "focus-visible:border-[var(--brand-cyan)]/40 focus-visible:ring-[var(--brand-cyan)]/25",
+              inputClassName,
+            )}
+            spellCheck={false}
+            autoComplete="off"
+            autoFocus={autoFocus}
+          />
+          <div className="absolute top-1/2 right-1.5 flex -translate-y-1/2 items-center gap-1.5">
+            <kbd
+              className={cn(
+                "pointer-events-none hidden h-6 items-center rounded-md border border-border/80",
+                "bg-muted/40 px-1.5 font-mono text-[0.65rem] text-muted-foreground sm:inline-flex",
+              )}
+            >
+              ⌘K
+            </kbd>
+            <Button
+              type="submit"
+              size="icon-sm"
+              aria-label="Investigate wallet"
+              className={cn(
+                "size-8 rounded-md border-transparent",
+                "bg-[var(--brand-cyan)] text-black",
+                "hover:bg-[var(--brand-cyan)]/90",
+                "active:not-aria-[haspopup]:translate-y-0",
+                "focus-visible:ring-[var(--brand-cyan)]/40",
+              )}
+            >
+              <ArrowRight className="size-4" />
+            </Button>
+          </div>
+        </form>
+      </div>
 
       {error ? (
         <Alert variant="destructive">
@@ -150,19 +199,22 @@ export function WalletSearch({
       ) : null}
 
       {recent.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {recent.map((address) => (
-            <Button
-              key={address}
-              type="button"
-              variant="outline"
-              size="sm"
-              className="font-mono text-xs"
-              onClick={() => handleRecentClick(address)}
-            >
-              {address.slice(0, 6)}…{address.slice(-4)}
-            </Button>
-          ))}
+        <div className="flex flex-col gap-2">
+          <p className="text-xs text-muted-foreground">Try a wallet</p>
+          <div className="flex flex-wrap gap-2">
+            {recent.map((address) => (
+              <Button
+                key={address}
+                type="button"
+                variant="outline"
+                size="sm"
+                className="font-mono text-xs"
+                onClick={() => handleRecentClick(address)}
+              >
+                {address.slice(0, 6)}…{address.slice(-4)}
+              </Button>
+            ))}
+          </div>
         </div>
       ) : null}
     </div>
