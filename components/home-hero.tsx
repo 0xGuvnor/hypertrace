@@ -21,7 +21,7 @@ const FEATURES = [
 
 export function HomeHero({ className }: HomeHeroProps) {
   return (
-    <div className={cn("flex h-full flex-col gap-6 sm:gap-8", className)}>
+    <div className={cn("flex flex-col gap-6 sm:gap-8", className)}>
       <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border/80 bg-card px-3 py-1">
         <span
           aria-hidden
@@ -45,7 +45,7 @@ export function HomeHero({ className }: HomeHeroProps) {
         </p>
       </div>
 
-      <div className="mt-auto grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         {FEATURES.map((feature) => {
           const Icon = feature.icon;
           return (
