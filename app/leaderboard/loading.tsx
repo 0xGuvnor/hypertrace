@@ -38,13 +38,21 @@ export default function Loading() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="flex flex-col gap-1.5">
-              <Skeleton className="h-3 w-36" />
-              <Skeleton className="h-9 w-full rounded-lg" />
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between md:gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Skeleton className="h-3 w-36" />
+            <Skeleton className="h-9 w-full rounded-full md:w-56" />
+          </div>
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Skeleton className="h-3 w-40" />
+              <Skeleton className="h-9 w-full rounded-full md:w-64" />
             </div>
-          ))}
+            <div className="flex flex-col gap-1.5">
+              <Skeleton className="h-3 w-32" />
+              <Skeleton className="h-9 w-full rounded-full md:w-56" />
+            </div>
+          </div>
         </div>
 
         <Table

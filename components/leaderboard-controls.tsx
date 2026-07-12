@@ -50,13 +50,13 @@ function FilterSegmentGroup<T extends string>({
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <span className="text-muted-foreground font-mono text-[10px] tracking-[0.16em] uppercase">
+      <span className="font-mono text-[10px] tracking-[0.16em] text-[var(--brand-cyan)] uppercase">
         {label}
       </span>
       <div
         role="radiogroup"
         aria-label={label}
-        className="flex w-full overflow-hidden rounded-lg border border-border bg-card"
+        className="flex w-full rounded-full border border-border bg-card p-0.5 md:w-auto"
       >
         {options.map((option) => {
           const active = option.value === value;
@@ -68,12 +68,12 @@ function FilterSegmentGroup<T extends string>({
               aria-checked={active}
               onClick={() => onChange(option.value)}
               className={cn(
-                "min-w-0 flex-1 px-2 py-2 font-mono text-[11px] tracking-wide transition-colors duration-150 sm:text-xs",
+                "min-w-0 flex-1 rounded-full px-2.5 py-1.5 font-mono text-[11px] tracking-wide transition-colors duration-150 md:flex-none md:px-3 sm:text-xs",
                 "outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-[var(--brand-cyan)]/50",
                 "motion-reduce:transition-none",
                 active
                   ? "bg-[var(--brand-cyan)] font-medium text-black"
-                  : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               {option.label}
@@ -103,7 +103,7 @@ export function LeaderboardControls({
   onMinVolumeFilterChange,
 }: LeaderboardControlsProps) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between md:gap-4">
       <FilterSegmentGroup
         label="Performance window"
         options={PNL_WINDOWS.map((window) => ({
@@ -113,24 +113,26 @@ export function LeaderboardControls({
         value={pnlWindow}
         onChange={onPnlWindowChange}
       />
-      <FilterSegmentGroup
-        label="Minimum account value"
-        options={MIN_ACCOUNT_VALUE_FILTERS.map((filter) => ({
-          value: filter,
-          label: MIN_ACCOUNT_VALUE_LABELS[filter],
-        }))}
-        value={minAccountValueFilter}
-        onChange={onMinAccountValueFilterChange}
-      />
-      <FilterSegmentGroup
-        label="Minimum volume"
-        options={MIN_VOLUME_FILTERS.map((filter) => ({
-          value: filter,
-          label: MIN_VOLUME_LABELS[filter],
-        }))}
-        value={minVolumeFilter}
-        onChange={onMinVolumeFilterChange}
-      />
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-3">
+        <FilterSegmentGroup
+          label="Minimum account value"
+          options={MIN_ACCOUNT_VALUE_FILTERS.map((filter) => ({
+            value: filter,
+            label: MIN_ACCOUNT_VALUE_LABELS[filter],
+          }))}
+          value={minAccountValueFilter}
+          onChange={onMinAccountValueFilterChange}
+        />
+        <FilterSegmentGroup
+          label="Minimum volume"
+          options={MIN_VOLUME_FILTERS.map((filter) => ({
+            value: filter,
+            label: MIN_VOLUME_LABELS[filter],
+          }))}
+          value={minVolumeFilter}
+          onChange={onMinVolumeFilterChange}
+        />
+      </div>
     </div>
   );
 }
