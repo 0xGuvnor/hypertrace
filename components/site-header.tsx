@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { MobileNavMenu } from "@/components/mobile-nav-menu";
-import { SITE_NAV_LINKS } from "@/lib/site-nav";
+import { SiteNavPills } from "@/components/site-nav-pills";
 import { cn } from "@/lib/utils";
 
 type SiteHeaderVariant = "compact" | "minimal";
@@ -12,27 +12,11 @@ type SiteHeaderProps = {
   className?: string;
 };
 
-function DesktopNavLinks({ className }: { className?: string }) {
-  return (
-    <div className={cn("hidden items-center gap-4 sm:flex", className)}>
-      {SITE_NAV_LINKS.map((link) => (
-        <Link
-          key={link.href}
-          href={link.href}
-          className="text-muted-foreground hover:text-foreground text-sm transition-colors"
-        >
-          {link.label}
-        </Link>
-      ))}
-    </div>
-  );
-}
-
 function SiteNavActions({ className }: { className?: string }) {
   return (
-    <nav className={cn("flex shrink-0 items-center gap-2 pt-0.5", className)}>
+    <nav className={cn("flex shrink-0 items-center gap-2", className)}>
       <MobileNavMenu className="sm:hidden" />
-      <DesktopNavLinks />
+      <SiteNavPills />
     </nav>
   );
 }
@@ -40,7 +24,7 @@ function SiteNavActions({ className }: { className?: string }) {
 function siteHeaderClassName(className?: string) {
   return cn(
     "sticky top-0 z-40 -mt-6 w-full self-stretch",
-    "bg-background/90 backdrop-blur-sm",
+    "bg-background",
     "pt-6 pb-3 sm:-mt-8 sm:pt-8",
     className,
   );
@@ -62,14 +46,14 @@ export function SiteHeader({
     <header
       className={cn(
         siteHeaderClassName(className),
-        "flex flex-row items-start justify-between",
+        "flex flex-row items-center justify-between",
       )}
     >
       <Link
         href="/"
-        className="group flex flex-row items-center gap-1 rounded-xl outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--brand-cyan)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="group flex flex-row items-center gap-1.5 rounded-lg outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--brand-cyan)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
-        <div className="relative size-9 shrink-0 sm:size-10">
+        <div className="relative size-8 shrink-0 sm:size-9">
           <Image
             src="/logo.png"
             alt=""
@@ -78,11 +62,9 @@ export function SiteHeader({
             className="size-full object-contain"
           />
         </div>
-        <div className="flex flex-col items-start">
-          <span className="text-base font-semibold tracking-tight sm:text-lg">
-            Hyper<span className="italic">trace</span>
-          </span>
-        </div>
+        <span className="text-base font-semibold tracking-tight sm:text-lg">
+          Hyper<span className="italic">trace</span>
+        </span>
       </Link>
       <SiteNavActions />
     </header>

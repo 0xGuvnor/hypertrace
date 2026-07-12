@@ -1,22 +1,17 @@
 import { AppShell } from "@/components/app-shell";
+import { HomeHero } from "@/components/home-hero";
+import { InvestigationConsole } from "@/components/investigation-console";
 import { SiteHeader } from "@/components/site-header";
-import { SiteHeroBrand } from "@/components/site-hero-brand";
-import { WalletSearch } from "@/components/wallet-search";
 
 export default function Page() {
   return (
-    <AppShell
-      width="narrow"
-      className="items-center pb-10 sm:pb-14"
-    >
-      <SiteHeader variant="minimal" />
-      <div className="flex w-full flex-col items-center gap-6 pt-[clamp(1.5rem,24vh,11rem)] sm:gap-7">
-        <SiteHeroBrand />
-        <WalletSearch
-          autoFocus
-          className="w-full"
-          inputClassName="h-10 sm:h-11 focus-visible:border-[var(--brand-cyan)]/40 focus-visible:ring-[var(--brand-cyan)]/25"
-        />
+    <AppShell width="wide" className="pb-8 sm:pb-10">
+      <SiteHeader variant="compact" />
+      <div className="flex flex-1 flex-col justify-center py-8 sm:py-10 lg:pt-0 lg:pb-[min(16vh,7rem)]">
+        <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-12 xl:gap-16">
+          <HomeHero />
+          <InvestigationConsole />
+        </div>
       </div>
     </AppShell>
   );
