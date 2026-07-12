@@ -274,8 +274,9 @@ export function LeaderboardListLive({
       if (options?.syncUrl !== false) {
         router.replace(leaderboardHref(nextView), { scroll: false });
       }
+      // Clear before refetch so Tail never pairs new listArgs with an old cursor.
+      setQueriedPage(null);
       if (matchesPreloadedView(nextView, initialView)) {
-        setQueriedPage(null);
         return;
       }
       void refetch(leaderboardListArgsFromView(nextView));
