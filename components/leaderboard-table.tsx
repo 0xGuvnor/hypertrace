@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowUpDown, ChevronDown, ChevronUp, ListOrdered } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
   type LeaderboardSortBy,
   type LeaderboardTailStatus,
   type PnlWindow,
+  LEADERBOARD_SORT_LABELS,
   PNL_WINDOW_LABELS,
   PNL_WINDOW_TO_SORT,
   VLM_WINDOW_TO_SORT,
@@ -30,6 +31,11 @@ import {
 import { cn } from "@/lib/utils";
 
 const SIBLING_WINDOWS: PnlWindow[] = ["day", "week", "month", "allTime"];
+const DESKTOP_ONLY = "hidden md:table-cell";
+
+function formatRank(rank: number): string {
+  return String(rank).padStart(2, "0");
+}
 
 function pnlClass(value: number, emphasized: boolean): string {
   if (value > 0) {
@@ -91,37 +97,55 @@ function SortableTableHead({
   );
 }
 
+function RankedByLeading({ sortBy }: { sortBy: LeaderboardSortBy }) {
+  return (
+    <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+      <ListOrdered
+        aria-hidden
+        className="size-3.5 shrink-0 text-[var(--brand-cyan)]"
+      />
+      <p className="font-mono text-[11px] tracking-wide text-muted-foreground sm:text-xs">
+        Ranked by{" "}
+        <span className="text-foreground">{LEADERBOARD_SORT_LABELS[sortBy]}</span>
+      </p>
+    </div>
+  );
+}
+
 function LeaderboardSkeletonRow() {
   return (
     <TableRow>
+      <TableCell>
+        <Skeleton className="h-4 w-6" />
+      </TableCell>
       <TableCell>
         <Skeleton className="h-4 w-28" />
       </TableCell>
       <TableCell className="text-right">
         <Skeleton className="ml-auto h-4 w-16" />
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className={cn("text-right", DESKTOP_ONLY)}>
         <Skeleton className="ml-auto h-4 w-14" />
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className={cn("text-right", DESKTOP_ONLY)}>
         <Skeleton className="ml-auto h-3 w-12" />
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className={cn("text-right", DESKTOP_ONLY)}>
         <Skeleton className="ml-auto h-3 w-12" />
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className={cn("text-right", DESKTOP_ONLY)}>
         <Skeleton className="ml-auto h-3 w-12" />
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className={cn("text-right", DESKTOP_ONLY)}>
         <Skeleton className="ml-auto h-4 w-14" />
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className={cn("text-right", DESKTOP_ONLY)}>
         <Skeleton className="ml-auto h-3 w-12" />
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className={cn("text-right", DESKTOP_ONLY)}>
         <Skeleton className="ml-auto h-3 w-12" />
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className={cn("text-right", DESKTOP_ONLY)}>
         <Skeleton className="ml-auto h-3 w-12" />
       </TableCell>
     </TableRow>
@@ -146,6 +170,9 @@ function LeaderboardTableHeader({
   return (
     <TableHeader>
       <TableRow>
+        <TableHead className="w-12 text-muted-foreground font-mono text-[10px] tracking-wide uppercase">
+          #
+        </TableHead>
         <TableHead>Wallet</TableHead>
         <SortableTableHead
           label="Account value"
@@ -160,12 +187,15 @@ function LeaderboardTableHeader({
           activeSortKey={sortBy}
           sortOrder={sortOrder}
           onSort={onSort}
-          className="text-[var(--brand-cyan)]"
+          className={cn("text-[var(--brand-cyan)]", DESKTOP_ONLY)}
         />
         {siblingWindows.map((window) => (
           <TableHead
             key={`pnl-${window}`}
-            className="text-muted-foreground text-right text-xs font-normal"
+            className={cn(
+              "text-muted-foreground text-right text-xs font-normal",
+              DESKTOP_ONLY,
+            )}
           >
             {PNL_WINDOW_LABELS[window]}
           </TableHead>
@@ -176,12 +206,15 @@ function LeaderboardTableHeader({
           activeSortKey={sortBy}
           sortOrder={sortOrder}
           onSort={onSort}
-          className="text-[var(--brand-cyan)]"
+          className={cn("text-[var(--brand-cyan)]", DESKTOP_ONLY)}
         />
         {siblingWindows.map((window) => (
           <TableHead
             key={`vlm-${window}`}
-            className="text-muted-foreground text-right text-xs font-normal"
+            className={cn(
+              "text-muted-foreground text-right text-xs font-normal",
+              DESKTOP_ONLY,
+            )}
           >
             {PNL_WINDOW_LABELS[window]} Vol
           </TableHead>
@@ -199,6 +232,7 @@ export function LeaderboardTable({
   onSort,
   tail,
   sentinelRef,
+  startIndex = 0,
 }: {
   rows: LeaderboardRow[];
   pnlWindow: PnlWindow;
@@ -207,6 +241,7 @@ export function LeaderboardTable({
   onSort: (key: LeaderboardSortBy) => void;
   tail: LeaderboardTailStatus;
   sentinelRef: (node: Element | null) => void;
+  startIndex?: number;
 }) {
   if (rows.length === 0 && tail === "exhausted") {
     return (
@@ -221,7 +256,7 @@ export function LeaderboardTable({
     return (
       <div className="flex flex-col gap-4">
         {tail === "loadingMore" ? (
-          <Table>
+          <Table leading={<RankedByLeading sortBy={sortBy} />}>
             <TableBody>
               {Array.from({ length: 2 }).map((_, index) => (
                 <LeaderboardSkeletonRow key={`ghost-${index}`} />
@@ -240,7 +275,7 @@ export function LeaderboardTable({
 
   return (
     <div className="flex flex-col gap-4">
-      <Table>
+      <Table leading={<RankedByLeading sortBy={sortBy} />}>
         <LeaderboardTableHeader
           pnlWindow={pnlWindow}
           sortBy={sortBy}
@@ -248,11 +283,15 @@ export function LeaderboardTable({
           onSort={onSort}
         />
         <TableBody>
-          {rows.map((row) => {
+          {rows.map((row, index) => {
             const activePnl = pnlValueForWindow(row, pnlWindow);
             const activeVlm = vlmValueForWindow(row, pnlWindow);
+            const rank = startIndex + index + 1;
             return (
               <TableRow key={row.address}>
+                <TableCell className="text-muted-foreground font-mono text-xs tabular-nums">
+                  {formatRank(rank)}
+                </TableCell>
                 <TableCell>
                   <div className="flex min-w-0 flex-col gap-0.5">
                     {row.displayName ? (
@@ -274,6 +313,7 @@ export function LeaderboardTable({
                 <TableCell
                   className={cn(
                     "text-right font-mono text-sm font-medium tabular-nums transition-opacity duration-150 motion-reduce:transition-none",
+                    DESKTOP_ONLY,
                     pnlClass(activePnl, true),
                   )}
                 >
@@ -286,6 +326,7 @@ export function LeaderboardTable({
                       key={`pnl-${window}`}
                       className={cn(
                         "text-right font-mono text-[11px] tabular-nums",
+                        DESKTOP_ONLY,
                         pnlClass(value, false),
                       )}
                     >
@@ -293,7 +334,12 @@ export function LeaderboardTable({
                     </TableCell>
                   );
                 })}
-                <TableCell className="text-right font-mono text-sm font-medium tabular-nums">
+                <TableCell
+                  className={cn(
+                    "text-right font-mono text-sm font-medium tabular-nums",
+                    DESKTOP_ONLY,
+                  )}
+                >
                   {formatUsd(activeVlm)}
                 </TableCell>
                 {siblingWindows.map((window) => {
@@ -301,7 +347,10 @@ export function LeaderboardTable({
                   return (
                     <TableCell
                       key={`vlm-${window}`}
-                      className="text-muted-foreground text-right font-mono text-[11px] tabular-nums"
+                      className={cn(
+                        "text-muted-foreground text-right font-mono text-[11px] tabular-nums",
+                        DESKTOP_ONLY,
+                      )}
                     >
                       {formatUsd(value)}
                     </TableCell>

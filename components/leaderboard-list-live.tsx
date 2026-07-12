@@ -9,9 +9,9 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 
 import { LeaderboardControls } from "@/components/leaderboard-controls";
+import { LeaderboardPageHeader } from "@/components/leaderboard-page-header";
 import { LeaderboardTable } from "@/components/leaderboard-table";
 import { api } from "@/convex/_generated/api";
-import { formatTimestamp } from "@/lib/format";
 import {
   LEADERBOARD_LIST_PAGE_SIZE,
   type LeaderboardListArgs,
@@ -150,6 +150,7 @@ function LeaderboardListTail({
       onSort={onSort}
       tail={tail}
       sentinelRef={sentinelRef}
+      startIndex={0}
     />
   );
 }
@@ -273,8 +274,9 @@ export function LeaderboardListLive({
       if (options?.syncUrl !== false) {
         router.replace(leaderboardHref(nextView), { scroll: false });
       }
+      // Clear before refetch so Tail never pairs new listArgs with an old cursor.
+      setQueriedPage(null);
       if (matchesPreloadedView(nextView, initialView)) {
-        setQueriedPage(null);
         return;
       }
       void refetch(leaderboardListArgsFromView(nextView));
@@ -350,17 +352,13 @@ export function LeaderboardListLive({
   );
 
   return (
-    <div className="relative flex min-w-0 flex-col gap-4">
+    <div className="relative flex min-w-0 flex-col gap-6">
       {querying ? (
-        <p className="text-muted-foreground absolute top-0 right-0 text-xs">
+        <p className="text-muted-foreground absolute top-0 right-0 z-10 text-xs">
           Updating…
         </p>
       ) : null}
-      {snapshotAt !== null ? (
-        <p className="text-muted-foreground -mt-2 text-xs">
-          Snapshot as of {formatTimestamp(snapshotAt)}
-        </p>
-      ) : null}
+      <LeaderboardPageHeader snapshotAt={snapshotAt} />
       <LeaderboardControls
         pnlWindow={pnlWindow}
         onPnlWindowChange={handlePnlWindowChange}

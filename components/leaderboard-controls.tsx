@@ -1,6 +1,13 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import {
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
+
 import {
   type MinAccountValueFilter,
   type MinVolumeFilter,
@@ -33,6 +40,110 @@ const MIN_VOLUME_LABELS: Record<MinVolumeFilter, string> = {
   "100m": "$100M",
 };
 
+type SegmentOption<T extends string> = {
+  value: T;
+  label: string;
+};
+
+type ThumbRect = { left: number; width: number };
+
+function FilterSegmentGroup<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: readonly SegmentOption<T>[];
+  value: T;
+  onChange: (next: T) => void;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const buttonRefs = useRef(new Map<T, HTMLButtonElement>());
+  const [thumb, setThumb] = useState<ThumbRect | null>(null);
+
+  const measureThumb = useCallback(() => {
+    const button = buttonRefs.current.get(value);
+    if (!button) {
+      setThumb(null);
+      return;
+    }
+    setThumb({ left: button.offsetLeft, width: button.offsetWidth });
+  }, [value]);
+
+  useLayoutEffect(() => {
+    measureThumb();
+    const track = trackRef.current;
+    if (!track || typeof ResizeObserver === "undefined") return;
+
+    const observer = new ResizeObserver(() => {
+      measureThumb();
+    });
+    observer.observe(track);
+    return () => observer.disconnect();
+  }, [measureThumb, options]);
+
+  const thumbStyle: CSSProperties | undefined = thumb
+    ? {
+        transform: `translateX(${thumb.left}px)`,
+        width: thumb.width,
+      }
+    : undefined;
+
+  return (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <span className="font-mono text-[10px] tracking-[0.16em] text-[var(--brand-cyan)] uppercase">
+        {label}
+      </span>
+      <div
+        ref={trackRef}
+        role="radiogroup"
+        aria-label={label}
+        className="relative flex w-full rounded-full border border-border bg-card p-0.5 md:w-auto"
+      >
+        <span
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute top-0.5 bottom-0.5 left-0 z-0 rounded-full bg-[var(--brand-cyan)]",
+            "transition-[transform,width] duration-200 ease-out motion-reduce:transition-none",
+            thumb ? "opacity-100" : "opacity-0",
+          )}
+          style={thumbStyle}
+        />
+        {options.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              ref={(node) => {
+                if (node) {
+                  buttonRefs.current.set(option.value, node);
+                } else {
+                  buttonRefs.current.delete(option.value);
+                }
+              }}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => onChange(option.value)}
+              className={cn(
+                "relative z-10 min-w-0 flex-1 rounded-full px-2.5 py-1.5 font-mono text-[11px] tracking-wide transition-colors duration-150 md:flex-none md:px-3 sm:text-xs",
+                "outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-[var(--brand-cyan)]/50",
+                "motion-reduce:transition-none",
+                active
+                  ? "font-medium text-black"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 type LeaderboardControlsProps = {
   pnlWindow: PnlWindow;
   onPnlWindowChange: (window: PnlWindow) => void;
@@ -51,92 +162,35 @@ export function LeaderboardControls({
   onMinVolumeFilterChange,
 }: LeaderboardControlsProps) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
-      <div
-        role="tablist"
-        aria-label="PnL window"
-        className="flex items-end gap-1 border-b border-border/60"
-      >
-        {PNL_WINDOWS.map((window) => {
-          const active = window === pnlWindow;
-          return (
-            <button
-              key={window}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => onPnlWindowChange(window)}
-              className={cn(
-                "relative px-3 pb-2 pt-1 text-sm transition-colors duration-150",
-                "outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-cyan)]/50",
-                "motion-reduce:transition-none",
-                active
-                  ? "font-medium text-[var(--brand-cyan)]"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {PNL_WINDOW_LABELS[window]}
-              <span
-                className={cn(
-                  "absolute inset-x-1 bottom-0 h-0.5 rounded-full bg-[var(--brand-cyan)] transition-opacity duration-150 motion-reduce:transition-none",
-                  active ? "opacity-100" : "opacity-0",
-                )}
-              />
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
-        <div className="flex min-w-0 flex-col gap-1">
-          <span className="text-muted-foreground text-xs">
-            Min account value
-          </span>
-          <div className="flex flex-wrap gap-1">
-            {MIN_ACCOUNT_VALUE_FILTERS.map((filter) => {
-              const active = filter === minAccountValueFilter;
-              return (
-                <Button
-                  key={filter}
-                  type="button"
-                  size="sm"
-                  variant={active ? "secondary" : "ghost"}
-                  className={cn(
-                    "h-8 px-2.5 text-xs",
-                    active && "text-[var(--brand-cyan)]",
-                  )}
-                  onClick={() => onMinAccountValueFilterChange(filter)}
-                >
-                  {MIN_ACCOUNT_VALUE_LABELS[filter]}
-                </Button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="flex min-w-0 flex-col gap-1">
-          <span className="text-muted-foreground text-xs">Min volume</span>
-          <div className="flex flex-wrap gap-1">
-            {MIN_VOLUME_FILTERS.map((filter) => {
-              const active = filter === minVolumeFilter;
-              return (
-                <Button
-                  key={filter}
-                  type="button"
-                  size="sm"
-                  variant={active ? "secondary" : "ghost"}
-                  className={cn(
-                    "h-8 px-2.5 text-xs",
-                    active && "text-[var(--brand-cyan)]",
-                  )}
-                  onClick={() => onMinVolumeFilterChange(filter)}
-                >
-                  {MIN_VOLUME_LABELS[filter]}
-                </Button>
-              );
-            })}
-          </div>
-        </div>
+    <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between md:gap-4">
+      <FilterSegmentGroup
+        label="Performance window"
+        options={PNL_WINDOWS.map((window) => ({
+          value: window,
+          label: PNL_WINDOW_LABELS[window],
+        }))}
+        value={pnlWindow}
+        onChange={onPnlWindowChange}
+      />
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-3">
+        <FilterSegmentGroup
+          label="Minimum account value"
+          options={MIN_ACCOUNT_VALUE_FILTERS.map((filter) => ({
+            value: filter,
+            label: MIN_ACCOUNT_VALUE_LABELS[filter],
+          }))}
+          value={minAccountValueFilter}
+          onChange={onMinAccountValueFilterChange}
+        />
+        <FilterSegmentGroup
+          label="Minimum volume"
+          options={MIN_VOLUME_FILTERS.map((filter) => ({
+            value: filter,
+            label: MIN_VOLUME_LABELS[filter],
+          }))}
+          value={minVolumeFilter}
+          onChange={onMinVolumeFilterChange}
+        />
       </div>
     </div>
   );
