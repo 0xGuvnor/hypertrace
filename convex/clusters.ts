@@ -63,10 +63,17 @@ export const rebuildDepositSource = internalMutation({
   handler: async (ctx) => {
     const now = Date.now();
 
-    for (const existing of await ctx.db.query("clusters").collect()) {
+    // One clusters pass. Leaderboard ingest balloons `wallets`; never .collect() it.
+    const existingClusters = await ctx.db.query("clusters").collect();
+    const addressesToSync = new Set<string>();
+
+    for (const existing of existingClusters) {
       const memberCount = existing.memberAddresses.length;
       if ((existing.memberCount ?? -1) !== memberCount) {
         await ctx.db.patch(existing._id, { memberCount });
+      }
+      for (const address of existing.memberAddresses) {
+        addressesToSync.add(address);
       }
     }
 
@@ -76,6 +83,12 @@ export const rebuildDepositSource = internalMutation({
       desiredClusters.map((cluster) => [cluster.clusterKey, cluster]),
     );
     const activeClusterKeys = new Set(desiredByKey.keys());
+
+    for (const cluster of desiredClusters) {
+      for (const address of cluster.memberAddresses) {
+        addressesToSync.add(address);
+      }
+    }
 
     let clustersCreated = 0;
     let clustersUpdated = 0;
@@ -130,7 +143,7 @@ export const rebuildDepositSource = internalMutation({
       }
     }
 
-    for (const existing of await ctx.db.query("clusters").collect()) {
+    for (const existing of existingClusters) {
       if (!existing.basis.includes(SHARED_DEPOSIT_SOURCE_BASIS)) {
         continue;
       }
@@ -147,10 +160,22 @@ export const rebuildDepositSource = internalMutation({
     }
 
     const hlSourceCounts = buildHlAddressSourceCounts(deposits);
+    for (const hlAddress of hlSourceCounts.keys()) {
+      addressesToSync.add(hlAddress);
+    }
+
     let walletsLinked = 0;
     let walletsUnlinked = 0;
 
-    for (const wallet of await ctx.db.query("wallets").collect()) {
+    for (const address of addressesToSync) {
+      const wallet = await ctx.db
+        .query("wallets")
+        .withIndex("by_address", (q) => q.eq("address", address))
+        .unique();
+      if (!wallet) {
+        continue;
+      }
+
       const sourceCounts = hlSourceCounts.get(wallet.address) ?? new Map();
       const nextClusterId = pickPrimaryClusterKey(
         wallet.address,
