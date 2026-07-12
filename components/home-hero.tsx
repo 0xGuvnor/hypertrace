@@ -35,7 +35,7 @@ export function HomeHero({ className }: HomeHeroProps) {
       <div className="flex flex-col gap-4">
         <h1 className="max-w-xl text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
           See the capital behind the{" "}
-          <em className="font-serif text-[1.35em] font-light italic leading-none text-[var(--brand-cyan)]">
+          <em className="font-serif text-[1.45em] font-light italic leading-none text-[var(--brand-cyan)]">
             move.
           </em>
         </h1>
