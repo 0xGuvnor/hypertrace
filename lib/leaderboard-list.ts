@@ -123,6 +123,18 @@ export const PNL_WINDOW_LABELS: Record<PnlWindow, string> = {
   allTime: "All",
 };
 
+export const LEADERBOARD_SORT_LABELS: Record<LeaderboardSortBy, string> = {
+  accountValue: "Account value",
+  pnlDay: "Day PnL",
+  pnlWeek: "Week PnL",
+  pnlMonth: "Month PnL",
+  pnlAllTime: "All-time PnL",
+  vlmDay: "Day Vol",
+  vlmWeek: "Week Vol",
+  vlmMonth: "Month Vol",
+  vlmAllTime: "All-time Vol",
+};
+
 export const MIN_VOLUME_THRESHOLDS = {
   "1m": 1e6,
   "10m": 1e7,

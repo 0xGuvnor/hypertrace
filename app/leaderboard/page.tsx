@@ -29,21 +29,10 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
   return (
     <AppShell className="gap-6 sm:gap-8">
       <SiteHeader variant="compact" className="items-start" />
-      <div className="flex min-w-0 flex-col gap-4">
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight sm:text-xl">
-            Leaderboard
-          </h1>
-          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-            Filterable Hyperliquid whale PnL. Opted-in addresses from
-            stats-data.
-          </p>
-        </div>
-        <LeaderboardListLive
-          preloadedLeaderboard={preloadedLeaderboard}
-          initialView={initialView}
-        />
-      </div>
+      <LeaderboardListLive
+        preloadedLeaderboard={preloadedLeaderboard}
+        initialView={initialView}
+      />
     </AppShell>
   );
 }
