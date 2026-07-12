@@ -23,6 +23,7 @@ import type * as lib_ingestAuth from "../lib/ingestAuth.js";
 import type * as lib_ingestParse from "../lib/ingestParse.js";
 import type * as lib_knownAddresses from "../lib/knownAddresses.js";
 import type * as lib_leaderboardParse from "../lib/leaderboardParse.js";
+import type * as lib_leaderboardScan from "../lib/leaderboardScan.js";
 import type * as lib_leaderboardTypes from "../lib/leaderboardTypes.js";
 import type * as lib_snapshotEqual from "../lib/snapshotEqual.js";
 import type * as lib_spotAccountValue from "../lib/spotAccountValue.js";
@@ -51,6 +52,7 @@ declare const fullApi: ApiFromModules<{
   "lib/ingestParse": typeof lib_ingestParse;
   "lib/knownAddresses": typeof lib_knownAddresses;
   "lib/leaderboardParse": typeof lib_leaderboardParse;
+  "lib/leaderboardScan": typeof lib_leaderboardScan;
   "lib/leaderboardTypes": typeof lib_leaderboardTypes;
   "lib/snapshotEqual": typeof lib_snapshotEqual;
   "lib/spotAccountValue": typeof lib_spotAccountValue;

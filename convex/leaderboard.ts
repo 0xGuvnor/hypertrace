@@ -9,6 +9,7 @@ import {
 } from "./_generated/server";
 import { isValidAddress, normalizeAddress } from "./lib/address";
 import type { LeaderboardUpsertRow } from "./lib/leaderboardParse";
+import { leaderboardScanPageSize } from "./lib/leaderboardScan";
 import {
   ingestLeaderboardBatchResultValidator,
   leaderboardListResultValidator,
@@ -244,6 +245,23 @@ function matchesFilters(
   return true;
 }
 
+function volumeSortForWindow(window: VolumeWindow): LeaderboardSortBy {
+  switch (window) {
+    case "day":
+      return "vlmDay";
+    case "week":
+      return "vlmWeek";
+    case "month":
+      return "vlmMonth";
+    case "allTime":
+      return "vlmAllTime";
+    default: {
+      const _exhaustive: never = window;
+      return _exhaustive;
+    }
+  }
+}
+
 export const list = query({
   args: {
     sortBy: leaderboardSortByValidator,
@@ -258,6 +276,20 @@ export const list = query({
   handler: async (ctx, args) => {
     const sortBy = args.sortBy as LeaderboardSortBy;
     const volumeWindow = (args.volumeWindow ?? "day") as VolumeWindow;
+    const volumeFilterActive =
+      args.minVolume !== undefined || args.requirePositiveVolume === true;
+    const useVolumeIndexBound =
+      volumeFilterActive && sortBy === volumeSortForWindow(volumeWindow);
+    const needsVolumePostFilter = volumeFilterActive && !useVolumeIndexBound;
+    const needsAccountValuePostFilter =
+      args.minAccountValue !== undefined && sortBy !== "accountValue";
+    const needsPostFilter =
+      needsVolumePostFilter || needsAccountValuePostFilter;
+    const scanNumItems = leaderboardScanPageSize(
+      args.paginationOpts.numItems,
+      needsPostFilter,
+    );
+
     const ordered = (() => {
       switch (sortBy) {
         case "accountValue": {
@@ -296,26 +328,86 @@ export const list = query({
             .query("leaderboardSnapshots")
             .withIndex("by_pnlAllTime")
             .order(args.order);
-        case "vlmDay":
+        case "vlmDay": {
+          if (useVolumeIndexBound) {
+            if (args.requirePositiveVolume === true) {
+              return ctx.db
+                .query("leaderboardSnapshots")
+                .withIndex("by_vlmDay", (q) => q.gt("vlmDay", 0))
+                .order(args.order);
+            }
+            return ctx.db
+              .query("leaderboardSnapshots")
+              .withIndex("by_vlmDay", (q) =>
+                q.gte("vlmDay", args.minVolume as number),
+              )
+              .order(args.order);
+          }
           return ctx.db
             .query("leaderboardSnapshots")
             .withIndex("by_vlmDay")
             .order(args.order);
-        case "vlmWeek":
+        }
+        case "vlmWeek": {
+          if (useVolumeIndexBound) {
+            if (args.requirePositiveVolume === true) {
+              return ctx.db
+                .query("leaderboardSnapshots")
+                .withIndex("by_vlmWeek", (q) => q.gt("vlmWeek", 0))
+                .order(args.order);
+            }
+            return ctx.db
+              .query("leaderboardSnapshots")
+              .withIndex("by_vlmWeek", (q) =>
+                q.gte("vlmWeek", args.minVolume as number),
+              )
+              .order(args.order);
+          }
           return ctx.db
             .query("leaderboardSnapshots")
             .withIndex("by_vlmWeek")
             .order(args.order);
-        case "vlmMonth":
+        }
+        case "vlmMonth": {
+          if (useVolumeIndexBound) {
+            if (args.requirePositiveVolume === true) {
+              return ctx.db
+                .query("leaderboardSnapshots")
+                .withIndex("by_vlmMonth", (q) => q.gt("vlmMonth", 0))
+                .order(args.order);
+            }
+            return ctx.db
+              .query("leaderboardSnapshots")
+              .withIndex("by_vlmMonth", (q) =>
+                q.gte("vlmMonth", args.minVolume as number),
+              )
+              .order(args.order);
+          }
           return ctx.db
             .query("leaderboardSnapshots")
             .withIndex("by_vlmMonth")
             .order(args.order);
-        case "vlmAllTime":
+        }
+        case "vlmAllTime": {
+          if (useVolumeIndexBound) {
+            if (args.requirePositiveVolume === true) {
+              return ctx.db
+                .query("leaderboardSnapshots")
+                .withIndex("by_vlmAllTime", (q) => q.gt("vlmAllTime", 0))
+                .order(args.order);
+            }
+            return ctx.db
+              .query("leaderboardSnapshots")
+              .withIndex("by_vlmAllTime", (q) =>
+                q.gte("vlmAllTime", args.minVolume as number),
+              )
+              .order(args.order);
+          }
           return ctx.db
             .query("leaderboardSnapshots")
             .withIndex("by_vlmAllTime")
             .order(args.order);
+        }
         default: {
           const _exhaustive: never = sortBy;
           return _exhaustive;
@@ -323,7 +415,10 @@ export const list = query({
       }
     })();
 
-    const result = await ordered.paginate(args.paginationOpts);
+    const result = await ordered.paginate({
+      numItems: scanNumItems,
+      cursor: args.paginationOpts.cursor,
+    });
     const page = result.page
       .map(toListRow)
       .filter((row) =>
@@ -334,7 +429,8 @@ export const list = query({
           args.requirePositiveVolume,
           volumeWindow,
         ),
-      );
+      )
+      .slice(0, args.paginationOpts.numItems);
 
     return {
       page,

@@ -6,7 +6,14 @@ import {
   usePreloadedQuery,
 } from "convex/react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { LeaderboardControls } from "@/components/leaderboard-controls";
 import { LeaderboardPageHeader } from "@/components/leaderboard-page-header";
@@ -29,6 +36,8 @@ import {
   PNL_WINDOW_TO_SORT,
 } from "@/lib/leaderboard-list";
 import { useInView } from "@/lib/use-in-view";
+
+const MAX_EMPTY_DRAIN_FETCHES = 25;
 
 type LeaderboardListLiveProps = {
   preloadedLeaderboard: Preloaded<typeof api.leaderboard.list>;
@@ -80,6 +89,7 @@ function LeaderboardListTail({
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [exhausted, setExhausted] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const consecutiveEmptyFetchesRef = useRef(0);
 
   const rows = useMemo(
     () => [...firstPage.page, ...additionalRows],
@@ -108,6 +118,11 @@ function LeaderboardListTail({
           cursor,
         },
       });
+      if (result.page.length === 0) {
+        consecutiveEmptyFetchesRef.current += 1;
+      } else {
+        consecutiveEmptyFetchesRef.current = 0;
+      }
       setAdditionalRows((prev) => [...prev, ...result.page]);
       setNextCursor(result.continueCursor);
       setExhausted(result.isDone);
@@ -134,6 +149,14 @@ function LeaderboardListTail({
       void handleLoadMore();
     }
   }, [inView, canLoadMore, loadingMore, handleLoadMore]);
+
+  // Underfilled first pages (post-filter miss) need draining without waiting for scroll.
+  useEffect(() => {
+    if (rows.length >= LEADERBOARD_LIST_PAGE_SIZE) return;
+    if (!canLoadMore || loadingMore) return;
+    if (consecutiveEmptyFetchesRef.current >= MAX_EMPTY_DRAIN_FETCHES) return;
+    void handleLoadMore();
+  }, [rows.length, canLoadMore, loadingMore, handleLoadMore]);
 
   const tail: LeaderboardTailStatus = loadingMore
     ? "loadingMore"
