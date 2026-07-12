@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Kbd } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
 import { isValidAddress, normalizeAddress } from "@/lib/address";
 
@@ -166,14 +167,7 @@ export function WalletSearch({
             autoFocus={autoFocus}
           />
           <div className="absolute top-1/2 right-1.5 flex -translate-y-1/2 items-center gap-1.5">
-            <kbd
-              className={cn(
-                "pointer-events-none hidden h-6 items-center rounded-md border border-border/80",
-                "bg-muted/40 px-1.5 font-mono text-[0.65rem] text-muted-foreground sm:inline-flex",
-              )}
-            >
-              ⌘K
-            </kbd>
+            <Kbd className="hidden sm:inline-flex">⌘K</Kbd>
             <Button
               type="submit"
               size="icon-sm"

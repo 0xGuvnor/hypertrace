@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Cormorant_Garamond, Geist, Geist_Mono } from "next/font/google"
 
 import "./globals.css"
 import { ConvexClientProvider } from "@/app/ConvexClientProvider"
@@ -52,6 +52,13 @@ const fontMono = Geist_Mono({
   variable: "--font-mono",
 })
 
+const displaySerif = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["300", "400"],
+  style: ["normal", "italic"],
+  variable: "--font-serif",
+})
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -61,7 +68,13 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", fontMono.variable, "font-sans", geist.variable)}
+      className={cn(
+        "antialiased",
+        fontMono.variable,
+        "font-sans",
+        geist.variable,
+        displaySerif.variable,
+      )}
     >
       <body>
         <ThemeProvider>

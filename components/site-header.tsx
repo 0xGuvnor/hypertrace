@@ -24,7 +24,7 @@ function SiteNavActions({ className }: { className?: string }) {
 function siteHeaderClassName(className?: string) {
   return cn(
     "sticky top-0 z-40 -mt-6 w-full self-stretch",
-    "border-b border-border/60 bg-background",
+    "bg-background",
     "pt-6 pb-3 sm:-mt-8 sm:pt-8",
     className,
   );

@@ -21,7 +21,7 @@ const FEATURES = [
 
 export function HomeHero({ className }: HomeHeroProps) {
   return (
-    <div className={cn("flex flex-col gap-6 sm:gap-8", className)}>
+    <div className={cn("flex h-full flex-col gap-6 sm:gap-8", className)}>
       <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border/80 bg-card px-3 py-1">
         <span
           aria-hidden
@@ -35,7 +35,7 @@ export function HomeHero({ className }: HomeHeroProps) {
       <div className="flex flex-col gap-4">
         <h1 className="max-w-xl text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
           See the capital behind the{" "}
-          <em className="font-semibold italic text-[var(--brand-cyan)]">
+          <em className="font-serif text-[1.08em] font-light italic text-[var(--brand-cyan)]">
             move.
           </em>
         </h1>
@@ -45,7 +45,7 @@ export function HomeHero({ className }: HomeHeroProps) {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="mt-auto grid grid-cols-2 gap-3">
         {FEATURES.map((feature) => {
           const Icon = feature.icon;
           return (

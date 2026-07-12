@@ -9,7 +9,7 @@ export function InvestigationConsole({ className }: InvestigationConsoleProps) {
   return (
     <section
       className={cn(
-        "flex flex-col gap-5 rounded-xl border border-border/80 bg-card p-5 sm:gap-6 sm:p-6",
+        "flex h-full flex-col gap-5 rounded-xl border border-border/80 bg-card p-5 sm:gap-6 sm:p-6",
         className,
       )}
     >
@@ -33,7 +33,7 @@ export function InvestigationConsole({ className }: InvestigationConsoleProps) {
         </div>
       </div>
 
-      <div className="border-t border-border/60 pt-5 sm:pt-6">
+      <div className="flex flex-1 flex-col justify-center border-t border-border/60 pt-5 sm:pt-6">
         <WalletSearch autoFocus showLabel />
       </div>
     </section>
