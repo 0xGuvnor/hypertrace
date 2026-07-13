@@ -65,4 +65,12 @@ export default defineSchema({
     .index("by_vlmMonth", ["vlmMonth"])
     .index("by_vlmAllTime", ["vlmAllTime"])
     .index("by_fetchedAt", ["fetchedAt"]),
+
+  walletFavorites: defineTable({
+    userTokenIdentifier: v.string(),
+    address: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userTokenIdentifier"])
+    .index("by_user_and_address", ["userTokenIdentifier", "address"]),
 });
