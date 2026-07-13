@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
+import { AuthNavControls } from "@/components/auth-nav-controls";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -98,6 +99,10 @@ export function MobileNavMenu({ className }: MobileNavMenuProps) {
             );
           })}
         </nav>
+        <AuthNavControls
+          layout="sheet"
+          onNavigate={() => setOpen(false)}
+        />
       </SheetContent>
     </Sheet>
   );

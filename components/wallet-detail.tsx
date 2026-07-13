@@ -1,6 +1,7 @@
 import { AddressWithTooltip } from "@/components/address-with-tooltip";
 import { AccountTenure } from "@/components/account-tenure";
 import { CopyAddressButton } from "@/components/copy-address-button";
+import { FavoriteAddressButton } from "@/components/favorite-address-button";
 import { LiveStatusBadge } from "@/components/live-status-badge";
 import { WalletClusterCard } from "@/components/wallet-cluster-card";
 import { WalletSummary } from "@/components/wallet-summary";
@@ -39,6 +40,7 @@ export function WalletDetail({
           ) : null}
           <AddressWithTooltip address={snapshot.address} />
           <CopyAddressButton address={snapshot.address} />
+          <FavoriteAddressButton address={snapshot.address} />
         </div>
         {feedStatus && statusNow !== undefined ? (
           <LiveStatusBadge status={feedStatus} now={statusNow} />

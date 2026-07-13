@@ -14,7 +14,7 @@ Hyperliquid whale tracker. Two differentiators over Hyperliquid's native UI:
 | Ingestion worker | Bun always-on process on [Railway](https://railway.app) | Talks to Convex over HTTPS (`ConvexHttpClient` / HTTP ingest). No direct DB connection.                                        |
 | Chain data       | Arbitrum RPC (Alchemy)                                  | Bridge2 + Hyperliquid CCTP deposit tracing                                                                                     |
 | Leaderboard data | `stats-data.hyperliquid.xyz` (undocumented)             | Railway worker poll (30 min) → HTTP ingest → `leaderboardSnapshots`                                                            |
-| Auth             | Better Auth (planned)                                   | Email/password + social. No wallet sign-in.                                                                                    |
+| Auth             | Better Auth + Google SSO (`@convex-dev/better-auth`)    | Google only. Favorites are the first gated feature. No wallet sign-in.                                                         |
 | Alerting         | Discord / Telegram (planned)                            | Webhooks on new or growing clusters                                                                                            |
 
 ## Architecture
@@ -89,7 +89,7 @@ Signal 1 runs on a Convex cron every 3 minutes (`internal.clusters.rebuildDeposi
 
 ### Planned
 
-- Better Auth (email/password + Google/GitHub)
+- Better Auth Google SSO + wallet favorites
 - Discord / Telegram alerts on cluster create / growth
 - Durable `fills` table + statistical clustering (v2)
 - Optional fills-derived leaderboard fallback
@@ -103,7 +103,7 @@ Signal 1 runs on a Convex cron every 3 minutes (`internal.clusters.rebuildDeposi
 5. Rule-based clustering (deposit source). Done.
 6. Frontend leaderboard view. Done (PnL + volume windows, min-volume filter).
 7. Frontend clusters view. Done.
-8. Better Auth. Planned.
+8. Better Auth Google SSO + wallet favorites. Done.
 9. Discord / Telegram alerting. Planned.
 10. Statistical clustering (v2). Planned.
 
@@ -116,6 +116,23 @@ bun install
 bun run dev          # Next.js
 bun run dev:convex   # Convex dev server (separate terminal)
 ```
+
+### Auth env (Better Auth + Google)
+
+Convex deployment (dev example `wry-fox-504`):
+
+```bash
+bunx convex env set BETTER_AUTH_SECRET "$(openssl rand -base64 32)"
+bunx convex env set SITE_URL http://localhost:3000
+bunx convex env set GOOGLE_CLIENT_ID "…"
+bunx convex env set GOOGLE_CLIENT_SECRET "…"
+```
+
+`.env.local` also needs `NEXT_PUBLIC_SITE_URL` (and the existing Convex URL vars). Google Cloud OAuth redirect URI:
+
+`{SITE_URL}/api/auth/callback/google`
+
+Use `http://localhost:3000/api/auth/callback/google` for local and your Vercel origin for production.
 
 Worker (Railway service root `worker/`):
 
