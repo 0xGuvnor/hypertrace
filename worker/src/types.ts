@@ -22,6 +22,7 @@ export type WalletSnapshot = {
     fundingFee: string;
     takeProfitPrice: string | null;
     stopLossPrice: string | null;
+    openedAt: number | null;
   }>;
   openOrders: Array<{
     coin: string;

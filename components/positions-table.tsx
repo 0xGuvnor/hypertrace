@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatSignedPercent, formatUsd, formatSize } from "@/lib/format";
+import { formatPositionAge } from "@/lib/position-age";
 import { positionUnrealizedPnlPercent } from "@/lib/position-roe";
 import {
   summarizeOpenPositions,
@@ -207,6 +208,7 @@ function PositionsTablePaged({
               onSort={onSort}
             />
             <TableHead className="text-right">Entry</TableHead>
+            <TableHead className="text-right">Age</TableHead>
             <TableHead className="text-right">Mark</TableHead>
             <TableHead className="text-right">Liq. price</TableHead>
             <TableHead className="text-right">TP</TableHead>
@@ -264,6 +266,11 @@ function PositionsTablePaged({
                 </TableCell>
                 <TableCell className="text-right font-mono text-xs">
                   {formatUsd(position.entryPrice)}
+                </TableCell>
+                <TableCell className="text-muted-foreground text-right font-mono text-xs">
+                  {position.openedAt != null
+                    ? formatPositionAge(position.openedAt, Date.now())
+                    : "—"}
                 </TableCell>
                 <TableCell className="text-right font-mono text-xs">
                   {position.markPrice ? formatUsd(position.markPrice) : "—"}

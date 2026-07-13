@@ -91,14 +91,17 @@ export default function Loading() {
             <TableHeader>
               <TableRow>
                 <TableHead>Asset</TableHead>
+                <TableHead className="text-right">Leverage</TableHead>
                 <TableHead className="text-right">Size</TableHead>
+                <TableHead className="text-right">Value</TableHead>
                 <TableHead className="text-right">Entry</TableHead>
+                <TableHead className="text-right">Age</TableHead>
                 <TableHead className="text-right">Mark</TableHead>
-                <TableHead className="text-right">uPnL</TableHead>
                 <TableHead className="text-right">Liq. price</TableHead>
                 <TableHead className="text-right">TP</TableHead>
                 <TableHead className="text-right">SL</TableHead>
-                <TableHead className="text-right">Leverage</TableHead>
+                <TableHead className="text-right">Funding fee</TableHead>
+                <TableHead className="text-right">uPnL</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -108,13 +111,7 @@ export default function Loading() {
                     <Skeleton className="h-5 w-14 rounded-full" />
                   </TableCell>
                   <TableCell className="text-right">
-                    <Skeleton className="ml-auto h-4 w-16" />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Skeleton className="ml-auto h-4 w-20" />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Skeleton className="ml-auto h-4 w-20" />
+                    <Skeleton className="ml-auto h-4 w-10" />
                   </TableCell>
                   <TableCell className="text-right">
                     <Skeleton className="ml-auto h-4 w-16" />
@@ -126,10 +123,25 @@ export default function Loading() {
                     <Skeleton className="ml-auto h-4 w-20" />
                   </TableCell>
                   <TableCell className="text-right">
+                    <Skeleton className="ml-auto h-4 w-10" />
+                  </TableCell>
+                  <TableCell className="text-right">
                     <Skeleton className="ml-auto h-4 w-20" />
                   </TableCell>
                   <TableCell className="text-right">
-                    <Skeleton className="ml-auto h-4 w-14" />
+                    <Skeleton className="ml-auto h-4 w-20" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="ml-auto h-4 w-16" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="ml-auto h-4 w-16" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="ml-auto h-4 w-20" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="ml-auto h-4 w-16" />
                   </TableCell>
                 </TableRow>
               ))}

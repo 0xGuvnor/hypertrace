@@ -1,5 +1,6 @@
 import type { WalletSnapshot } from "./types";
 import { HlRequestQueue } from "./hl-request-queue";
+import { attachOpenedAtToPositions } from "./positionOpenedAt";
 import {
   buildSpotHoldings,
   computeAccountValue,
@@ -45,6 +46,8 @@ type UserFill = {
   side: "B" | "A";
   time: number;
   hash?: string;
+  startPosition?: string;
+  dir?: string;
   liquidation?: {
     liquidatedUser: string;
     markPx: string;
@@ -219,7 +222,12 @@ function parseOpenOrders(
 }
 
 function attachTpslToPositions(
-  positions: Array<Omit<WalletSnapshot["positions"][number], "takeProfitPrice" | "stopLossPrice">>,
+  positions: Array<
+    Omit<
+      WalletSnapshot["positions"][number],
+      "takeProfitPrice" | "stopLossPrice"
+    >
+  >,
   rawOrders: FrontendOpenOrder[],
 ): WalletSnapshot["positions"] {
   const tpslByCoin = new Map<
@@ -287,7 +295,12 @@ function mergeMarkPriceMaps(...maps: Map<string, string>[]): Map<string, string>
 function parsePositions(
   assetPositions: ClearinghouseState["assetPositions"],
   markByCoin: Map<string, string>,
-): Array<Omit<WalletSnapshot["positions"][number], "takeProfitPrice" | "stopLossPrice">> {
+): Array<
+  Omit<
+    WalletSnapshot["positions"][number],
+    "takeProfitPrice" | "stopLossPrice" | "openedAt"
+  >
+> {
   return assetPositions
     .map(({ position }) => {
       const sizeNum = Number.parseFloat(position.szi);
@@ -388,10 +401,13 @@ export async function fetchWalletSnapshot(address: string): Promise<WalletSnapsh
     buildMarkPriceByCoin(meta.default),
     buildMarkPriceByCoin(meta.xyz),
   );
-  const positions = [
-    ...parsePositions(clearinghouseDefault.assetPositions, markByCoin),
-    ...parsePositions(clearinghouseXyz.assetPositions, markByCoin),
-  ];
+  const positions = attachOpenedAtToPositions(
+    [
+      ...parsePositions(clearinghouseDefault.assetPositions, markByCoin),
+      ...parsePositions(clearinghouseXyz.assetPositions, markByCoin),
+    ],
+    fills,
+  );
   const rawOpenOrders = [...ordersDefault, ...ordersXyz];
   const openOrders = parseOpenOrders(rawOpenOrders);
 

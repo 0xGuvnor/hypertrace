@@ -27,6 +27,8 @@ export const positionValidator = v.object({
   fundingFee: v.string(),
   takeProfitPrice: v.union(v.string(), v.null()),
   stopLossPrice: v.union(v.string(), v.null()),
+  /** Unix ms when the current continuous position opened; null if outside fill window. */
+  openedAt: v.optional(v.union(v.number(), v.null())),
 });
 
 export const openOrderValidator = v.object({

@@ -25,6 +25,7 @@ import type * as lib_knownAddresses from "../lib/knownAddresses.js";
 import type * as lib_leaderboardParse from "../lib/leaderboardParse.js";
 import type * as lib_leaderboardScan from "../lib/leaderboardScan.js";
 import type * as lib_leaderboardTypes from "../lib/leaderboardTypes.js";
+import type * as lib_positionOpenedAt from "../lib/positionOpenedAt.js";
 import type * as lib_snapshotEqual from "../lib/snapshotEqual.js";
 import type * as lib_spotAccountValue from "../lib/spotAccountValue.js";
 import type * as wallets from "../wallets.js";
@@ -54,6 +55,7 @@ declare const fullApi: ApiFromModules<{
   "lib/leaderboardParse": typeof lib_leaderboardParse;
   "lib/leaderboardScan": typeof lib_leaderboardScan;
   "lib/leaderboardTypes": typeof lib_leaderboardTypes;
+  "lib/positionOpenedAt": typeof lib_positionOpenedAt;
   "lib/snapshotEqual": typeof lib_snapshotEqual;
   "lib/spotAccountValue": typeof lib_spotAccountValue;
   wallets: typeof wallets;
