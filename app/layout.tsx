@@ -5,6 +5,7 @@ import "./globals.css"
 import { ConvexClientProvider } from "@/app/ConvexClientProvider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { getToken } from "@/lib/auth-server"
 import { cn } from "@/lib/utils"
 
 const siteDescription =
@@ -59,11 +60,13 @@ const displaySerif = Cormorant_Garamond({
   variable: "--font-serif",
 })
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const token = await getToken()
+
   return (
     <html
       lang="en"
@@ -79,7 +82,9 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <TooltipProvider>
-            <ConvexClientProvider>{children}</ConvexClientProvider>
+            <ConvexClientProvider initialToken={token}>
+              {children}
+            </ConvexClientProvider>
           </TooltipProvider>
         </ThemeProvider>
       </body>
