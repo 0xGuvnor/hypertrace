@@ -15,7 +15,7 @@ import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
 const headerNavItemClassName = cn(
-  "rounded-full px-3.5 py-1.5 text-sm transition-colors",
+  "rounded-full px-2.5 py-1.5 text-sm transition-colors",
   "outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-cyan)]/50",
   "text-muted-foreground hover:text-foreground",
 );
@@ -40,6 +40,41 @@ function initialsFromUser(name: string, email: string): string {
   return (email[0] ?? "?").toUpperCase();
 }
 
+function AccountAvatar({
+  image,
+  name,
+  email,
+}: {
+  image: string | null;
+  name: string;
+  email: string;
+}) {
+  const initial = initialsFromUser(name, email);
+
+  if (image) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- Google OAuth avatar URL; avoid next/image remote allowlist churn
+      <img
+        src={image}
+        alt=""
+        width={20}
+        height={20}
+        referrerPolicy="no-referrer"
+        className="size-5 rounded-full object-cover"
+      />
+    );
+  }
+
+  return (
+    <span
+      aria-hidden="true"
+      className="flex size-5 items-center justify-center rounded-full bg-[var(--brand-cyan)]/12 font-mono text-[0.65rem] text-[var(--brand-cyan)]"
+    >
+      {initial}
+    </span>
+  );
+}
+
 export function AuthNavControls({
   className,
   layout = "header",
@@ -57,7 +92,7 @@ export function AuthNavControls({
       <div
         className={cn(
           layout === "header"
-            ? "mx-1 h-7 w-14 animate-pulse rounded-full bg-muted/60"
+            ? "mx-1 size-7 animate-pulse rounded-full bg-muted/60"
             : "h-11 w-full animate-pulse rounded-xl bg-muted/60",
           className,
         )}
@@ -101,7 +136,7 @@ export function AuthNavControls({
 
   const label = user?.name || user?.email || "Account";
   const email = user?.email ?? "";
-  const initial = initialsFromUser(user?.name ?? "", email);
+  const image = user?.image ?? null;
 
   async function handleSignOut() {
     await authClient.signOut();
@@ -117,9 +152,12 @@ export function AuthNavControls({
           className,
         )}
       >
-        <p className="truncate px-3 font-mono text-xs text-muted-foreground">
-          {email || label}
-        </p>
+        <div className="flex items-center gap-2 px-3">
+          <AccountAvatar image={image} name={user?.name ?? ""} email={email} />
+          <p className="truncate font-mono text-xs text-muted-foreground">
+            {email || label}
+          </p>
+        </div>
         <Button
           type="button"
           variant="outline"
@@ -142,29 +180,28 @@ export function AuthNavControls({
             type="button"
             className={cn(
               headerNavItemClassName,
-              "inline-flex max-w-[9.5rem] items-center gap-1.5",
+              "inline-flex items-center",
               className,
             )}
             aria-label={`Account menu for ${label}`}
           />
         }
       >
-        <span
-          aria-hidden="true"
-          className="flex size-4 shrink-0 items-center justify-center rounded-full bg-[var(--brand-cyan)]/12 font-mono text-[0.6rem] text-[var(--brand-cyan)]"
-        >
-          {initial}
-        </span>
-        <span className="truncate">{label}</span>
+        <AccountAvatar image={image} name={user?.name ?? ""} email={email} />
       </PopoverTrigger>
       <PopoverContent align="end" className="w-56 gap-2 p-2">
-        <div className="px-2 py-1.5">
-          <p className="truncate text-sm font-medium text-foreground">{label}</p>
-          {email ? (
-            <p className="truncate font-mono text-xs text-muted-foreground">
-              {email}
+        <div className="flex items-center gap-2.5 px-2 py-1.5">
+          <AccountAvatar image={image} name={user?.name ?? ""} email={email} />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-foreground">
+              {label}
             </p>
-          ) : null}
+            {email ? (
+              <p className="truncate font-mono text-xs text-muted-foreground">
+                {email}
+              </p>
+            ) : null}
+          </div>
         </div>
         <Button
           type="button"
