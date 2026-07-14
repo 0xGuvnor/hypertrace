@@ -14,9 +14,15 @@ import { api } from "@/convex/_generated/api";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
+const headerNavItemClassName = cn(
+  "rounded-full px-3.5 py-1.5 text-sm transition-colors",
+  "outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-cyan)]/50",
+  "text-muted-foreground hover:text-foreground",
+);
+
 type AuthNavControlsProps = {
   className?: string;
-  /** Compact outline button for header; full-width for mobile sheet */
+  /** Pill-track item for desktop header; full-width for mobile sheet */
   layout?: "header" | "sheet";
   onNavigate?: () => void;
 };
@@ -51,7 +57,7 @@ export function AuthNavControls({
       <div
         className={cn(
           layout === "header"
-            ? "h-8 w-16 animate-pulse rounded-md bg-muted/60"
+            ? "mx-1 h-7 w-14 animate-pulse rounded-full bg-muted/60"
             : "h-11 w-full animate-pulse rounded-xl bg-muted/60",
           className,
         )}
@@ -86,10 +92,7 @@ export function AuthNavControls({
     return (
       <Link
         href="/login"
-        className={cn(
-          buttonVariants({ variant: "outline", size: "sm" }),
-          className,
-        )}
+        className={cn(headerNavItemClassName, className)}
       >
         Sign in
       </Link>
@@ -135,21 +138,24 @@ export function AuthNavControls({
     <Popover>
       <PopoverTrigger
         render={
-          <Button
-            variant="outline"
-            size="sm"
-            className={cn("gap-2 font-normal", className)}
+          <button
+            type="button"
+            className={cn(
+              headerNavItemClassName,
+              "inline-flex max-w-[9.5rem] items-center gap-1.5",
+              className,
+            )}
             aria-label={`Account menu for ${label}`}
           />
         }
       >
         <span
-          aria-hidden
-          className="flex size-5 items-center justify-center rounded-full bg-[var(--brand-cyan)]/15 font-mono text-[0.65rem] text-[var(--brand-cyan)]"
+          aria-hidden="true"
+          className="flex size-4 shrink-0 items-center justify-center rounded-full bg-[var(--brand-cyan)]/12 font-mono text-[0.6rem] text-[var(--brand-cyan)]"
         >
           {initial}
         </span>
-        <span className="max-w-[7rem] truncate">{label}</span>
+        <span className="truncate">{label}</span>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-56 gap-2 p-2">
         <div className="px-2 py-1.5">

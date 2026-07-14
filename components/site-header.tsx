@@ -17,8 +17,9 @@ function SiteNavActions({ className }: { className?: string }) {
   return (
     <nav className={cn("flex shrink-0 items-center gap-2", className)}>
       <MobileNavMenu className="sm:hidden" />
-      <SiteNavPills />
-      <AuthNavControls className="hidden sm:inline-flex" layout="header" />
+      <SiteNavPills
+        trailing={<AuthNavControls layout="header" />}
+      />
     </nav>
   );
 }

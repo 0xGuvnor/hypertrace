@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
 
 import { SITE_NAV_LINKS } from "@/lib/site-nav";
 import { cn } from "@/lib/utils";
@@ -15,9 +16,10 @@ function isActivePath(pathname: string, href: string): boolean {
 
 type SiteNavPillsProps = {
   className?: string;
+  trailing?: ReactNode;
 };
 
-export function SiteNavPills({ className }: SiteNavPillsProps) {
+export function SiteNavPills({ className, trailing }: SiteNavPillsProps) {
   const pathname = usePathname();
 
   return (
@@ -45,6 +47,7 @@ export function SiteNavPills({ className }: SiteNavPillsProps) {
           </Link>
         );
       })}
+      {trailing}
     </div>
   );
 }
