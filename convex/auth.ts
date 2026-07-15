@@ -1,5 +1,6 @@
 import { createClient, type GenericCtx } from "@convex-dev/better-auth";
 import { convex } from "@convex-dev/better-auth/plugins";
+import { dash } from "@better-auth/infra";
 import { betterAuth } from "better-auth/minimal";
 import { v } from "convex/values";
 
@@ -25,7 +26,12 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
         clientSecret: googleClientSecret,
       },
     },
-    plugins: [convex({ authConfig })],
+    plugins: [
+      convex({ authConfig }),
+      dash({
+        apiKey: process.env.BETTER_AUTH_API_KEY,
+      }),
+    ],
     trustedOrigins: [siteUrl],
   });
 };
