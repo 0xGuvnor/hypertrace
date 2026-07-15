@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { AuthNavControls } from "@/components/auth-nav-controls";
 import { MobileNavMenu } from "@/components/mobile-nav-menu";
 import { SiteNavPills } from "@/components/site-nav-pills";
 import { cn } from "@/lib/utils";
@@ -16,7 +17,9 @@ function SiteNavActions({ className }: { className?: string }) {
   return (
     <nav className={cn("flex shrink-0 items-center gap-2", className)}>
       <MobileNavMenu className="sm:hidden" />
-      <SiteNavPills />
+      <SiteNavPills
+        trailing={<AuthNavControls layout="header" />}
+      />
     </nav>
   );
 }

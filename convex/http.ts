@@ -1,5 +1,6 @@
 import { httpRouter } from "convex/server";
 
+import { authComponent, createAuth } from "./auth";
 import { internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
 import { unauthorizedResponse, verifyIngestSecret } from "./lib/ingestAuth";
@@ -12,6 +13,8 @@ import {
 import type { WalletSnapshot } from "./lib/hyperliquidTypes";
 
 const http = httpRouter();
+
+authComponent.registerRoutesLazy(http, createAuth);
 
 http.route({
   path: "/ingest/watches",
