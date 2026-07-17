@@ -43,7 +43,7 @@ export function ClusterMembersTable({
               <TableCell>
                 <Link
                   href={`/address/${address}`}
-                  className="font-mono text-xs hover:text-[var(--brand-cyan)] hover:underline"
+                  className="font-mono text-xs underline-offset-4 hover:text-[var(--brand-cyan)] hover:underline [text-decoration-thickness:from-font] [text-underline-position:from-font]"
                 >
                   {truncateAddress(address, 6)}
                 </Link>

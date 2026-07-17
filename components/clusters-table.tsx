@@ -28,7 +28,7 @@ export function ClustersTable({
 }) {
   if (clusters.length === 0) {
     return (
-      <p className="text-muted-foreground py-12 text-center text-sm leading-relaxed">
+      <p className="text-muted-foreground mx-auto max-w-prose py-12 text-center text-sm leading-relaxed text-pretty">
         No clusters detected yet. Clusters form when the same Arbitrum funding
         source bridges into two or more Hyperliquid wallets. Search a wallet to
         start deposit tracing, then check back after the clustering job runs.
@@ -53,12 +53,12 @@ export function ClustersTable({
               <TableCell>
                 <Link
                   href={clusterPath(cluster.clusterKey)}
-                  className="font-medium text-[var(--brand-cyan)] hover:underline"
+                  className="font-medium text-[var(--brand-cyan)] underline-offset-4 hover:underline [text-decoration-thickness:from-font] [text-underline-position:from-font]"
                 >
                   {cluster.memberAddresses.length} wallets
                 </Link>
               </TableCell>
-              <TableCell className="font-mono text-xs">
+              <TableCell className="font-mono text-xs tabular-nums">
                 {truncateAddress(cluster.sourceAddress, 6)}
               </TableCell>
               <TableCell>
@@ -70,7 +70,7 @@ export function ClustersTable({
                   ))}
                 </div>
               </TableCell>
-              <TableCell className="text-right font-mono text-xs">
+              <TableCell className="text-right font-mono text-xs tabular-nums">
                 {formatConfidence(cluster.confidenceScore)}
               </TableCell>
             </TableRow>

@@ -88,14 +88,18 @@ export function LoginForm({ nextPath, className }: LoginFormProps) {
         className,
       )}
     >
-      <div className="flex flex-col gap-1">
-        <p className="font-mono text-xs tracking-[0.08em] text-[var(--brand-cyan)] uppercase">
+      <div className="flex flex-col gap-1.5">
+        <p className="flex items-center gap-2 font-mono text-xs tracking-[0.16em] text-[var(--brand-cyan)] uppercase">
+          <span
+            aria-hidden
+            className="size-1.5 shrink-0 rounded-full bg-[var(--brand-cyan)]"
+          />
           Access
         </p>
-        <h1 className="text-xl font-semibold tracking-tight text-pretty text-foreground sm:text-2xl">
+        <h1 className="text-balance text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           Sign in to Hyper<span className="italic">trace</span>
         </h1>
-        <p className="text-sm leading-relaxed text-muted-foreground">
+        <p className="text-muted-foreground max-w-prose text-pretty text-sm leading-relaxed">
           Save wallets you are tracking. Whale pages stay public.
         </p>
       </div>
@@ -114,7 +118,7 @@ export function LoginForm({ nextPath, className }: LoginFormProps) {
           {pending ? "Redirecting…" : "Continue with Google"}
         </Button>
         {error ? (
-          <p className="mt-3 text-sm text-destructive" role="alert">
+          <p className="mt-3 text-pretty text-sm text-destructive" role="alert">
             {error}
           </p>
         ) : null}

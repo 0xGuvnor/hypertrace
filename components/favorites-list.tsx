@@ -38,8 +38,8 @@ export function FavoritesList() {
 
   if (!isAuthenticated) {
     return (
-      <div className="flex flex-col items-start gap-4 rounded-xl border border-border/80 bg-card p-5 sm:p-6">
-        <p className="text-sm text-muted-foreground">
+      <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 rounded-xl border border-border/80 bg-card p-5 text-center sm:p-6">
+        <p className="text-muted-foreground max-w-prose text-sm leading-relaxed text-pretty">
           Sign in to see wallets you have favorited.
         </p>
         <Link
@@ -60,8 +60,8 @@ export function FavoritesList() {
 
   if (favorites.length === 0) {
     return (
-      <div className="flex flex-col items-start gap-3 rounded-xl border border-border/80 bg-card p-5 sm:p-6">
-        <p className="text-sm text-muted-foreground">
+      <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 rounded-xl border border-border/80 bg-card p-5 text-center sm:p-6">
+        <p className="text-muted-foreground max-w-prose text-sm leading-relaxed text-pretty">
           No favorites yet. Open a wallet and tap the star to save it here.
         </p>
         <Link
@@ -99,7 +99,7 @@ export function FavoritesList() {
               <TableCell>
                 <Link
                   href={`/address/${item.address}`}
-                  className="inline-flex min-h-11 items-center outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-cyan)]/50"
+                  className="inline-flex min-h-11 items-center underline-offset-4 outline-none hover:text-[var(--brand-cyan)] hover:underline focus-visible:ring-2 focus-visible:ring-[var(--brand-cyan)]/50 [text-decoration-thickness:from-font] [text-underline-position:from-font]"
                 >
                   <AddressWithTooltip address={item.address} />
                 </Link>
@@ -112,6 +112,11 @@ export function FavoritesList() {
                   disabled={pendingAddress === item.address}
                   aria-label="Remove from favorites"
                   title="Remove favorite"
+                  className={cn(
+                    "relative",
+                    "after:absolute after:top-1/2 after:left-1/2 after:size-10",
+                    "after:-translate-x-1/2 after:-translate-y-1/2 after:content-['']",
+                  )}
                   onClick={() => {
                     setPendingAddress(item.address);
                     void toggle({ address: item.address }).finally(() => {

@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { truncateAddress } from "@/lib/address";
 import { formatBasis, formatConfidence } from "@/lib/cluster-labels";
@@ -31,10 +30,10 @@ export function ClusterDetail({
         >
           ← Back to clusters
         </Link>
-        <h1 className="text-lg font-semibold tracking-tight sm:text-xl">
+        <h1 className="text-balance text-2xl font-bold tracking-tight sm:text-3xl">
           Wallet cluster
         </h1>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-muted-foreground text-pretty text-sm leading-relaxed">
           {cluster.memberAddresses.length} wallets linked by shared funding
         </p>
       </div>
@@ -42,7 +41,7 @@ export function ClusterDetail({
       <div className="grid gap-4 sm:grid-cols-2">
         <Card size="sm">
           <CardHeader>
-            <CardTitle className="text-sm">Funding source</CardTitle>
+            <p className="text-xs text-muted-foreground">Funding source</p>
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
             <div className="flex min-w-0 items-center gap-1">
@@ -50,7 +49,7 @@ export function ClusterDetail({
                 href={arbiscanAddressUrl(cluster.sourceAddress)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="truncate font-mono text-sm hover:text-[var(--brand-cyan)] hover:underline"
+                className="truncate font-mono text-sm underline-offset-4 hover:text-[var(--brand-cyan)] hover:underline [text-decoration-thickness:from-font] [text-underline-position:from-font]"
               >
                 {truncateAddress(cluster.sourceAddress, 8)}
               </Link>
@@ -61,10 +60,10 @@ export function ClusterDetail({
 
         <Card size="sm">
           <CardHeader>
-            <CardTitle className="text-sm">Confidence</CardTitle>
+            <p className="text-xs text-muted-foreground">Confidence</p>
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
-            <p className="font-mono text-lg font-medium">
+            <p className="font-mono text-lg font-medium tabular-nums">
               {formatConfidence(cluster.confidenceScore)}
             </p>
             <div className="flex flex-wrap gap-1">
