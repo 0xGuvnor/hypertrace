@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { RECENT_FILLS_CAP } from "@/lib/fills";
 import { formatSize, formatTimestamp, formatUsd } from "@/lib/format";
+import { PNL_NEGATIVE_BADGE } from "@/lib/pnl-tone";
 import { paginateItems } from "@/lib/table-page";
 import type { WalletSnapshot } from "@/lib/wallet-types";
 
@@ -26,7 +27,7 @@ function FillsTablePaged({
 
   if (fills.length === 0) {
     return (
-      <p className="text-muted-foreground py-8 text-center text-sm">
+      <p className="text-muted-foreground py-8 text-center text-sm text-pretty">
         No recent fills on record.
       </p>
     );
@@ -67,10 +68,7 @@ function FillsTablePaged({
                     {fill.side}
                   </Badge>
                   {fill.isLiquidation && (
-                    <Badge
-                      variant="outline"
-                      className="border-red-500/30 bg-red-500/10 font-medium text-red-700 dark:text-red-400"
-                    >
+                    <Badge variant="outline" className={PNL_NEGATIVE_BADGE}>
                       Liquidated
                     </Badge>
                   )}

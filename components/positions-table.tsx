@@ -18,6 +18,15 @@ import { formatSignedPercent, formatUsd, formatSize } from "@/lib/format";
 import { formatPositionAge } from "@/lib/position-age";
 import { positionUnrealizedPnlPercent } from "@/lib/position-roe";
 import {
+  fundingFeeClass,
+  PNL_NEGATIVE_BADGE,
+  PNL_NEGATIVE_TEXT,
+  PNL_POSITIVE_BADGE,
+  PNL_POSITIVE_TEXT,
+  signedNumberClass,
+  unrealizedPnlClass,
+} from "@/lib/pnl-tone";
+import {
   summarizeOpenPositions,
   type PositionsOpenSummary,
 } from "@/lib/positions-summary";
@@ -45,40 +54,23 @@ function comparePositions(
   return a.coin.localeCompare(b.coin);
 }
 
-function signedNumberClass(value: number): string {
-  if (!Number.isFinite(value) || value === 0) return "";
-  if (value < 0) return "text-red-600 dark:text-red-400";
-  return "text-emerald-600 dark:text-emerald-400";
-}
-
-function unrealizedPnlClass(value: string): string {
-  const num = Number.parseFloat(value);
-  if (!Number.isFinite(num)) return "";
-  if (num > 0) return "text-emerald-600 dark:text-emerald-400";
-  if (num < 0) return "text-red-600 dark:text-red-400";
-  return "";
-}
-
-function fundingFeeClass(value: string): string {
-  const num = Number.parseFloat(value);
-  if (!Number.isFinite(num) || num === 0) return "";
-  if (num < 0) return "text-red-600 dark:text-red-400";
-  return "text-emerald-600 dark:text-emerald-400";
-}
-
 function PositionsSummaryBar({ summary }: { summary: PositionsOpenSummary }) {
   return (
     <div className="bg-muted/30 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b px-3 py-2">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
         <div className="flex items-baseline gap-1.5">
           <span className="text-muted-foreground text-xs">Long</span>
-          <span className="font-mono text-xs tabular-nums text-emerald-600 dark:text-emerald-400">
+          <span
+            className={`font-mono text-xs tabular-nums ${PNL_POSITIVE_TEXT}`}
+          >
             {formatUsd(summary.longValue)}
           </span>
         </div>
         <div className="flex items-baseline gap-1.5">
           <span className="text-muted-foreground text-xs">Short</span>
-          <span className="font-mono text-xs tabular-nums text-red-600 dark:text-red-400">
+          <span
+            className={`font-mono text-xs tabular-nums ${PNL_NEGATIVE_TEXT}`}
+          >
             {formatUsd(summary.shortValue)}
           </span>
         </div>
@@ -241,11 +233,7 @@ function PositionsTablePaged({
                 <TableCell>
                   <Badge
                     variant="outline"
-                    className={
-                      isLong
-                        ? "border-emerald-500/30 bg-emerald-500/10 font-medium text-emerald-700 dark:text-emerald-400"
-                        : "border-red-500/30 bg-red-500/10 font-medium text-red-700 dark:text-red-400"
-                    }
+                    className={isLong ? PNL_POSITIVE_BADGE : PNL_NEGATIVE_BADGE}
                   >
                     {position.coin}
                   </Badge>
@@ -253,7 +241,7 @@ function PositionsTablePaged({
                 <TableCell className="text-right">
                   <div className="flex flex-col items-end gap-0.5">
                     <span className="font-mono text-xs">{position.leverage}x</span>
-                    <span className="text-muted-foreground text-[10px]">
+                    <span className="text-muted-foreground text-xs">
                       {formatMarginMode(position.marginMode)}
                     </span>
                   </div>
@@ -301,7 +289,7 @@ function PositionsTablePaged({
                   <div className="flex flex-col items-end gap-0.5">
                     <span>{formatUsd(position.unrealizedPnl)}</span>
                     {pct != null && (
-                      <span className="text-[11px] opacity-80">
+                      <span className="text-xs opacity-80">
                         ({formatSignedPercent(pct)})
                       </span>
                     )}
@@ -346,7 +334,7 @@ export function PositionsTable({
 
   if (positions.length === 0) {
     return (
-      <p className="text-muted-foreground py-8 text-center text-sm">
+      <p className="text-muted-foreground py-8 text-center text-sm text-pretty">
         No open perpetual positions.
       </p>
     );

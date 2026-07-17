@@ -27,7 +27,7 @@ export function HomeHero({ className }: HomeHeroProps) {
           aria-hidden
           className="size-1.5 shrink-0 rounded-full bg-[var(--brand-cyan)]"
         />
-        <span className="font-mono text-[0.65rem] tracking-[0.08em] text-[var(--brand-cyan)] uppercase">
+        <span className="font-mono text-xs tracking-[0.08em] text-[var(--brand-cyan)] uppercase">
           Hyperliquid intelligence layer
         </span>
       </div>
@@ -39,35 +39,34 @@ export function HomeHero({ className }: HomeHeroProps) {
             move.
           </em>
         </h1>
-        <p className="max-w-md text-pretty text-sm leading-relaxed text-muted-foreground sm:text-[0.9375rem]">
+        <p className="max-w-md text-pretty text-base leading-relaxed text-muted-foreground">
           Trace whale wallets, uncover coordinated clusters, and monitor live
           positions across Hyperliquid—all from one signal-rich view.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
         {FEATURES.map((feature) => {
           const Icon = feature.icon;
           return (
-            <div
-              key={feature.title}
-              className="flex flex-col gap-2 rounded-xl border border-border/80 bg-card p-3 sm:p-4"
-            >
-              <Icon
-                aria-hidden
-                className="size-4 text-[var(--brand-cyan)]"
-                strokeWidth={1.75}
-              />
-              <p className="text-sm font-medium text-foreground">
-                {feature.title}
-              </p>
-              <p className="text-xs leading-relaxed text-muted-foreground">
+            <li key={feature.title} className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                <Icon
+                  aria-hidden
+                  className="size-4 shrink-0 text-[var(--brand-cyan)]"
+                  strokeWidth={1.75}
+                />
+                <p className="text-sm font-medium text-foreground">
+                  {feature.title}
+                </p>
+              </div>
+              <p className="text-[0.8125rem] leading-relaxed text-muted-foreground">
                 {feature.description}
               </p>
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 }

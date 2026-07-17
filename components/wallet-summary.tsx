@@ -2,7 +2,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { formatUsd } from "@/lib/format";
 import type { WalletSnapshot } from "@/lib/wallet-types";
@@ -24,12 +23,12 @@ export function WalletSummary({
       {stats.map((stat) => (
         <Card key={stat.label} size="sm">
           <CardHeader>
-            <CardTitle className="text-muted-foreground text-xs font-normal">
-              {stat.label}
-            </CardTitle>
+            <p className="text-xs text-muted-foreground">{stat.label}</p>
           </CardHeader>
           <CardContent>
-            <p className="text-lg font-medium tabular-nums">{stat.value}</p>
+            <p className="font-mono text-lg font-medium tabular-nums">
+              {stat.value}
+            </p>
           </CardContent>
         </Card>
       ))}

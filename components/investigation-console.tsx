@@ -15,7 +15,7 @@ export function InvestigationConsole({ className }: InvestigationConsoleProps) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <p className="font-mono text-[0.65rem] tracking-[0.08em] text-[var(--brand-cyan)] uppercase">
+          <p className="font-mono text-xs tracking-[0.08em] text-[var(--brand-cyan)] uppercase">
             Investigation console
           </p>
           <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
@@ -27,7 +27,7 @@ export function InvestigationConsole({ className }: InvestigationConsoleProps) {
             aria-hidden
             className="size-1.5 shrink-0 rounded-full bg-[var(--brand-cyan)] motion-safe:animate-pulse"
           />
-          <span className="font-mono text-[0.65rem] tracking-wide text-muted-foreground uppercase">
+          <span className="font-mono text-xs tracking-wide text-muted-foreground uppercase">
             Live
           </span>
         </div>

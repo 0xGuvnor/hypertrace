@@ -51,10 +51,13 @@
 }
 
 :root {
-    --brand-ink: #05051a;
-    --brand-cyan: #9ee8d8;
-    --brand-blue: #0055ff;
-    --brand-purple: #8a2be2;
+    /* Pale mint fill for CTAs; darker fg for text/icons on light surfaces */
+    --brand-ink: oklch(0.133 0.047 278);
+    --brand-cyan-fill: oklch(0.878 0.077 179);
+    --brand-cyan: oklch(0.48 0.09 179);
+    --pnl-positive: oklch(0.5 0.14 155);
+    --pnl-negative: oklch(0.5 0.17 25);
+    --status-stale: oklch(0.55 0.14 75);
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -90,10 +93,12 @@
 }
 
 .dark {
-    --brand-ink: #05051a;
-    --brand-cyan: #9ee8d8;
-    --brand-blue: #0055ff;
-    --brand-purple: #8a2be2;
+    --brand-ink: oklch(0.133 0.047 278);
+    --brand-cyan-fill: oklch(0.878 0.077 179);
+    --brand-cyan: oklch(0.878 0.077 179);
+    --pnl-positive: oklch(0.78 0.14 155);
+    --pnl-negative: oklch(0.72 0.16 25);
+    --status-stale: oklch(0.78 0.14 75);
     --background: oklch(0.09 0 0);
     --foreground: oklch(0.96 0 0);
     --card: oklch(0.155 0 0);
@@ -136,5 +141,6 @@
     }
   html {
     @apply font-sans;
+    font-synthesis: none;
     }
 }

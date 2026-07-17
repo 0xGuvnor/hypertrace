@@ -18,7 +18,7 @@ function StatusIndicator({
   const dotClass = {
     cyan: "bg-[var(--brand-cyan)]",
     muted: "bg-muted-foreground/50",
-    amber: "bg-amber-500",
+    amber: "bg-[var(--status-stale)]",
     neutral: "bg-muted-foreground/70",
   }[tone];
 
@@ -84,7 +84,7 @@ function statusMeta(status: LiveFeedStatus, now: number) {
         tone: "amber" as const,
         pulse: false,
         badgeClass:
-          "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+          "border-[color-mix(in_oklch,var(--status-stale)_30%,transparent)] bg-[color-mix(in_oklch,var(--status-stale)_10%,transparent)] text-[var(--status-stale)]",
       };
     default: {
       const _exhaustive: never = status;
@@ -103,7 +103,7 @@ export function LiveStatusBadge({ status, now }: LiveStatusBadgeProps) {
     >
       <StatusIndicator tone={meta.tone} pulse={meta.pulse} />
       <span className="font-medium">{meta.label}</span>
-      <span className="text-[0.6875rem] opacity-80">{meta.detail}</span>
+      <span className="text-xs opacity-80">{meta.detail}</span>
     </Badge>
   );
 }

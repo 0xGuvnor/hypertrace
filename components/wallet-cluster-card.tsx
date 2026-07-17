@@ -48,7 +48,7 @@ export function WalletClusterCard({
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href={`${clusterPath(primary.clusterKey)}?from=${walletAddress}`}
-            className="text-sm font-medium text-[var(--brand-cyan)] hover:underline"
+            className="text-sm font-medium text-[var(--brand-cyan)] underline-offset-4 hover:underline [text-decoration-thickness:from-font] [text-underline-position:from-font]"
           >
             {primary.memberAddresses.length} wallets share source{" "}
             <span className="font-mono">
@@ -74,7 +74,7 @@ export function WalletClusterCard({
                 {index > 0 ? ", " : null}
                 <Link
                   href={clusterPath(cluster.clusterKey)}
-                  className="text-[var(--brand-cyan)] hover:underline"
+                  className="text-[var(--brand-cyan)] underline-offset-4 hover:underline [text-decoration-thickness:from-font] [text-underline-position:from-font]"
                 >
                   {cluster.memberAddresses.length} wallets
                 </Link>

@@ -89,7 +89,7 @@ export function LoginForm({ nextPath, className }: LoginFormProps) {
       )}
     >
       <div className="flex flex-col gap-1">
-        <p className="font-mono text-[0.65rem] tracking-[0.08em] text-[var(--brand-cyan)] uppercase">
+        <p className="font-mono text-xs tracking-[0.08em] text-[var(--brand-cyan)] uppercase">
           Access
         </p>
         <h1 className="text-xl font-semibold tracking-tight text-pretty text-foreground sm:text-2xl">
@@ -104,7 +104,7 @@ export function LoginForm({ nextPath, className }: LoginFormProps) {
         <Button
           type="button"
           size="lg"
-          className="h-11 w-full gap-2 bg-[var(--brand-cyan)] text-[var(--brand-ink)] hover:bg-[var(--brand-cyan)]/90"
+          className="h-11 w-full gap-2 bg-[var(--brand-cyan-fill)] text-[var(--brand-ink)] hover:bg-[var(--brand-cyan-fill)]/90"
           disabled={pending}
           onClick={() => {
             void handleGoogleSignIn();

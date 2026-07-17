@@ -24,6 +24,7 @@ import { arbiscanAddressUrl, arbiscanTxUrl } from "@/lib/cluster-routes";
 import { TRANSFER_SCAN_START_DATE_LABEL } from "@/lib/deposit-scan";
 import type { Deposit, DepositFunder } from "@/lib/cluster-types";
 import { formatTimestamp, formatUsd } from "@/lib/format";
+import { PNL_NEGATIVE_SOFT, PNL_POSITIVE_SOFT } from "@/lib/pnl-tone";
 import { paginateItems } from "@/lib/table-page";
 
 function formatWeightPercent(weight: number): string {
@@ -40,7 +41,7 @@ function CounterpartyLink({
   return (
     <Tooltip>
       <TooltipTrigger
-        className="cursor-default font-mono text-xs underline decoration-dotted decoration-muted-foreground underline-offset-4"
+        className="cursor-default font-mono text-xs underline decoration-dotted decoration-muted-foreground underline-offset-4 [text-decoration-thickness:from-font] [text-underline-position:from-font]"
         render={
           <Link
             href={arbiscanAddressUrl(address)}
@@ -125,11 +126,7 @@ function TransfersTablePaged({
                   <TableCell>
                     <Badge
                       variant={isDeposit ? "default" : "secondary"}
-                      className={
-                        isDeposit
-                          ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/20"
-                          : "bg-red-500/15 text-red-400 border-red-500/20"
-                      }
+                      className={isDeposit ? PNL_POSITIVE_SOFT : PNL_NEGATIVE_SOFT}
                     >
                       {isDeposit ? "In" : "Out"}
                     </Badge>
@@ -145,7 +142,7 @@ function TransfersTablePaged({
                       href={arbiscanTxUrl(transfer.arbTxHash)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-mono text-xs text-[var(--brand-cyan)] hover:underline"
+                      className="font-mono text-xs text-[var(--brand-cyan)] underline-offset-4 hover:underline [text-decoration-thickness:from-font] [text-underline-position:from-font]"
                     >
                       {truncateAddress(transfer.arbTxHash, 4)}
                     </Link>
@@ -191,7 +188,7 @@ export function TransfersTable({
 
   if (transfers.length === 0) {
     return (
-      <p className="text-muted-foreground py-8 text-center text-sm leading-relaxed">
+      <p className="text-muted-foreground max-w-prose py-8 text-center text-sm leading-relaxed text-pretty">
         No bridge transfers on record for this wallet. Hypertrace scans Arbitrum
         bridge deposits and withdrawals from {TRANSFER_SCAN_START_DATE_LABEL}{" "}
         onward. Transfers appear once the wallet is watched and indexing

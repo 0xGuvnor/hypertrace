@@ -111,10 +111,10 @@ export function WalletTabs({
       className="min-w-0"
     >
       <div className="-mx-1 overflow-x-auto px-1 pb-1 sm:overflow-visible">
-        <TabsList className="w-full sm:w-fit">
+        <TabsList className="!h-10 w-full sm:!h-8 sm:w-fit">
           <TabsTrigger
             value="positions"
-            className="min-w-0 flex-1 text-xs sm:flex-none sm:text-sm"
+            className="min-w-0 flex-1 text-xs transition-colors sm:flex-none sm:text-sm"
           >
             <span className="sm:hidden">Pos</span>
             <span className="hidden sm:inline">Positions</span>
@@ -124,14 +124,14 @@ export function WalletTabs({
           </TabsTrigger>
           <TabsTrigger
             value="spot"
-            className="min-w-0 flex-1 text-xs sm:flex-none sm:text-sm"
+            className="min-w-0 flex-1 text-xs transition-colors sm:flex-none sm:text-sm"
           >
             Spot
             <span className="text-muted-foreground">({spotCount})</span>
           </TabsTrigger>
           <TabsTrigger
             value="orders"
-            className="min-w-0 flex-1 text-xs sm:flex-none sm:text-sm"
+            className="min-w-0 flex-1 text-xs transition-colors sm:flex-none sm:text-sm"
           >
             Orders
             <span className="text-muted-foreground">
@@ -140,7 +140,7 @@ export function WalletTabs({
           </TabsTrigger>
           <TabsTrigger
             value="fills"
-            className="min-w-0 flex-1 text-xs sm:flex-none sm:text-sm"
+            className="min-w-0 flex-1 text-xs transition-colors sm:flex-none sm:text-sm"
           >
             Fills
             <span className="text-muted-foreground">
@@ -149,7 +149,7 @@ export function WalletTabs({
           </TabsTrigger>
           <TabsTrigger
             value="transfers"
-            className="min-w-0 flex-1 text-xs sm:flex-none sm:text-sm"
+            className="min-w-0 flex-1 text-xs transition-colors sm:flex-none sm:text-sm"
           >
             <span className="sm:hidden">Xfer</span>
             <span className="hidden sm:inline">Transfers</span>

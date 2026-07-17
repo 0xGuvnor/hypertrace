@@ -8,6 +8,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { isValidAddress, normalizeAddress } from "@/lib/address";
 
@@ -173,11 +178,13 @@ export function WalletSearch({
               size="icon-sm"
               aria-label="Investigate wallet"
               className={cn(
-                "size-8 rounded-md border-transparent",
-                "bg-[var(--brand-cyan)] text-black",
-                "hover:bg-[var(--brand-cyan)]/90",
+                "relative size-8 rounded-md border-transparent",
+                "bg-[var(--brand-cyan-fill)] text-black",
+                "hover:bg-[var(--brand-cyan-fill)]/90",
                 "active:not-aria-[haspopup]:translate-y-0",
                 "focus-visible:ring-[var(--brand-cyan)]/40",
+                "after:absolute after:top-1/2 after:left-1/2 after:size-10",
+                "after:-translate-x-1/2 after:-translate-y-1/2 after:content-['']",
               )}
             >
               <ArrowRight className="size-4" />
@@ -194,19 +201,27 @@ export function WalletSearch({
 
       {recent.length > 0 ? (
         <div className="flex flex-col gap-2">
-          <p className="text-xs text-muted-foreground">Try a wallet</p>
+          <p className="text-xs text-muted-foreground">Recent</p>
           <div className="flex flex-wrap gap-2">
             {recent.map((address) => (
-              <Button
-                key={address}
-                type="button"
-                variant="outline"
-                size="sm"
-                className="font-mono text-xs"
-                onClick={() => handleRecentClick(address)}
-              >
-                {address.slice(0, 6)}…{address.slice(-4)}
-              </Button>
+              <Tooltip key={address}>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="min-h-9 font-mono text-xs"
+                      onClick={() => handleRecentClick(address)}
+                    />
+                  }
+                >
+                  {address.slice(0, 6)}…{address.slice(-4)}
+                </TooltipTrigger>
+                <TooltipContent className="max-w-none font-mono break-all">
+                  {address}
+                </TooltipContent>
+              </Tooltip>
             ))}
           </div>
         </div>

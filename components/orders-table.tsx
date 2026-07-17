@@ -132,7 +132,7 @@ export function OrdersTable({
 
   if (orders.length === 0) {
     return (
-      <p className="text-muted-foreground py-8 text-center text-sm">
+      <p className="text-muted-foreground py-8 text-center text-sm text-pretty">
         No open orders.
       </p>
     );

@@ -59,6 +59,11 @@ export function FavoriteAddressButton({ address }: FavoriteAddressButtonProps) {
       }
       aria-pressed={isFavorited}
       title={isFavorited ? "Remove favorite" : "Favorite"}
+      className={cn(
+        "relative",
+        "after:absolute after:top-1/2 after:left-1/2 after:size-10",
+        "after:-translate-x-1/2 after:-translate-y-1/2 after:content-['']",
+      )}
     >
       <Star
         className={cn(
