@@ -10,7 +10,7 @@ export function LeaderboardPageHeader({
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
       <div className="min-w-0 flex-1">
-        <p className="text-muted-foreground flex items-center gap-2 font-mono text-[10px] tracking-[0.18em] uppercase">
+        <p className="text-muted-foreground flex items-center gap-2 font-mono text-xs tracking-[0.16em] uppercase">
           <span
             aria-hidden
             className="size-1.5 shrink-0 rounded-full bg-[var(--brand-cyan)]"
@@ -21,10 +21,10 @@ export function LeaderboardPageHeader({
             PnL
           </span>
         </p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+        <h1 className="mt-2 text-balance text-2xl font-bold tracking-tight sm:text-3xl">
           Whale leaderboard
         </h1>
-        <p className="text-muted-foreground mt-2 max-w-xl text-sm leading-relaxed">
+        <p className="text-muted-foreground mt-2 max-w-xl text-pretty text-sm leading-relaxed">
           Filterable Hyperliquid whale performance. Opted-in addresses sourced
           from stats-data.
         </p>
@@ -32,7 +32,7 @@ export function LeaderboardPageHeader({
 
       {snapshotAt !== null ? (
         <div className="shrink-0 sm:pb-0.5 sm:text-right">
-          <p className="text-muted-foreground font-mono text-[10px] tracking-[0.18em] uppercase">
+          <p className="text-muted-foreground font-mono text-xs tracking-[0.16em] uppercase">
             Snapshot
           </p>
           <p

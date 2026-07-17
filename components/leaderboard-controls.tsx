@@ -92,19 +92,19 @@ function FilterSegmentGroup<T extends string>({
 
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <span className="font-mono text-[10px] tracking-[0.16em] text-[var(--brand-cyan)] uppercase">
+      <span className="font-mono text-xs tracking-[0.14em] text-[var(--brand-cyan)] uppercase">
         {label}
       </span>
       <div
         ref={trackRef}
         role="radiogroup"
         aria-label={label}
-        className="relative flex w-full rounded-full border border-border bg-card p-0.5 md:w-auto"
+        className="relative flex min-h-9 w-full rounded-full border border-border bg-card p-0.5 md:w-auto"
       >
         <span
           aria-hidden
           className={cn(
-            "pointer-events-none absolute top-0.5 bottom-0.5 left-0 z-0 rounded-full bg-[var(--brand-cyan)]",
+            "pointer-events-none absolute top-0.5 bottom-0.5 left-0 z-0 rounded-full bg-[var(--brand-cyan-fill)]",
             "transition-[transform,width] duration-200 ease-out motion-reduce:transition-none",
             thumb ? "opacity-100" : "opacity-0",
           )}
@@ -127,11 +127,11 @@ function FilterSegmentGroup<T extends string>({
               aria-checked={active}
               onClick={() => onChange(option.value)}
               className={cn(
-                "relative z-10 min-w-0 flex-1 rounded-full px-2.5 py-1.5 font-mono text-[11px] tracking-wide transition-colors duration-150 md:flex-none md:px-3 sm:text-xs",
+                "relative z-10 min-w-0 flex-1 rounded-full px-2.5 py-1.5 font-mono text-xs tracking-wide transition-colors duration-150 md:flex-none md:px-3",
                 "outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-[var(--brand-cyan)]/50",
                 "motion-reduce:transition-none",
                 active
-                  ? "font-medium text-black"
+                  ? "font-medium text-[var(--brand-ink)]"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >

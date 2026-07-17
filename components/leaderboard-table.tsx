@@ -28,6 +28,7 @@ import {
   pnlValueForWindow,
   vlmValueForWindow,
 } from "@/lib/leaderboard-list";
+import { signedNumberClassEmphasized } from "@/lib/pnl-tone";
 import { cn } from "@/lib/utils";
 
 const SIBLING_WINDOWS: PnlWindow[] = ["day", "week", "month", "allTime"];
@@ -35,20 +36,6 @@ const DESKTOP_ONLY = "hidden md:table-cell";
 
 function formatRank(rank: number): string {
   return String(rank).padStart(2, "0");
-}
-
-function pnlClass(value: number, emphasized: boolean): string {
-  if (value > 0) {
-    return emphasized
-      ? "text-emerald-600 dark:text-emerald-400"
-      : "text-emerald-600/70 dark:text-emerald-400/70";
-  }
-  if (value < 0) {
-    return emphasized
-      ? "text-red-600 dark:text-red-400"
-      : "text-red-600/70 dark:text-red-400/70";
-  }
-  return emphasized ? "text-foreground" : "text-muted-foreground";
 }
 
 function SortableTableHead({
@@ -104,7 +91,7 @@ function RankedByLeading({ sortBy }: { sortBy: LeaderboardSortBy }) {
         aria-hidden
         className="size-3.5 shrink-0 text-[var(--brand-cyan)]"
       />
-      <p className="font-mono text-[11px] tracking-wide text-muted-foreground sm:text-xs">
+      <p className="font-mono text-xs tracking-wide text-muted-foreground">
         Ranked by{" "}
         <span className="text-foreground">{LEADERBOARD_SORT_LABELS[sortBy]}</span>
       </p>
@@ -170,7 +157,7 @@ function LeaderboardTableHeader({
   return (
     <TableHeader>
       <TableRow>
-        <TableHead className="w-12 text-muted-foreground font-mono text-[10px] tracking-wide uppercase">
+        <TableHead className="w-12 text-muted-foreground font-mono text-xs tracking-wide uppercase">
           #
         </TableHead>
         <TableHead>Wallet</TableHead>
@@ -245,7 +232,7 @@ export function LeaderboardTable({
 }) {
   if (rows.length === 0 && tail === "exhausted") {
     return (
-      <p className="text-muted-foreground py-12 text-center text-sm leading-relaxed">
+      <p className="text-muted-foreground mx-auto max-w-prose py-12 text-center text-sm leading-relaxed text-pretty">
         No wallets match these filters. Lower the min account value or min
         volume.
       </p>
@@ -301,7 +288,7 @@ export function LeaderboardTable({
                     ) : null}
                     <Link
                       href={`/address/${row.address}`}
-                      className="font-mono text-xs hover:text-[var(--brand-cyan)] hover:underline"
+                      className="font-mono text-xs underline-offset-4 hover:text-[var(--brand-cyan)] hover:underline [text-decoration-thickness:from-font] [text-underline-position:from-font]"
                     >
                       {truncateAddress(row.address, 6)}
                     </Link>
@@ -314,7 +301,7 @@ export function LeaderboardTable({
                   className={cn(
                     "text-right font-mono text-sm font-medium tabular-nums transition-opacity duration-150 motion-reduce:transition-none",
                     DESKTOP_ONLY,
-                    pnlClass(activePnl, true),
+                    signedNumberClassEmphasized(activePnl, true),
                   )}
                 >
                   {formatUsd(activePnl)}
@@ -325,9 +312,9 @@ export function LeaderboardTable({
                     <TableCell
                       key={`pnl-${window}`}
                       className={cn(
-                        "text-right font-mono text-[11px] tabular-nums",
+                        "text-right font-mono text-xs tabular-nums",
                         DESKTOP_ONLY,
-                        pnlClass(value, false),
+                        signedNumberClassEmphasized(value, false),
                       )}
                     >
                       {formatUsd(value)}
@@ -348,7 +335,7 @@ export function LeaderboardTable({
                     <TableCell
                       key={`vlm-${window}`}
                       className={cn(
-                        "text-muted-foreground text-right font-mono text-[11px] tabular-nums",
+                        "text-muted-foreground text-right font-mono text-xs tabular-nums",
                         DESKTOP_ONLY,
                       )}
                     >

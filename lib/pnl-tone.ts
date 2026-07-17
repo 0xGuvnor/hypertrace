@@ -2,6 +2,8 @@
 
 export const PNL_POSITIVE_TEXT = "text-[var(--pnl-positive)]";
 export const PNL_NEGATIVE_TEXT = "text-[var(--pnl-negative)]";
+export const PNL_POSITIVE_TEXT_MUTED = "text-[var(--pnl-positive)]/70";
+export const PNL_NEGATIVE_TEXT_MUTED = "text-[var(--pnl-negative)]/70";
 
 export const PNL_POSITIVE_BADGE =
   "border-[color-mix(in_oklch,var(--pnl-positive)_30%,transparent)] bg-[color-mix(in_oklch,var(--pnl-positive)_10%,transparent)] font-medium text-[var(--pnl-positive)]";
@@ -18,6 +20,20 @@ export const PNL_NEGATIVE_SOFT =
 export function signedNumberClass(value: number): string {
   if (!Number.isFinite(value) || value === 0) return "";
   return value < 0 ? PNL_NEGATIVE_TEXT : PNL_POSITIVE_TEXT;
+}
+
+/** Emphasized vs muted signed tone (e.g. active PnL column vs siblings). */
+export function signedNumberClassEmphasized(
+  value: number,
+  emphasized: boolean,
+): string {
+  if (!Number.isFinite(value) || value === 0) {
+    return emphasized ? "text-foreground" : "text-muted-foreground";
+  }
+  if (value > 0) {
+    return emphasized ? PNL_POSITIVE_TEXT : PNL_POSITIVE_TEXT_MUTED;
+  }
+  return emphasized ? PNL_NEGATIVE_TEXT : PNL_NEGATIVE_TEXT_MUTED;
 }
 
 export function signedHlStringClass(value: string): string {
