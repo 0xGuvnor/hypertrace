@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useLayoutEffect, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 
 import { FillsTable } from "@/components/fills-table";
 import { OrdersTable } from "@/components/orders-table";
@@ -45,19 +45,23 @@ export function WalletTabs({
   const spotCount = snapshot.spotBalances?.length ?? 0;
 
   const [view, setView] = useState<WalletView>(initialView);
+  const viewRef = useRef(view);
+  viewRef.current = view;
 
   const applyView = useCallback(
     (
       updater: (prev: WalletView) => WalletView,
       options?: { syncUrl?: boolean },
     ) => {
-      setView((prev) => {
-        const next = updater(prev);
-        if (options?.syncUrl !== false) {
-          router.replace(walletHref(snapshot.address, next), { scroll: false });
-        }
-        return next;
-      });
+      const prev = viewRef.current;
+      const next = updater(prev);
+      if (viewsEqual(prev, next)) return;
+      viewRef.current = next;
+      setView(next);
+      // router.replace updates Router; illegal inside a setState updater.
+      if (options?.syncUrl !== false) {
+        router.replace(walletHref(snapshot.address, next), { scroll: false });
+      }
     },
     [router, snapshot.address],
   );
