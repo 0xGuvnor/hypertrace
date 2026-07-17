@@ -188,7 +188,7 @@ export function TransfersTable({
 
   if (transfers.length === 0) {
     return (
-      <p className="text-muted-foreground max-w-prose py-8 text-center text-sm leading-relaxed text-pretty">
+      <p className="text-muted-foreground mx-auto max-w-prose py-8 text-center text-sm leading-relaxed text-pretty">
         No bridge transfers on record for this wallet. Hypertrace scans Arbitrum
         bridge deposits and withdrawals from {TRANSFER_SCAN_START_DATE_LABEL}{" "}
         onward. Transfers appear once the wallet is watched and indexing
