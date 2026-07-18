@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Geist, Geist_Mono } from "next/font/google"
 
 import "./globals.css"
 import { ConvexClientProvider } from "@/app/ConvexClientProvider"
+import { PixelAmoebaBackground } from "@/components/pixel-amoeba-background"
 import { ThemeProvider } from "@/components/theme-provider"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { getToken } from "@/lib/auth-server"
@@ -79,13 +80,16 @@ export default async function RootLayout({
         displaySerif.variable,
       )}
     >
-      <body>
+      <body className="relative">
         <ThemeProvider>
-          <TooltipProvider>
-            <ConvexClientProvider initialToken={token}>
-              {children}
-            </ConvexClientProvider>
-          </TooltipProvider>
+          <PixelAmoebaBackground />
+          <div className="relative z-10">
+            <TooltipProvider>
+              <ConvexClientProvider initialToken={token}>
+                {children}
+              </ConvexClientProvider>
+            </TooltipProvider>
+          </div>
         </ThemeProvider>
       </body>
     </html>
