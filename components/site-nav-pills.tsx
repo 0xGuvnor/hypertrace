@@ -25,7 +25,7 @@ export function SiteNavPills({ className, trailing }: SiteNavPillsProps) {
   return (
     <div
       className={cn(
-        "hidden items-center rounded-full border border-border/80 bg-card/60 p-0.5 sm:flex",
+        "hidden items-center rounded-full border border-border/80 bg-card/85 p-0.5 sm:flex",
         className,
       )}
     >
