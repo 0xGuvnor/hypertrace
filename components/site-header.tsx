@@ -27,7 +27,6 @@ function SiteNavActions({ className }: { className?: string }) {
 function siteHeaderClassName(className?: string) {
   return cn(
     "sticky top-0 z-40 -mt-6 w-full self-stretch",
-    "bg-background",
     "pt-6 pb-3 sm:-mt-8 sm:pt-8",
     className,
   );
@@ -54,7 +53,7 @@ export function SiteHeader({
     >
       <Link
         href="/"
-        className="group flex flex-row items-center gap-1.5 rounded-lg outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--brand-cyan)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="group flex flex-row items-center gap-1.5 rounded-lg outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--brand-cyan)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
       >
         <div className="relative size-8 shrink-0 sm:size-9">
           <Image
@@ -65,7 +64,7 @@ export function SiteHeader({
             className="size-full object-contain"
           />
         </div>
-        <span className="text-base font-semibold tracking-tight sm:text-lg">
+        <span className="text-base font-semibold tracking-tight sm:text-lg dark:[text-shadow:0_1px_14px_oklch(0_0_0_/_0.75)]">
           Hyper<span className="italic">trace</span>
         </span>
       </Link>
